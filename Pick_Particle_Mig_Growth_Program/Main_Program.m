@@ -548,6 +548,16 @@ while (itim < ttim) % set time while loop
     %% MIGRATION IS SELECTED
     if (0 <= r2) && (r2 < R_Mig/R_tot)
         
+        
+        % REWRITE PROGRAM TO COUNT NUMBER OF MIGRATIONS ALLOWED PER SEC.
+        % SELECT PARTICLE AT RANDOM USING Pick_Particle_Lim_Mig_Function
+        % USE THE PROBABILITY TO DETERMINE WHICH PARTICLE SHOULD MOVE
+        % INSTEAD OF HISTOGRAM TO SELECT LOCATION, USE THE
+        % Pick_Particle_Lim_Mig_Function THEN TO SELECT LOCATION THEN
+        % THE PROBABILITY AT EACH LOCATION TO DETERMINE WHICH PARTICLE 
+        % CAN MOVE.
+        
+        
         % Check to see if a migration occured at a non-boundary zone
         Mig_Occured = 0;
         Mig_Left = 0;
