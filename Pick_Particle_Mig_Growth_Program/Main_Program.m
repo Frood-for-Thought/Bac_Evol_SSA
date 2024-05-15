@@ -564,12 +564,17 @@ while (itim < ttim) % set time while loop
         Mig_Right = 0;
         Cant_Select_Bacteria = 0; % This variable is security to prevent the while loop from getting stuck.
         while Mig_Occured <= 0
-            % Look for a deme location using normalized migration
-            % probabilites for each deme.
-            Find_Location = 1; % Boolean to signify function to look for location.
-            [i, Location_Mig_Probability, Find_Location]...
-                = Select_Location_Bacteria_Mig_Function(...
-                P_deme_Mig, R_Mig, Find_Location, nl);
+            % Pick one random particle on this cycle
+            % Function to Pick one random particle on the Bacterial arrays
+            [WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,i,...
+                Count_Num_Mig,All_Prt_Ran_Order,Rand_Part_Mtx_El,R_Mig,if_sel] ...
+                = Pick_Particle_Lim_Mig_Function(Rand_Part_Mtx_El,Count_Num_Mig,...
+                All_Prt_Ran_Order,nl,itim,x,m1,m2,m3,R_Mig);
+            % If Rand_Part_Mtx_El > length(All_Prt_Ran_Order) then R_Mig = 0
+            % because the number of allowed migrations in this timeframe is over.
+            if R_Mig == 0
+                break
+            end
             
             % Look for location and bacterial type to migrate
             pos_selected = 0;
