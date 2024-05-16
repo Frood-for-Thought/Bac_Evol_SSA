@@ -39,9 +39,25 @@
                 % Removes the total number of particles at this Deme from the
                 % picked particle number
                 PickParticle = PickParticle - nxtotal;
-                % If the number of migrations are allowed in the 
+                % Check if the number of migrations are allowed in the 
                 % matrix which counts the number of migrations per Deme
-                if Count_Num_Mig(i) >= 1
+                
+                % If the number of migrations can take place but the
+                % population of the section has no bacteria, function moves to
+                % the next Rand_Part_Mtx_El
+                if (Count_Num_Mig(i) >= 1) && (nxtotal <= 0)
+                    if_sel = 2;
+                    Rand_Part_Mtx_El = Rand_Part_Mtx_El + 1;
+                    if Rand_Part_Mtx_El > length(All_Prt_Ran_Order)
+                        R_Mig = 0;
+                        Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
+                        All_Prt_Ran_Order = randperm(sum(Count_Num_Mig)); % Create a random order of all the particles to pick
+                        Rand_Part_Mtx_El = 1;
+                    end
+                    PickParticle = All_Prt_Ran_Order(Rand_Part_Mtx_El);
+                    continue
+                % The particle is allowed to migrate here.
+                elseif Count_Num_Mig(i) >= 1
                     if_sel = 1; % This if statement was selected
                     % When PickParticle goes negative, then the position has been selected
                     if (PickParticle <= 0) && (nxtotal > 0)
@@ -61,25 +77,11 @@
                         % the "break" makes it so that location "il" is selected
                         pos_selected = 1;
                         break
-                    end
-                % If the number of migrations can take place but the
-                % population of the section has no bacteria, function moves to
-                % the next Rand_Part_Mtx_El
-                elseif (Count_Num_Mig(i) >= 1) && (nxtotal <= 0)
-                    if_sel = 2;
-                    Rand_Part_Mtx_El = Rand_Part_Mtx_El + 1;
-                    if Rand_Part_Mtx_El > length(All_Prt_Ran_Order)
-                        R_Mig = 0;
-                        Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
-                        All_Prt_Ran_Order = randperm(sum(Count_Num_Mig)); % Create a random order of all the particles to pick
-                        Rand_Part_Mtx_El = 1;
-                    end
-                    PickParticle = All_Prt_Ran_Order(Rand_Part_Mtx_El);
-                    continue
-                end
+                    end % if (PickParticle <= 0) && (nxtotal > 0)
+                end % if (Count_Num_Mig(i) >= 1) && (nxtotal <= 0)
                 % If the number of migrations are not allowed at this location
                 % function moves to the next position i
-            end
+            end % for i = 1:nl % select position loop
         % Go back to beginning and restart the if statement because
         % no position was selected
             if pos_selected < 1
