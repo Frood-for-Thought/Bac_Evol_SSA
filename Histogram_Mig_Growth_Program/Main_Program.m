@@ -336,7 +336,7 @@ tum_dt = 0;
 % element from 1:nl
 Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
 All_Particles = sum(Count_Num_Mig); % Create a random order of all the particles to pick
-Rand_Part_Mtx_El = 0; % Used to select which element in vector All_Prt_Ran_Order
+Rand_Part_Mtx_El = 0;
 New_Bacteria = 0; % Count the number of growths
 Lose_Bacteria_70 = 0; % Count the number of deaths
 Mutation_Occurs = 0; % Count the number of mutations
