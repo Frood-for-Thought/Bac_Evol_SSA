@@ -1,29 +1,10 @@
 function [i, Location_Mig_Probability, Find_Location,...
-    WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
+    WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected]...
     = Select_Location_Bacteria_Mig_Function(...
     P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability, P_deme_Mig_WT, P_deme_Mig_Mut1,...
     P_deme_Mig_Mut2, P_deme_Mig_Mut3)
-    if Find_Location > 0
-        % FIND MIGRATION LOCATION 
-        P_deme_Mig = P_deme_Mig/R_Mig; % Normalized mig probability for each deme
-                                    % to find where in the system migration occurs
-        P_il_new_location = randperm(length(P_deme_Mig));
-        New_P_deme_Order = P_deme_Mig(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
-        r3 = rand();
-        Position_Found = 0;
-        while Position_Found < 1
-            for i = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,i)
-                    Location_Mig_Probability = P_deme_wthPosition_Random(1,i);
-                    Mig_Location = P_deme_wthPosition_Random(2,i);
-                    Position_Found = 1;
-                end
-            end
-            r3 = rand(); % if no location is found
-        end
-        i = Mig_Location;
-    else
+
+    if Find_Location < 1
         % Calculate the migration rate percentage for each bacteria at location i
         P_bac = [P_deme_Mig_WT(i), P_deme_Mig_Mut1(i), P_deme_Mig_Mut2(i), P_deme_Mig_Mut3(i)];
         mN_Normal = sum(P_bac);
@@ -72,6 +53,6 @@ function [i, Location_Mig_Probability, Find_Location,...
         elseif Bacteria_Type_Selected == 4
             Mut3_Selected = 1;
         end
-        pos_selected = 1;
+        
     end % if Find_Location > 0
 end

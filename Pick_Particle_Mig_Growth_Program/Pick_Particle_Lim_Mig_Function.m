@@ -50,9 +50,7 @@
                     Rand_Part_Mtx_El = Rand_Part_Mtx_El + 1;
                     if Rand_Part_Mtx_El > length(All_Prt_Ran_Order)
                         R_Mig = 0;
-                        Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
-                        All_Prt_Ran_Order = randperm(sum(Count_Num_Mig)); % Create a random order of all the particles to pick
-                        Rand_Part_Mtx_El = 1;
+                        break
                     end
                     PickParticle = All_Prt_Ran_Order(Rand_Part_Mtx_El);
                     continue
@@ -82,8 +80,8 @@
                 % If the number of migrations are not allowed at this location
                 % function moves to the next position i
             end % for i = 1:nl % select position loop
-        % Go back to beginning and restart the if statement because
-        % no position was selected
+            % Go back to beginning and restart the if statement because
+            % no position was selected
             if pos_selected < 1
                 Rand_Part_Mtx_El = Rand_Part_Mtx_El + 1;
                 if Rand_Part_Mtx_El > length(All_Prt_Ran_Order)
@@ -92,5 +90,5 @@
                 end
                 PickParticle = All_Prt_Ran_Order(Rand_Part_Mtx_El);
             end
-        end
+        end % while pos_selected < 1
     end

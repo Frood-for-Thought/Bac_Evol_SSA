@@ -577,8 +577,7 @@ while (itim < ttim) % set time while loop
                 
                 % Pick one random particle on this cycle
                 % Function to Pick one random particle on the Bacterial arrays
-                [WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,i,...
-                    Count_Num_Mig,All_Prt_Ran_Order,Rand_Part_Mtx_El,R_Mig,if_sel] ...
+                [~,~,~,~,i,Count_Num_Mig,All_Prt_Ran_Order,Rand_Part_Mtx_El,R_Mig,if_sel] ...
                     = Pick_Particle_Lim_Mig_Function(Rand_Part_Mtx_El,Count_Num_Mig,...
                     All_Prt_Ran_Order,nl,itim,x,m1,m2,m3,R_Mig);
                 % If Rand_Part_Mtx_El > length(All_Prt_Ran_Order) then R_Mig = 0
@@ -588,20 +587,20 @@ while (itim < ttim) % set time while loop
                 end
 
                 % Look for location and bacterial type to migrate
-                pos_selected = 0;
-                while pos_selected < 1
-                    Find_Location = 0; % Find Bacterial Type.
-                    [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
-                        = Select_Location_Bacteria_Mig_Function(...
-                        P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability,...
-                        P_deme_Mig_WT, P_deme_Mig_Mut1,P_deme_Mig_Mut2, P_deme_Mig_Mut3);
-                    % Find_Location = 1, no position found
-                    if Find_Location > 0
-                        % CHOOSE A NEW LOCATION
-                        [i, Location_Mig_Probability, Find_Location]...
-                            = Select_Location_Bacteria_Mig_Function(...
-                            P_deme_Mig, R_Mig, Find_Location, nl);
-                    end
+                Find_Location = 0; % Find Bacterial Type.
+                [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
+                    = Select_Location_Bacteria_Mig_Function(...
+                    P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability,...
+                    P_deme_Mig_WT, P_deme_Mig_Mut1,P_deme_Mig_Mut2, P_deme_Mig_Mut3);
+                    
+                % Find_Location = 1, no position found
+                if Find_Location > 0
+                    % If nothing happens then it just means that the bacteria moved
+                    % within its own Deme and did not move to a neighbouring one
+                    Cant_Select_Bacteria = Cant_Select_Bacteria + 1;
+                    % No migration has occured so reset this location.
+                    Count_Num_Mig(i) = Count_Num_Mig(i) + 1;
+                    continue
                 end
 
                 % Bacteria at location i
