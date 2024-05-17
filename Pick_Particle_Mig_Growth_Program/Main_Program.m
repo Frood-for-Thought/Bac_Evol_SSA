@@ -337,7 +337,7 @@ tum_dt = 0;
 Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
 All_Particles = sum(Count_Num_Mig); % Create a random order of all the particles to pick
 Rand_Part_Mtx_El = 0; % Used to select which element in vector All_Prt_Ran_Order
-All_Prt_Ran_Order = randperm(Tot_Num); % Create a random order of all the particles to pick
+All_Prt_Ran_Order = randperm(All_Particles); % Create a random order of all the particles to pick
 New_Bacteria = 0; % Count the number of growths
 Mutation_Occurs = 0; % Count the number of mutations
 Conjugation_Occurs = 0; % Count the number of times conjugation occurs
@@ -551,11 +551,14 @@ while (itim < ttim) % set time while loop
         
         % REWRITE PROGRAM TO COUNT NUMBER OF MIGRATIONS ALLOWED PER SEC.
         % SELECT PARTICLE AT RANDOM USING Pick_Particle_Lim_Mig_Function
+        
         % USE THE PROBABILITY TO DETERMINE WHICH PARTICLE SHOULD MOVE
         % INSTEAD OF HISTOGRAM TO SELECT LOCATION, USE THE5
         % Pick_Particle_Lim_Mig_Function THEN TO SELECT LOCATION THEN
         % THE PROBABILITY AT EACH LOCATION TO DETERMINE WHICH PARTICLE 
         % CAN MOVE.
+        
+        % REPEAT THE SAME FOR THE GROWTH LOCATION.
         
         
         % Check to see if a migration occured at a non-boundary zone
@@ -575,16 +578,6 @@ while (itim < ttim) % set time while loop
             if R_Mig == 0
                 break
             end
-            WT_Selected
-            Mut1_Selected
-            Mut2_Selected
-            Mut3_Selected
-            i
-            Count_Num_Mig
-            All_Prt_Ran_Order
-            Rand_Part_Mtx_El
-            R_Mig
-            if_sel
             
             % Look for location and bacterial type to migrate
             pos_selected = 0;
