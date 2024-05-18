@@ -14,7 +14,9 @@ function [i, Location_Mig_Probability, Find_Location,...
             mN_Normal = 1;
         end
         % If for some reason the migration rate percentage is negative.
-        if (Location_Mig_Probability > 0) && (sum(P_bac) <= 0)
+        % IN CASE THIS IS A REGION WHERE A PARTICLE IS BUT THE
+        % MIGRATION PROBABILITY IS 0.
+        if (Location_Mig_Probability >= 0) && (sum(P_bac) <= 0)
             Find_Location = 1;
             return % The while loop will cycle to a new probability.
         end
