@@ -585,13 +585,15 @@ while (itim < ttim) % set time while loop
                 if R_Mig == 0
                     break
                 end
-
+                
+                Location_Mig_Probability = P_deme_Mig(i);
                 % Look for location and bacterial type to migrate
                 Find_Location = 0; % Find Bacterial Type.
-                [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
+                
+                [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected]...
                     = Select_Location_Bacteria_Mig_Function(...
-                    P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability,...
-                    P_deme_Mig_WT, P_deme_Mig_Mut1,P_deme_Mig_Mut2, P_deme_Mig_Mut3);
+                    P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability, P_deme_Mig_WT, P_deme_Mig_Mut1,...
+                    P_deme_Mig_Mut2, P_deme_Mig_Mut3);
                     
                 % Find_Location = 1, no position found
                 if Find_Location > 0
