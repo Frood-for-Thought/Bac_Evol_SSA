@@ -527,10 +527,10 @@ while (itim < ttim) % set time while loop
     end % for il = 1:nl
     
     % In case total rates are needed to be shown.
-    R_growth;
-    R_Mig;
-    R_death = death*Tot_Num*10; % the death rate includes the x10 pop factor
-    R_conj;
+    R_growth
+    R_Mig
+    R_death = death*Tot_Num*10 % the death rate includes the x10 pop factor
+    R_conj
     
     % The total rate of reaction
     R_tot = R_growth + R_Mig + R_death + R_conj;
@@ -562,6 +562,9 @@ while (itim < ttim) % set time while loop
         % INSIDE THE Pick_Particle_Lim_Mig_Function IN CASE
         % if Cant_Select_Bacteria <= 10 LOOP DOES NOT SELECT THAT LOCATION
         % AND NEEDS TO SELECT A NEW ONE.
+        
+        % IF THERE'S STILL MIGRATIONS ALLOWED, THEN Rand_Part_Mtx_El
+        % SHOULD BE RESET INSTEAD OF GOING TO 0.
         
         % REPEAT THE SAME FOR THE GROWTH LOCATION.
         

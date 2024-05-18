@@ -22,8 +22,8 @@ function [R_mig_deme, Mig_Occured, Mig_Right, Mig_Left]...
         % (N/DL^2)*area_of_exit
         % Using assumption by Allen Supplemental Paper:
         %       Rate = R_mig_deme*(channel_width/deme_size)
-        %       w/DL = 20/310 ~ 0.06
-        R_mig_deme = R_mig_deme*0.06;
+        %       w/DL = 10/310 ~ 0.03
+        R_mig_deme = R_mig_deme*0.03;
     else
         % The rates calculated for migrating on either direction.
         R_mig_deme_up = 0;

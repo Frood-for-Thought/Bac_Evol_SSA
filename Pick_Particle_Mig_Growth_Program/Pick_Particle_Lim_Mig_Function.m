@@ -50,7 +50,9 @@
                     Rand_Part_Mtx_El = Rand_Part_Mtx_El + 1;
                     if Rand_Part_Mtx_El > length(All_Prt_Ran_Order)
                         R_Mig = 0;
-                        break
+                        Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
+                        All_Prt_Ran_Order = randperm(sum(Count_Num_Mig)); % Create a random order of all the particles to pick
+                        Rand_Part_Mtx_El = 1;
                     end
                     PickParticle = All_Prt_Ran_Order(Rand_Part_Mtx_El);
                     continue
