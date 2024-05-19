@@ -18,7 +18,11 @@ function [i, Location_Mig_Probability, Find_Location,...
         % MIGRATION PROBABILITY IS 0.
         if (Location_Mig_Probability >= 0) && (sum(P_bac) <= 0)
             Find_Location = 1;
-            return % The while loop will cycle to a new probability.
+            WT_Selected = NaN;
+            Mut1_Selected = NaN;
+            Mut2_Selected = NaN;
+            Mut3_Selected = NaN;
+            return;
         end
         P_bac = P_bac/mN_Normal;
         P_bac_new_location = randperm(length(P_bac));

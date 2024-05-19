@@ -6,7 +6,7 @@ close all
 clf
 
 % TOTAL TIME: (60sec)*(min)
-ttim = 60*720; % (1440min = 24h)
+ttim = 60*1440; % (1440min = 24h)
 
 itertot = 1; % total iteration
 nl = 101;   % Total number of demes
@@ -589,14 +589,15 @@ while (itim < ttim) % set time while loop
                     break
                 end
                 
+                % Look for location and bacterial type to migrate.
                 Location_Mig_Probability = P_deme_Mig(i);
-                % Look for location and bacterial type to migrate
+                % Find_Location = 0, input means looking for position.
                 Find_Location = 0; % Find Bacterial Type.
-                
                 [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected]...
                     = Select_Location_Bacteria_Mig_Function(...
                     P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability, P_deme_Mig_WT, P_deme_Mig_Mut1,...
                     P_deme_Mig_Mut2, P_deme_Mig_Mut3);
+                % Find_Location = 0, output means position found.
                     
                 % Find_Location = 1, no position found
                 if Find_Location > 0
