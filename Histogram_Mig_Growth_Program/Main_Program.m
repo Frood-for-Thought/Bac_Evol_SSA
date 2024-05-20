@@ -675,20 +675,18 @@ while (itim < ttim) % set time while loop
         R_growth; % Total rate of growth
         P_g_deme = P_g_deme/R_growth; % Normalized growth probability for each deme
                                     % to find where in the system growth occurs
-        P_il_new_location = randperm(length(P_g_deme));
-        New_P_deme_Order = P_g_deme(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
+        P_il_location = 1:size(P_g_deme, 2);
+        P_deme_Order = P_g_deme(:, P_il_location);
+        P_deme_wth_Position = [P_deme_Order; P_il_location];
         r3 = rand();
-        Position_Found = 0;
-        while Position_Found < 1
-            for il = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,il)
-                    Location_Growth_Probability = P_deme_wthPosition_Random(1,il);
-                    Growth_Location = P_deme_wthPosition_Random(2,il);
-                    Position_Found = 1;
-                end
+        sum_prob = 0;
+        for il = 1:length(P_deme_wth_Position) % select position loop
+            sum_prob = sum_prob + P_deme_wth_Position(1,il);
+            if r3 <= sum_prob
+                Location_Growth_Probability = P_deme_wth_Position(1,il);
+                Growth_Location = P_deme_wth_Position(2,il);
+                break
             end
-            r3 = rand(); % if no location is found
         end
         il = Growth_Location;
         New_Bacteria = New_Bacteria + 1;
