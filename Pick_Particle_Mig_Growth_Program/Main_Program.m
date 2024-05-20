@@ -548,27 +548,6 @@ while (itim < ttim) % set time while loop
     %% MIGRATION IS SELECTED
     if (0 <= r2) && (r2 < R_Mig/R_tot)
         
-        
-        % REWRITE PROGRAM TO COUNT NUMBER OF MIGRATIONS ALLOWED PER SEC.
-        % SELECT PARTICLE AT RANDOM USING Pick_Particle_Lim_Mig_Function
-        
-        % USE THE PROBABILITY TO DETERMINE WHICH PARTICLE SHOULD MOVE
-        % INSTEAD OF HISTOGRAM TO SELECT LOCATION, USE THE5
-        % Pick_Particle_Lim_Mig_Function THEN TO SELECT LOCATION THEN
-        % THE PROBABILITY AT EACH LOCATION TO DETERMINE WHICH PARTICLE 
-        % CAN MOVE.
-        
-        % NEED TO FIX PROBLEM OF Count_Num_Mig(i) = Count_Num_Mig(i) - 1;
-        % INSIDE THE Pick_Particle_Lim_Mig_Function IN CASE
-        % if Cant_Select_Bacteria <= 10 LOOP DOES NOT SELECT THAT LOCATION
-        % AND NEEDS TO SELECT A NEW ONE.
-        
-        % IF THERE'S STILL MIGRATIONS ALLOWED, THEN Rand_Part_Mtx_El
-        % SHOULD BE RESET INSTEAD OF GOING TO 0.
-        
-        % REPEAT THE SAME FOR THE GROWTH LOCATION.
-        
-        
         % Check to see if a migration occured at a non-boundary zone
         Mig_Occured = 0;
         Mig_Left = 0;
@@ -707,20 +686,18 @@ while (itim < ttim) % set time while loop
         R_growth; % Total rate of growth
         P_g_deme = P_g_deme/R_growth; % Normalized growth probability for each deme
                                     % to find where in the system growth occurs
-        P_il_new_location = randperm(length(P_g_deme));
-        New_P_deme_Order = P_g_deme(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
+        P_il_location = 1:size(P_g_deme, 2);
+        P_deme_Order = P_g_deme(:, P_il_location);
+        P_deme_wth_Position = [P_deme_Order; P_il_location];
         r3 = rand();
-        Position_Found = 0;
-        while Position_Found < 1
-            for il = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,il)
-                    Location_Growth_Probability = P_deme_wthPosition_Random(1,il);
-                    Growth_Location = P_deme_wthPosition_Random(2,il);
-                    Position_Found = 1;
-                end
+        sum_prob = 0;
+        for il = 1:length(P_deme_wth_Position) % select position loop
+            sum_prob = sum_prob + P_deme_wth_Position(1,il);
+            if r3 <= sum_prob
+                Location_Growth_Probability = P_deme_wth_Position(1,il);
+                Growth_Location = P_deme_wth_Position(2,il);
+                break
             end
-            r3 = rand(); % if no location is found
         end
         il = Growth_Location;
         New_Bacteria = New_Bacteria + 1;
@@ -873,16 +850,16 @@ while (itim < ttim) % set time while loop
         % Find conjugation location
         R_conj; % Total rate of Conjugation
         P_deme_conj = P_deme_conj/R_conj; % Normalized conj probability for each location
-        P_il_new_location = randperm(length(P_deme_conj));
-        New_P_deme_Order = P_deme_conj(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
+        P_il_location = randperm(length(P_deme_conj));
+        P_deme_Order = P_deme_conj(:, P_il_location);
+        P_deme_wth_Position = [P_deme_Order; P_il_location];
         r3 = rand();
         Position_Found = 0;
         while Position_Found < 1
             for il = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,il)
-                    Location_Growth_Probability = P_deme_wthPosition_Random(1,il);
-                    Conjugation_Location = P_deme_wthPosition_Random(2,il);
+                if r3 < P_deme_wth_Position(1,il)
+                    Location_Growth_Probability = P_deme_wth_Position(1,il);
+                    Conjugation_Location = P_deme_wth_Position(2,il);
                     Position_Found = 1;
                 end
             end
