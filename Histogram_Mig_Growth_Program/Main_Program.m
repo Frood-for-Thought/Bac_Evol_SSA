@@ -6,7 +6,7 @@ close all
 clf
 
 % TOTAL TIME: (60sec)*(min)
-ttim = 60*720; % (1440min = 24h)
+ttim = 60*2880; % (1440min = 24h)
 
 itertot = 1; % total iteration
 nl = 101;   % Total number of demes
@@ -321,7 +321,7 @@ m2(((nl-1)/2+1),1) = 0;
 % m2(20,1) = ntot;
 
 m3(((nl-1)/2+1),1) = 0;
-% m3(95,1) = ntot;
+% m3(50,1) = ntot;
 
 
 % Time Parameters
