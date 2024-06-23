@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 10; % total iteration sets the number of times information is collected per while loop run.
+itertot = 2; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -267,8 +267,10 @@ v = VideoWriter('BacteriaMutantFix.avi');
 open(v)
 video_Condition = 0;
 
-for iter = 1:itertot; % set iterationloop
+% MATRIX TO RECORD THE TIME TO FIX
 All_Times_Recorded = zeros();
+
+for iter = 1:itertot; % set iterationloop
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
