@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 1; % total iteration
+itertot = 20; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -267,8 +267,10 @@ v = VideoWriter('BacteriaMutantFix.avi');
 open(v)
 video_Condition = 0;
 
+% MATRIX TO RECORD THE TIME TO FIX
+All_Times_Recorded = zeros(itertot, 3);
+
 for iter = 1:itertot; % set iterationloop
-% first initialization
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
@@ -1091,9 +1093,20 @@ while (itim < ttim) % set time while loop
         end
         
 end %  end of time while loop
-
+% Update the All_Times_Recorded Matrix
+All_Times_Recorded(iter, 1) = Time_Recorded; % Time in seconds
+All_Times_Recorded(iter, 2) = Time_Recorded/60; % Time in minutes
+All_Times_Recorded(iter, 3) = Time_Recorded/3600; % Time in hours.
 
 end % end iteration loop
+
+
+T = array2table(All_Times_Recorded,...
+    'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
+format short G
+file_title = 'Time_for_Bac_Fix.xlsx';
+writetable(T,file_title,'Sheet',1,'Range','A1')
+
 
 % Num_WT_Bac
 % Num_Mut1_Bac
