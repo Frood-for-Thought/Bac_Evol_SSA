@@ -6,7 +6,7 @@ close all
 clf
 
 % TOTAL TIME: (60sec)*(min)
-ttim = 60*2880; % (1440min = 24h)
+ttim = 60*1440; % (1440min = 24h)
 
 itertot = 1; % total iteration
 nl = 101;   % Total number of demes
@@ -952,6 +952,21 @@ while (itim < ttim) % set time while loop
         m1(:,itim) = m1(:,oldtim);
         m2(:,itim) = m2(:,oldtim);
         m3(:,itim) = m3(:,oldtim);
+        
+        % CHECK TO SEE IF MUTANT BACTERIA OUTNUMBER WILD TYPE.
+        % IF TRUE THEN END THE WHILE LOOP AND RECORD THE TIME.
+        exit_while_loop = false;
+        for i = 1:nl
+            if (x(i,itim) < m1(i,itim)) | (x(i,itim) < m2(i,itim)) | (x(i,itim) < m3(i,itim))
+                Time_Recorded = oldtim
+                exit_while_loop = true;
+            end
+        end
+        
+        if exit_while_loop
+            break;
+        end
+        
         % Also Need to Reset Migration Parameters
             Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
             All_Particles = sum(Count_Num_Mig); % Create a random order of all the particles to pick
@@ -1076,6 +1091,8 @@ while (itim < ttim) % set time while loop
         end
         
 end %  end of time while loop
+
+
 end % end iteration loop
 
 % Num_WT_Bac
