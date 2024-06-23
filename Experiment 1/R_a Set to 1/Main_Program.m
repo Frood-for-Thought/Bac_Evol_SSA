@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 1; % total iteration sets the number of times information is collected per while loop run.
+itertot = 10; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -1091,13 +1091,16 @@ while (itim < ttim) % set time while loop
         end
         
 end %  end of time while loop
-All_Times_Recorded(itertot) = Time_Recorded
+% Update the All_Times_Recorded Matrix
+All_Times_Recorded(itertot, 1) = Time_Recorded; % Time in seconds
+All_Times_Recorded(itertot, 2) = Time_Recorded/60; % Time in minutes
+All_Times_Recorded(itertot, 3) = Time_Recorded/3600; % Time in hours.
 
 end % end iteration loop
 
 
 T = array2table(All_Times_Recorded,...
-    'VariableNames',{'Time'})
+    'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
 format short G
 file_title = 'Time_for_Bac_Fix.xlsx';
 writetable(T,file_title,'Sheet',1,'Range','A1')
