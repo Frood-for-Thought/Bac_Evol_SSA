@@ -24,7 +24,7 @@ function [vd,R_a] = Repellant_Mig_Function(nl,MIC_Bac,Cipro,vd_chemotaxis,...
         % antibiotic
 %         R_a(i) = (0.5-c_adapt)*(erf(25*(MIC_Bac(i) - Antibiotic))+1)+(2*c_adapt);
 %         R_a(i) = 0.5*(erf(32.8*(MIC_Bac(i) - Antibiotic))+ 1 + As);
-        R_a(i) = 0.8 + 0.2*(erf(32.8*(MIC_Bac(i) - Antibiotic)));
+        R_a(i) = 0.6 + 0.4*(erf(32.8*(MIC_Bac(i) - Antibiotic)));
         
 %         if R_a(i) < 0.6 
 %             % In this example
