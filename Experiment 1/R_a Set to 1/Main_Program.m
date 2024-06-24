@@ -307,10 +307,12 @@ m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
 % ini_i = 16;
-ini_i = 18;
-x(ini_i,1) = CC;
-x(ini_i-1,1) = CC;
-x(ini_i-2,1) = CC;
+% ini_i = 18;
+% x(ini_i,1) = CC;
+% x(ini_i-1,1) = CC;
+% x(ini_i-2,1) = CC;
+
+x(50,1) = CC;
 
 % initialize in the middle x = (nl-1)/2+1
 % x(((nl-1)/2+1),1) = ntot; % Wild type bacteria placed in the center
@@ -797,7 +799,7 @@ while (itim < ttim) % set time while loop
             if Bacteria_Type_Selected > length(P_bac)
                 Bacteria_Type_Selected = 3; % length(P_bac);
             end
-            Mutation_Occurs = Mutation_Occurs + 1
+            Mutation_Occurs = Mutation_Occurs + 1;
             Time = 0;
             New_Bacteria = 0;
         end
@@ -1120,7 +1122,7 @@ writetable(T,file_title,'Sheet',1,'Range','A1')
 % Mutant1_Grows
 % Mutant2
 % Conjugation_Occurs
-Migration_Occurs
+% Migration_Occurs
 
 % Close the video file recorded
 close(v);
