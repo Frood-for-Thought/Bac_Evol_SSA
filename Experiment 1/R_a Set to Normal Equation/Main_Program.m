@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 20; % total iteration sets the number of times information is collected per while loop run.
+itertot = 50; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -307,10 +307,12 @@ m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
 % ini_i = 16;
-ini_i = 18;
-x(ini_i,1) = CC;
-x(ini_i-1,1) = CC;
-x(ini_i-2,1) = CC;
+% ini_i = 18;
+% x(ini_i,1) = CC;
+% x(ini_i-1,1) = CC;
+% x(ini_i-2,1) = CC;
+
+x(50,1) = CC;
 
 % initialize in the middle x = (nl-1)/2+1
 % x(((nl-1)/2+1),1) = ntot; % Wild type bacteria placed in the center
