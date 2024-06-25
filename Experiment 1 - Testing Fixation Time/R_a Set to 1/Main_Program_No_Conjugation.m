@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 80; % total iteration sets the number of times information is collected per while loop run.
+itertot = 20; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -40,7 +40,7 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     return;
 end
 Conj_Rate = 0.01/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
-Start_Conj = round(10);
+Start_Conj = round(5);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
 K = 22; % The Monod Constant 22 µM ~ 110 molecules/µm^3 
@@ -312,7 +312,13 @@ m3 = zeros(nl,ttim);
 % x(ini_i-1,1) = CC;
 % x(ini_i-2,1) = CC;
 
+% x(50,1) = CC;
+
+% START MUTANTS AT CENTER
 x(50,1) = CC;
+m1(49,1) = 10;
+x(49,1) = CC;
+x(48,1) = CC;
 
 % initialize in the middle x = (nl-1)/2+1
 % x(((nl-1)/2+1),1) = ntot; % Wild type bacteria placed in the center
