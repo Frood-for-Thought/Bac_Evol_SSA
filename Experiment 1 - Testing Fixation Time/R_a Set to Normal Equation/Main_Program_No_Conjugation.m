@@ -312,13 +312,13 @@ m3 = zeros(nl,ttim);
 % x(ini_i-1,1) = CC;
 % x(ini_i-2,1) = CC;
 
-% x(50,1) = CC;
-
-% START MUTANTS AT CENTER
 x(50,1) = CC;
-m1(49,1) = 10;
-x(49,1) = CC;
-x(48,1) = CC;
+
+% % START MUTANTS AT CENTER
+% x(50,1) = CC;
+% m1(49,1) = 10;
+% x(49,1) = CC;
+% x(48,1) = CC;
 
 % initialize in the middle x = (nl-1)/2+1
 % x(((nl-1)/2+1),1) = ntot; % Wild type bacteria placed in the center
