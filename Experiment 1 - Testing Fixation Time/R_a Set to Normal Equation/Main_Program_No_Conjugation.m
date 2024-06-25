@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 20; % total iteration sets the number of times information is collected per while loop run.
+itertot = 80; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -839,7 +839,9 @@ while (itim < ttim) % set time while loop
         
     elseif ((R_Mig+R_growth+R_death)/R_tot <= r2) && (r2 < (R_Mig+R_growth+R_death+R_conj)/R_tot)
         %% CONJUGATION IS SELECTED
-            
+        
+        break;
+        
         % Find conjugation location
         R_conj; % Total rate of Conjugation
         P_deme_conj = P_deme_conj/R_conj; % Normalized conj probability for each location
