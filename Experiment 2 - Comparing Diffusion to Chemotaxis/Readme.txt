@@ -1,6 +1,6 @@
 In this experiment, the folder "Diffusion Model" has drift velocity set to zero and diffusion is just due to random diffusion instead of chemotaxis.
 
-Bacteria are placed on the left hand side of the model, everything else is preserved.
+Bacteria are placed on the left hand side of the model at position 16, (not position 50), everything else is preserved.
 
 The time is recorded to test how long it takes a mutant bacteria to fix into a deme.
 
