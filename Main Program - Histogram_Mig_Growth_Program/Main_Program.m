@@ -40,7 +40,7 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     return;
 end
 Conj_Rate = 0.01/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
-Start_Conj = round(10);
+Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
 K = 22; % The Monod Constant 22 µM ~ 110 molecules/µm^3 
@@ -673,7 +673,7 @@ while (itim < ttim) % set time while loop
         
         % FIND GROWTH LOCATION
         R_growth; % Total rate of growth
-        P_g_deme = P_g_deme/R_growth; % Normalized growth probability for each deme
+        P_g_deme = P_g_deme/sum(P_g_deme); % Normalized growth probability for each deme
                                     % to find where in the system growth occurs
         P_il_location = 1:size(P_g_deme, 2);
         P_deme_Order = P_g_deme(:, P_il_location);
@@ -835,24 +835,22 @@ while (itim < ttim) % set time while loop
         
     elseif ((R_Mig+R_growth+R_death)/R_tot <= r2) && (r2 < (R_Mig+R_growth+R_death+R_conj)/R_tot)
         %% CONJUGATION IS SELECTED
-            
+        
         % Find conjugation location
         R_conj; % Total rate of Conjugation
-        P_deme_conj = P_deme_conj/R_conj; % Normalized conj probability for each location
-        P_il_new_location = randperm(length(P_deme_conj));
-        New_P_deme_Order = P_deme_conj(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
+        P_deme_conj = P_deme_conj/sum(P_deme_conj); % Normalized conj probability for each location
+        P_il_location = 1:size(P_deme_conj, 2);
+        P_deme_Order = P_deme_conj(:, P_il_location);
+        P_deme_wth_Position = [P_deme_Order; P_il_location];
         r3 = rand();
-        Position_Found = 0;
-        while Position_Found < 1
-            for il = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,il)
-                    Location_Growth_Probability = P_deme_wthPosition_Random(1,il);
-                    Conjugation_Location = P_deme_wthPosition_Random(2,il);
-                    Position_Found = 1;
-                end
+        sum_prob = 0;
+        for il = 1:length(P_deme_wth_Position) % select position loop
+            sum_prob = sum_prob + P_deme_wth_Position(1,il);
+            if r3 <= sum_prob
+                Location_Conj_Probability = P_deme_wth_Position(1,il);
+                Conjugation_Location = P_deme_wth_Position(2,il);
+                break
             end
-            r3 = rand(); % if no location is found
         end
         il = Conjugation_Location;
 
