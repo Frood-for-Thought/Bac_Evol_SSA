@@ -38,7 +38,10 @@ function [cjN,Combine_Mtx_F_Norm] = Conjugation_Function(Start_Conj,Bacteria_Num
     % Calculate the conjugation rate at position "il"
     Conj_Rate_Mtx = zeros();
     for row = 1:size(Pair_Mtx,1)
-        Conj_Rate_Mtx(row, 1) = Conj_Rate * (Pair_Mtx(row, 3) * Pair_Mtx(row, 4));
+        doner_cells = Pair_Mtx(row, 3);
+        recipient_cells = Pair_Mtx(row, 4);
+        limiting_population = min(Pair_Mtx(row,3:4));
+        Conj_Rate_Mtx(row, 1) = Conj_Rate * ((doner_cells * recipient_cells)/limiting_population);
     end
 
     % Since demes are in units of 10, cjN growth rate is 10 times more likely
