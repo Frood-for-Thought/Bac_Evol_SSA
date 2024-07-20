@@ -39,7 +39,9 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
     return;
 end
-Conj_Rate = 0.0076/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
+% ? = 1.5*10^-2 ?m^3/(cells*hr)
+% ?_population = 1.5*10^-2 ?m^3/(cells*hr)/(6000?m^3)
+Conj_Rate = 0.0000025/3600; % Rate = 2.5x10^-6 1/bac*h *(Bac1*Bac2) [bac/s]
 Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
