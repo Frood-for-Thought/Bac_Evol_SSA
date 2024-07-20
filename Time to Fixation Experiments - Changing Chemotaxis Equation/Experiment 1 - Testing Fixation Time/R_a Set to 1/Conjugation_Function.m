@@ -45,8 +45,7 @@ function [cjN,Combine_Mtx_F_Norm] = Conjugation_Function(Start_Conj,Bacteria_Num
             Conj_Rate_Mtx(row, 1) = 0;
         else
             % Calculate the conjugation rate for the current row
-            limiting_population = min(Pair_Mtx(row,3:4));
-            Conj_Rate_Mtx(row, 1) = Conj_Rate * ((donor_cells * recipient_cells)/limiting_population);
+            Conj_Rate_Mtx(row, 1) = Conj_Rate * donor_cells * recipient_cells;
         end
     end
 
