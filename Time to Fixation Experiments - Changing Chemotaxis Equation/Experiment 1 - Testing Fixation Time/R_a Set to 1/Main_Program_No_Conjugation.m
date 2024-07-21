@@ -39,8 +39,15 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
     return;
 end
-Conj_Rate = 0.01/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
-Start_Conj = round(5);
+% Tr_slow = 1.5*10^-11 mL/(cells*hr)*(10^9 µm^3/mL)
+% Tr_slow = 1.5*10^-2 (µm^3/cells*hr)
+% Tr_fast = 5*10^-9 mL/(cells*hr)*(10^9 µm^3/mL)= 5 µm^3/cells*hr
+Conj_Rate = 5;
+% Tr_per_deme = Tr/V = Tr/(6000µm^3) 
+Conj_Rate = Conj_Rate/6000;
+% Convert from per hour to per seconds.
+Conj_Rate = Conj_Rate/3600; % [(1/bac*hr)(1hr/3600s)(Bac1*Bac2)]: [bac/s]
+Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
 K = 22; % The Monod Constant 22 µM ~ 110 molecules/µm^3 
@@ -271,6 +278,9 @@ video_Condition = 0;
 All_Times_Recorded = zeros(itertot, 3);
 
 for iter = 1:itertot; % set iterationloop
+
+% Set the RNG seed using the iteration number
+rng(iter);
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
@@ -683,7 +693,7 @@ while (itim < ttim) % set time while loop
         
         % FIND GROWTH LOCATION
         R_growth; % Total rate of growth
-        P_g_deme = P_g_deme/R_growth; % Normalized growth probability for each deme
+        P_g_deme = P_g_deme/sum(P_g_deme); % Normalized growth probability for each deme
                                     % to find where in the system growth occurs
         P_il_location = 1:size(P_g_deme, 2);
         P_deme_Order = P_g_deme(:, P_il_location);
@@ -795,7 +805,11 @@ while (itim < ttim) % set time while loop
         % mutation rate.
         % µ = 50*10^-6 mut/(cell*day)
         %   ~ 1*10^-9 mut/(cell*sec)
-        R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        if il < 50
+            R_mutation = (1.15*10^-12)*Tot_Num*10; % s^-1
+        else
+            R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        end
         P_mut = 1 - exp(-R_mutation*Time);
         R_m = rand();
         if R_m <= P_mut
@@ -850,21 +864,19 @@ while (itim < ttim) % set time while loop
         
         % Find conjugation location
         R_conj; % Total rate of Conjugation
-        P_deme_conj = P_deme_conj/R_conj; % Normalized conj probability for each location
-        P_il_new_location = randperm(length(P_deme_conj));
-        New_P_deme_Order = P_deme_conj(:, P_il_new_location);
-        P_deme_wthPosition_Random = [New_P_deme_Order; P_il_new_location];
+        P_deme_conj = P_deme_conj/sum(P_deme_conj); % Normalized conj probability for each location
+        P_il_location = 1:size(P_deme_conj, 2);
+        P_deme_Order = P_deme_conj(:, P_il_location);
+        P_deme_wth_Position = [P_deme_Order; P_il_location];
         r3 = rand();
-        Position_Found = 0;
-        while Position_Found < 1
-            for il = 1:nl % select position loop
-                if r3 < P_deme_wthPosition_Random(1,il)
-                    Location_Growth_Probability = P_deme_wthPosition_Random(1,il);
-                    Conjugation_Location = P_deme_wthPosition_Random(2,il);
-                    Position_Found = 1;
-                end
+        sum_prob = 0;
+        for il = 1:length(P_deme_wth_Position) % select position loop
+            sum_prob = sum_prob + P_deme_wth_Position(1,il);
+            if r3 <= sum_prob
+                Location_Conj_Probability = P_deme_wth_Position(1,il);
+                Conjugation_Location = P_deme_wth_Position(2,il);
+                break
             end
-            r3 = rand(); % if no location is found
         end
         il = Conjugation_Location;
 
@@ -1114,7 +1126,7 @@ end % end iteration loop
 T = array2table(All_Times_Recorded,...
     'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
 format short G
-file_title = 'Time_for_Bac_Fix.xlsx';
+file_title = 'Time_for_Bac_Fix_No_Conj.xlsx';
 writetable(T,file_title,'Sheet',1,'Range','A1')
 
 

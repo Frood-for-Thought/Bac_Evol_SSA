@@ -8,7 +8,7 @@ clf
 % TOTAL TIME: (60sec)*(min)
 ttim = 60*1440; % (1440min = 24h)
 
-itertot = 50; % total iteration sets the number of times information is collected per while loop run.
+itertot = 100; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -39,9 +39,14 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
     return;
 end
-% Tr = 1.5*10^-2 µm^3/(cells*hr)
-% Tr_population = 1.5*10^-2 µm^3/(cells*hr)/(6000µm^3)
-Conj_Rate = 0.0000025/3600; % Rate = 2.5x10^-6 1/bac*h *(Bac1*Bac2) [bac/s]
+% Tr_slow = 1.5*10^-11 mL/(cells*hr)*(10^9 µm^3/mL)
+% Tr_slow = 1.5*10^-2 (µm^3/cells*hr)
+% Tr_fast = 5*10^-9 mL/(cells*hr)*(10^9 µm^3/mL)= 5 µm^3/cells*hr
+Conj_Rate = 5;
+% Tr_per_deme = Tr/V = Tr/(6000µm^3) 
+Conj_Rate = Conj_Rate/6000;
+% Convert from per hour to per seconds.
+Conj_Rate = Conj_Rate/3600; % [(1/bac*hr)(1hr/3600s)(Bac1*Bac2)]: [bac/s]
 Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
