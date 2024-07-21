@@ -800,7 +800,11 @@ while (itim < ttim) % set time while loop
         % mutation rate.
         % µ = 50*10^-6 mut/(cell*day)
         %   ~ 1*10^-9 mut/(cell*sec)
-        R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        if il < 50
+            R_mutation = (1.15*10^-12)*Tot_Num*10; % s^-1
+        else
+            R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        end
         P_mut = 1 - exp(-R_mutation*Time);
         R_m = rand();
         if R_m <= P_mut
