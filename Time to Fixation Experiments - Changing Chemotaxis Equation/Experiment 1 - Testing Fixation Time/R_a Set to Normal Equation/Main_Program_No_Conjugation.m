@@ -274,6 +274,9 @@ All_Times_Recorded = zeros(itertot, 3);
 
 for iter = 1:itertot; % set iterationloop
 
+% Set the RNG seed using the iteration number
+rng(iter);
+
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
 % Obj_Ini is used to check to see if it is going through initalization to
