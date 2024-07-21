@@ -316,13 +316,10 @@ m2 = zeros(nl,ttim);
 m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
-% ini_i = 16;
-% ini_i = 18;
-% x(ini_i,1) = CC;
-% x(ini_i-1,1) = CC;
-% x(ini_i-2,1) = CC;
-
-x(50,1) = CC;
+ini_i = 18;
+x(ini_i,1) = CC;
+x(ini_i-1,1) = CC;
+x(ini_i-2,1) = CC;
 
 % % START MUTANTS AT CENTER
 % x(50,1) = CC;
@@ -1124,7 +1121,7 @@ end % end iteration loop
 T = array2table(All_Times_Recorded,...
     'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
 format short G
-file_title = 'Time_for_Bac_Fix_Normal_Model.xlsx';
+file_title = 'Time_for_Bac_Fix_Diffusion.xlsx';
 writetable(T,file_title,'Sheet',1,'Range','A1')
 
 
