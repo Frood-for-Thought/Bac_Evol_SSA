@@ -1124,7 +1124,7 @@ end % end iteration loop
 T = array2table(All_Times_Recorded,...
     'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
 format short G
-file_title = 'Time_for_Bac_Fix.xlsx';
+file_title = 'Time_for_Bac_Fix_Normal_Model.xlsx';
 writetable(T,file_title,'Sheet',1,'Range','A1')
 
 
