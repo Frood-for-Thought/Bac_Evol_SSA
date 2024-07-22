@@ -280,7 +280,7 @@ All_Times_Recorded = zeros(itertot, 3);
 for iter = 1:itertot; % set iterationloop
 
 % Set the RNG seed using the iteration number
-rng(iter);
+% rng(iter);
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
@@ -316,13 +316,10 @@ m2 = zeros(nl,ttim);
 m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
-% ini_i = 16;
-% ini_i = 18;
-% x(ini_i,1) = CC;
-% x(ini_i-1,1) = CC;
-% x(ini_i-2,1) = CC;
-
-x(50,1) = CC;
+ini_i = 16;
+x(ini_i,1) = CC;
+x(ini_i-1,1) = CC;
+x(ini_i-2,1) = CC;
 
 % % START MUTANTS AT CENTER
 % x(50,1) = CC;
@@ -1109,6 +1106,9 @@ while (itim < ttim) % set time while loop
         end
         
 end %  end of time while loop
+if exit_while_loop == false
+    Time_Recorded = ttim;
+end
 % Update the All_Times_Recorded Matrix
 All_Times_Recorded(iter, 1) = Time_Recorded; % Time in seconds
 All_Times_Recorded(iter, 2) = Time_Recorded/60; % Time in minutes
