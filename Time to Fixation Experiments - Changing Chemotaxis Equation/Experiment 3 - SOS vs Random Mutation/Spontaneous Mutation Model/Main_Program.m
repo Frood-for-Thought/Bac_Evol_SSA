@@ -6,9 +6,9 @@ close all
 clf
 
 % TOTAL TIME: (60sec)*(min)
-ttim = 60*2880; % (1440min = 24h)
+ttim = 60*1440; % (1440min = 24h)
 
-itertot = 1; % total iteration
+itertot = 100; % total iteration sets the number of times information is collected per while loop run.
 nl = 101;   % Total number of demes
 Even = mod(nl,2);
 if Even == 0 % Even number
@@ -39,7 +39,14 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
     return;
 end
-Conj_Rate = 0.076/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
+% Tr_slow = 1.5*10^-11 mL/(cells*hr)*(10^9 µm^3/mL)
+% Tr_slow = 1.5*10^-2 (µm^3/cells*hr)
+% Tr_fast = 5*10^-9 mL/(cells*hr)*(10^9 µm^3/mL)= 5 µm^3/cells*hr
+Conj_Rate = 5;
+% Tr_per_deme = Tr/V = Tr/(6000µm^3) 
+Conj_Rate = Conj_Rate/6000;
+% Convert from per hour to per seconds.
+Conj_Rate = Conj_Rate/3600; % [(1/bac*hr)(1hr/3600s)(Bac1*Bac2)]: [bac/s]
 Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
@@ -267,8 +274,13 @@ v = VideoWriter('BacteriaMutantFix.avi');
 open(v)
 video_Condition = 0;
 
+% MATRIX TO RECORD THE TIME TO FIX
+All_Times_Recorded = zeros(itertot, 3);
+
 for iter = 1:itertot; % set iterationloop
-% first initialization
+
+% Set the RNG seed using the iteration number
+rng(iter);
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
@@ -305,10 +317,18 @@ m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
 % ini_i = 16;
-ini_i = 18;
-x(ini_i,1) = CC;
-x(ini_i-1,1) = CC;
-x(ini_i-2,1) = CC;
+% ini_i = 18;
+% x(ini_i,1) = CC;
+% x(ini_i-1,1) = CC;
+% x(ini_i-2,1) = CC;
+
+x(50,1) = CC;
+
+% % START MUTANTS AT CENTER
+% x(50,1) = CC;
+% m1(49,1) = 10;
+% x(49,1) = CC;
+% x(48,1) = CC;
 
 % initialize in the middle x = (nl-1)/2+1
 % x(((nl-1)/2+1),1) = ntot; % Wild type bacteria placed in the center
@@ -785,7 +805,7 @@ while (itim < ttim) % set time while loop
         % mutation rate.
         % µ = 50*10^-6 mut/(cell*day)
         %   ~ 1*10^-9 mut/(cell*sec)
-        R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        R_mutation = (1.15*10^-12)*Tot_Num*10; % s^-1
         P_mut = 1 - exp(-R_mutation*Time);
         R_m = rand();
         if R_m <= P_mut
@@ -795,7 +815,7 @@ while (itim < ttim) % set time while loop
             if Bacteria_Type_Selected > length(P_bac)
                 Bacteria_Type_Selected = 3; % length(P_bac);
             end
-            Mutation_Occurs = Mutation_Occurs + 1
+            Mutation_Occurs = Mutation_Occurs + 1;
             Time = 0;
             New_Bacteria = 0;
         end
@@ -950,6 +970,21 @@ while (itim < ttim) % set time while loop
         m1(:,itim) = m1(:,oldtim);
         m2(:,itim) = m2(:,oldtim);
         m3(:,itim) = m3(:,oldtim);
+        
+        % CHECK TO SEE IF MUTANT BACTERIA OUTNUMBER WILD TYPE.
+        % IF TRUE THEN END THE WHILE LOOP AND RECORD THE TIME.
+        exit_while_loop = false;
+        for i = 1:nl
+            if (x(i,itim) < m1(i,itim)) | (x(i,itim) < m2(i,itim)) | (x(i,itim) < m3(i,itim))
+                Time_Recorded = oldtim
+                exit_while_loop = true;
+            end
+        end
+        
+        if exit_while_loop
+            break;
+        end
+        
         % Also Need to Reset Migration Parameters
             Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
             All_Particles = sum(Count_Num_Mig); % Create a random order of all the particles to pick
@@ -1074,7 +1109,20 @@ while (itim < ttim) % set time while loop
         end
         
 end %  end of time while loop
+% Update the All_Times_Recorded Matrix
+All_Times_Recorded(iter, 1) = Time_Recorded; % Time in seconds
+All_Times_Recorded(iter, 2) = Time_Recorded/60; % Time in minutes
+All_Times_Recorded(iter, 3) = Time_Recorded/3600; % Time in hours.
+
 end % end iteration loop
+
+
+T = array2table(All_Times_Recorded,...
+    'VariableNames',{'Time_s', 'Time_min', 'Time_h'})
+format short G
+file_title = 'Time_for_Bac_Fix_Normal_Model.xlsx';
+writetable(T,file_title,'Sheet',1,'Range','A1')
+
 
 % Num_WT_Bac
 % Num_Mut1_Bac
@@ -1088,7 +1136,7 @@ end % end iteration loop
 % Mutant1_Grows
 % Mutant2
 % Conjugation_Occurs
-Migration_Occurs
+% Migration_Occurs
 
 % Close the video file recorded
 close(v);
