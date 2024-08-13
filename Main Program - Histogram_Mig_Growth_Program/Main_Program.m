@@ -6,7 +6,7 @@ close all
 clf
 
 % TOTAL TIME: (60sec)*(min)
-ttim = 60*2880; % (1440min = 24h)
+ttim = 60*1440; % (1440min = 24h)
 
 itertot = 1; % total iteration
 nl = 101;   % Total number of demes
@@ -31,9 +31,9 @@ Fit_m2 = 50; % The fitness of the bacteria is 100 for the second mutation
 Fit_m3 = 200; % The fitness of the bacteria is 200 for the second mutation
 % FF
 WT_FF = 1.0; % The Food Fitness of Wild Type bacteria
-Mut_1_FF = 0.85; % The Food Fitness of Mutant bacteria 1
-Mut_2_FF = 0.80;
-Mut_3_FF = 0.9;
+Mut_1_FF = 0.95; % The Food Fitness of Mutant bacteria 1
+Mut_2_FF = 0.90;
+Mut_3_FF = 0.85;
 % FGTA: Beta = Fit*MIC*(10 - 9*(g(s)/g_max))
 if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
@@ -502,8 +502,13 @@ while (itim < ttim) % set time while loop
             Bac_Over_Start_Conj = sum(any(Bacteria_Over_Conj,1));
             if (Bac_Interact_in_Deme >= 2) && (Bac_Over_Start_Conj >= 2)
                 % This function calculates the conjugation rate at il
+                MIC_wt = MIC_WT(il); % The MIC of this type of bacteria at position "il"
+                MIC_m1 = MIC_Mut1(il); % The MIC of this type of bacteria at position "il"
+                MIC_m2 = MIC_Mut2(il); % The MIC of this type of bacteria at position "il"
+                MIC_m3 = MIC_Mut3(il); % The MIC of this type of bacteria at position "il"
                 [cjN] = Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                    Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,MIC,...
+                    Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
+                        MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
                         Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected);
             end
             
@@ -869,9 +874,15 @@ while (itim < ttim) % set time while loop
         Conjugation_Selected = 1;
         Cipro = Cip_xbias(il); % Cipro concentration
         Bacteria_Num_Mtx = [x(il,itim) m1(il,itim) m2(il,itim) m3(il,itim)];
-        [cjN,Combine_Mtx_F_Norm] = Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                            Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,MIC,...
-                                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected);
+        MIC_wt = MIC_WT(il); % The MIC of this type of bacteria at position "il"
+        MIC_m1 = MIC_Mut1(il); % The MIC of this type of bacteria at position "il"
+        MIC_m2 = MIC_Mut2(il); % The MIC of this type of bacteria at position "il"
+        MIC_m3 = MIC_Mut3(il); % The MIC of this type of bacteria at position "il"
+        [cjN,Combine_Mtx_F_Norm] = ...
+            Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
+                Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
+                MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
+                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected);
                         
                             
         for row = 1:size(Combine_Mtx_F_Norm,1)
