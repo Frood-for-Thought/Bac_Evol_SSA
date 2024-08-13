@@ -39,7 +39,14 @@ if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
     return;
 end
-Conj_Rate = 0.01/3600; % Rate = 7.6x10^-3 conjugates/h, units [conj/s].
+% Tr_slow = 1.5*10^-11 mL/(cells*hr)*(10^9 µm^3/mL)
+% Tr_slow = 1.5*10^-2 (µm^3/cells*hr)
+% Tr_fast = 5*10^-9 mL/(cells*hr)*(10^9 µm^3/mL)= 5 µm^3/cells*hr
+Conj_Rate = 5;
+% Tr_per_deme = Tr/V = Tr/(6000µm^3) 
+Conj_Rate = Conj_Rate/6000;
+% Convert from per hour to per seconds.
+Conj_Rate = Conj_Rate/3600; % [(1/bac*hr)(1hr/3600s)(Bac1*Bac2)]: [bac/s]
 Start_Conj = round(3);
 % Start_Conj = 0;
 MIC = 0.05; % The MIC for WT E. coli (µg / mL)
@@ -268,7 +275,9 @@ open(v)
 video_Condition = 0;
 
 for iter = 1:itertot; % set iterationloop
-% first initialization
+
+% Set the RNG seed using the iteration number
+% rng(iter);
 
 %% Set the Bacterial Type Object Migration Parameters per Deme
 BacObj = 0;
@@ -304,8 +313,7 @@ m2 = zeros(nl,ttim);
 m3 = zeros(nl,ttim);
 
 % x(1,1) = ntot; % Wild type bacteria placed at the left
-% ini_i = 16;
-ini_i = 18;
+ini_i = 16;
 x(ini_i,1) = CC;
 x(ini_i-1,1) = CC;
 x(ini_i-2,1) = CC;
@@ -785,7 +793,11 @@ while (itim < ttim) % set time while loop
         % mutation rate.
         % µ = 50*10^-6 mut/(cell*day)
         %   ~ 1*10^-9 mut/(cell*sec)
-        R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        if il < 50
+            R_mutation = (1.15*10^-12)*Tot_Num*10; % s^-1
+        else
+            R_mutation = (1.15*10^-10)*Tot_Num*10; % s^-1
+        end
         P_mut = 1 - exp(-R_mutation*Time);
         R_m = rand();
         if R_m <= P_mut
@@ -795,7 +807,7 @@ while (itim < ttim) % set time while loop
             if Bacteria_Type_Selected > length(P_bac)
                 Bacteria_Type_Selected = 3; % length(P_bac);
             end
-            Mutation_Occurs = Mutation_Occurs + 1
+            Mutation_Occurs = Mutation_Occurs + 1;
             Time = 0;
             New_Bacteria = 0;
         end
@@ -1088,7 +1100,7 @@ end % end iteration loop
 % Mutant1_Grows
 % Mutant2
 % Conjugation_Occurs
-Migration_Occurs
+% Migration_Occurs
 
 % Close the video file recorded
 close(v);
