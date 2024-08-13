@@ -31,9 +31,9 @@ Fit_m2 = 50; % The fitness of the bacteria is 100 for the second mutation
 Fit_m3 = 200; % The fitness of the bacteria is 200 for the second mutation
 % FF
 WT_FF = 1.0; % The Food Fitness of Wild Type bacteria
-Mut_1_FF = 0.95; % The Food Fitness of Mutant bacteria 1
-Mut_2_FF = 0.90;
-Mut_3_FF = 0.85;
+Mut_1_FF = 0.85; % The Food Fitness of Mutant bacteria 1
+Mut_2_FF = 0.80;
+Mut_3_FF = 0.9;
 % FGTA: Beta = Fit*MIC*(10 - 9*(g(s)/g_max))
 if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1)
     disp('Since the FGTA depends on the ratio of g/g_max, then the numerator has to be below one.');
