@@ -1,7 +1,9 @@
 
-function [cjN,Combine_Mtx_F_Norm] = Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                    Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,MIC,...
-                        Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected)
+function [cjN,Combine_Mtx_F_Norm] = ...
+    Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
+                Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
+                MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
+                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected)
     
 %     field = 'a';
     row = 0;
@@ -59,23 +61,23 @@ function [cjN,Combine_Mtx_F_Norm] = Conjugation_Function(Start_Conj,Bacteria_Num
     
     % This calculates the fitness each bacteria have at position = il
     if (WT_FF > 0) && (Fit_WT > 0)
-        Total_WT_Fit = WT_FF*heaviside(Fit_WT*MIC - Cipro)+ 0.1*(WT_FF);
+        Total_WT_Fit = WT_FF*heaviside(MIC_wt - Cipro)+ 0.1*(WT_FF);
         % heaviside(Cipro - Fit_WT*MIC)
     else
         Total_WT_Fit = 0.01;
     end
     if (Mut_1_FF > 0) && (Fit_m1 > 0)
-        Total_Mut1_Fit = Mut_1_FF*heaviside(Fit_m1*MIC - Cipro) + 0.1*(Mut_1_FF);
+        Total_Mut1_Fit = Mut_1_FF*heaviside(MIC_m1 - Cipro) + 0.1*(Mut_1_FF);
     else
         Total_Mut1_Fit = 0.01;
     end
     if (Mut_2_FF > 0) && (Fit_m2 > 0)
-        Total_Mut2_Fit = Mut_2_FF*heaviside(Fit_m2*MIC - Cipro) + 0.1*(Mut_2_FF);
+        Total_Mut2_Fit = Mut_2_FF*heaviside(MIC_m2 - Cipro) + 0.1*(Mut_2_FF);
     else
         Total_Mut2_Fit = 0.01;
     end
     if (Mut_3_FF > 0) && (Fit_m3 > 0)
-        Total_Mut3_Fit = Mut_3_FF*heaviside(Fit_m3*MIC - Cipro) + 0.1*(Mut_3_FF);
+        Total_Mut3_Fit = Mut_3_FF*heaviside(MIC_m3 - Cipro) + 0.1*(Mut_3_FF);
     else
         Total_Mut3_Fit = 0.01;
     end
