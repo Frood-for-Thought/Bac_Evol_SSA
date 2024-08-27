@@ -546,14 +546,16 @@ while (itim < ttim) % set time while loop
                 MIC_m1 = MIC_Mut1(il); % The MIC of this type of bacteria at position "il"
                 MIC_m2 = MIC_Mut2(il); % The MIC of this type of bacteria at position "il"
                 MIC_m3 = MIC_Mut3(il); % The MIC of this type of bacteria at position "il"
+                MIC_m4 = MIC_Mut4(il); % The MIC of this type of bacteria at position "il"
                 [cjN] = Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                    Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
-                        MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
-                        Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected);
+                    Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,Mut_4_FF,...
+                        MIC_wt, MIC_m1, MIC_m2, MIC_m3, MIC_m4, ...
+                        Fit_WT,Fit_m1,Fit_m2,Fit_m3,Fit_m4,...
+                        Cipro,Conjugation_Selected);
             end
             
             %% Calculate Total Rates and Prob. Rate per deme
-            gN = (WT_gN + Mut1_gN + Mut2_gN + Mut3_gN)*10;
+            gN = (WT_gN + Mut1_gN + Mut2_gN + Mut3_gN + Mut4_gN)*10;
             % Since demes are in units of 10, gN growth rate is 
             % 10 times more likely
             R_growth = R_growth + gN;
@@ -561,7 +563,7 @@ while (itim < ttim) % set time while loop
             % probability per position, P_il
             P_g_deme(il) = P_g_deme(il) + gN;
             
-            mN = (WT_mN + Mut1_mN + Mut2_mN + Mut3_mN)*10;
+            mN = (WT_mN + Mut1_mN + Mut2_mN + Mut3_mN + Mut4_mN)*10;
             R_Mig = R_Mig + mN;
             % Make a matrix to describe Migration probability
             % per position, P_il
@@ -570,6 +572,7 @@ while (itim < ttim) % set time while loop
             P_deme_Mig_Mut1(il) = P_deme_Mig_Mut1(il) + Mut1_mN;
             P_deme_Mig_Mut2(il) = P_deme_Mig_Mut2(il) + Mut2_mN;
             P_deme_Mig_Mut3(il) = P_deme_Mig_Mut3(il) + Mut3_mN;
+            P_deme_Mig_Mut4(il) = P_deme_Mig_Mut4(il) + Mut4_mN;
 
             % Calculate Rate of conjugation for this time, "itim"
             R_conj = R_conj + cjN*10;
