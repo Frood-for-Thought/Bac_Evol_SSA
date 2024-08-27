@@ -621,10 +621,21 @@ while (itim < ttim) % set time while loop
             pos_selected = 0;
             while pos_selected < 1
                 Find_Location = 0; % Find Bacterial Type.
-                [~, ~, Find_Location,WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
+                [~, ~, Find_Location,...
+                    WT_Selected,...
+                    Mut1_Selected,...
+                    Mut2_Selected,...
+                    Mut3_Selected,...
+                    Mut4_Selected,...
+                    pos_selected]...
                     = Select_Location_Bacteria_Mig_Function(...
                     P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability,...
-                    P_deme_Mig_WT, P_deme_Mig_Mut1,P_deme_Mig_Mut2, P_deme_Mig_Mut3);
+                    P_deme_Mig_WT,... 
+                    P_deme_Mig_Mut1,...
+                    P_deme_Mig_Mut2,... 
+                    P_deme_Mig_Mut3,...
+                    P_deme_Mig_Mut4...
+                    );
                 % Find_Location = 1, no position found
                 if Find_Location > 0
                     % CHOOSE A NEW LOCATION
@@ -636,21 +647,21 @@ while (itim < ttim) % set time while loop
             % Go through loop to migrate bacteria selected.
             if Cant_Select_Bacteria <= 10
                 % Bacteria at location i
-                NIniTot = x(i,itim) + m1(i,itim) + m2(i,itim) + m3(i,itim);
+                NIniTot = x(i,itim) + m1(i,itim) + m2(i,itim) + m3(i,itim) + m4(i,itim);
                 i_R = i + 1;
                 i_L = i - 1;
                 ntot_right = 0;
                 ntot_left = 0;
                 % Count the number of bacteria on the sides
                 if (i > 1) && (i < nl)
-                    ntot_right = x(i_R,itim)+m1(i_R,itim)+m2(i_R,itim)+m3(i_R,itim);
-                    ntot_left = x(i_L,itim)+m1(i_L,itim)+m2(i_L,itim)+m3(i_L,itim);
+                    ntot_right = x(i_R,itim)+m1(i_R,itim)+m2(i_R,itim)+m3(i_R,itim)+m4(i_R,itim);
+                    ntot_left = x(i_L,itim)+m1(i_L,itim)+m2(i_L,itim)+m3(i_L,itim)+m4(i_L,itim);
                 elseif i == 1
-                    ntot_right = x(i_R,itim)+m1(i_R,itim)+m2(i_R,itim)+m3(i_R,itim);
+                    ntot_right = x(i_R,itim)+m1(i_R,itim)+m2(i_R,itim)+m3(i_R,itim)+m4(i_R,itim);
                     ntot_left = NaN;
                 elseif i == nl
                     ntot_right = NaN;
-                    ntot_left = x(i_L,itim)+m1(i_L,itim)+m2(i_L,itim)+m3(i_L,itim);
+                    ntot_left = x(i_L,itim)+m1(i_L,itim)+m2(i_L,itim)+m3(i_L,itim)+m4(i_L,itim);
                 end
                 if ntot_right < CC | ntot_left < CC
                     R_tum_up = NaN;
@@ -676,6 +687,9 @@ while (itim < ttim) % set time while loop
                     elseif Mut3_Selected > 0
                         Vo_m3 = Vo_max*R_a_Mut3(i); % The speed of this type of bacteria at position "il"
                         Vo_bac = Vo_m3;
+                    elseif Mut4_Selected > 0
+                        Vo_m4 = Vo_max*R_a_Mut4(i); % The speed of this type of bacteria at position "il"
+                        Vo_bac = Vo_m4;
                     end
                     
                     % The boolean is set to 0 to instruct the function not to 
@@ -717,6 +731,9 @@ while (itim < ttim) % set time while loop
             elseif Mut3_Selected > 0
                 m3(i,itim) = m3(i,itim) - 1;
                 m3(i_fin,itim) = m3(i_fin,itim) + 1;
+            elseif Mut4_Selected > 0
+                m4(i,itim) = m4(i,itim) - 1;
+                m4(i_fin,itim) = m4(i_fin,itim) + 1;
             end
         end % if Mig_Occured > 0
         
