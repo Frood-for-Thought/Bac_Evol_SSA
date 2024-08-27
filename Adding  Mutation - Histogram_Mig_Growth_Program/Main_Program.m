@@ -1241,21 +1241,30 @@ mutdata3(mutdata3==0)=nan;
 xdata4=xpos(1:nl);
 mutdata4=mut3(1:nl,(itim));
 mutdata4(mutdata4==0)=nan;
+xdata5=xpos(1:nl);
+mutdata5=mut4(1:nl,(itim));
+mutdata5(mutdata5==0)=nan;
 yyaxis left
-plot(xdata1,ydata1,'b',xdata2,mutdata2,'r',xdata3,mutdata3,'g',xdata4,mutdata4,'m','LineWidth',2);
+plot(xdata1,ydata1,'b',xdata2,mutdata2,'r',xdata3,mutdata3,'g',xdata4,mutdata4,'m',xdata5,mutdata5,'LineWidth',2);
 xlim([1 nl])
 ylim([0 (CC+100)])
 yyaxis right
 plot(Cip_xbias)
 xlim([1 nl])
+    % Legend
     Bacterial_Label_WT = 'Wild Type, Cip Fit = %d, Food Fit = %.2f';
     A = sprintf(Bacterial_Label_WT,Fit_WT,WT_FF);
     Bacterial_Label_M1 = 'Mutant 1, Cip Fit = %d, Food Fit = %.2f';
     Bacterial_Label_M2 = 'Mutant 2, Cip Fit = %d, Food Fit = %.2f';
     Bacterial_Label_M3 = 'Mutant 3, Cip Fit = %d, Food Fit = %.2f';
-    legend({A,sprintf(Bacterial_Label_M1,Fit_m1,Mut_1_FF),...
+    Bacterial_Label_M4 = 'Mutant 4, Cip Fit = %d, Food Fit = %.2f';
+    legend({...
+        A,...
+        sprintf(Bacterial_Label_M1,Fit_m1,Mut_1_FF),...
         sprintf(Bacterial_Label_M2,Fit_m2,Mut_2_FF),...
-        sprintf(Bacterial_Label_M3,Fit_m3,Mut_3_FF)},'Location','northwest');
+        sprintf(Bacterial_Label_M3,Fit_m3,Mut_3_FF),...
+        sprintf(Bacterial_Label_M4,Fit_m4,Mut_4_FF)...
+        },'Location','northwest');
 xlabel ('Deme Position (Length = 310µm)', 'fontsize', 16);
 Time_In_Min = itim/60;
 Time_In_Hours = itim/3600;
