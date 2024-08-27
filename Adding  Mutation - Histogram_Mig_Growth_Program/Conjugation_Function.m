@@ -1,9 +1,10 @@
 
 function [cjN,Combine_Mtx_F_Norm] = ...
     Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
-                MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
-                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected)
+                Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,Mut_4_FF,...
+                MIC_wt, MIC_m1, MIC_m2, MIC_m3, MIC_m4, ...
+                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Fit_m4,...
+                Cipro,Conjugation_Selected)
     
 %     field = 'a';
     row = 0;
@@ -81,10 +82,14 @@ function [cjN,Combine_Mtx_F_Norm] = ...
     else
         Total_Mut3_Fit = 0.01;
     end
+    if (Mut_4_FF > 0) && (Fit_m4 > 0)
+        Total_Mut4_Fit = Mut_4_FF*heaviside(MIC_m4 - Cipro) + 0.1*(Mut_4_FF);
+    else
+        Total_Mut4_Fit = 0.01;
+    end
     
     % Record the total fitness of each bacteria in the matrix, Fit_Val_Mtx,
     % and then calculate the chance in fitness in the matrix, Fit_Diff
-    Fit_Mtx = [Total_WT_Fit Total_Mut1_Fit Total_Mut2_Fit Total_Mut3_Fit];
     Fit_Val_Mtx = zeros();
     for row = 1:size(Combine_Mtx,1)
         if Combine_Mtx(row,1) == 1
@@ -95,6 +100,8 @@ function [cjN,Combine_Mtx_F_Norm] = ...
             Fit_Val_Mtx(row,1) = Total_Mut2_Fit;
         elseif Combine_Mtx(row,1) == 4
             Fit_Val_Mtx(row,1) = Total_Mut3_Fit;
+        elseif Combine_Mtx(row,1) == 5
+            Fit_Val_Mtx(row,1) = Total_Mut4_Fit;
         end
         if Combine_Mtx(row,2) == 1
             Fit_Val_Mtx(row,2) = Total_WT_Fit;
@@ -104,6 +111,8 @@ function [cjN,Combine_Mtx_F_Norm] = ...
             Fit_Val_Mtx(row,2) = Total_Mut2_Fit;
         elseif Combine_Mtx(row,2) == 4
             Fit_Val_Mtx(row,2) = Total_Mut3_Fit;
+        elseif Combine_Mtx(row,2) == 5
+            Fit_Val_Mtx(row,2) = Total_Mut4_Fit;
         end
     end
     Fit_Diff = zeros();
