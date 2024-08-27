@@ -1,8 +1,9 @@
 function [i, Location_Mig_Probability, Find_Location,...
-    WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,pos_selected]...
+    WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,Mut4_Selected...
+    ,pos_selected]...
     = Select_Location_Bacteria_Mig_Function(...
-    P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability, P_deme_Mig_WT, P_deme_Mig_Mut1,...
-    P_deme_Mig_Mut2, P_deme_Mig_Mut3)
+    P_deme_Mig, R_Mig, Find_Location, nl, i, Location_Mig_Probability, ...
+    P_deme_Mig_WT, P_deme_Mig_Mut1,P_deme_Mig_Mut2, P_deme_Mig_Mut3, P_deme_Mig_Mut4)
     if Find_Location > 0
         % FIND MIGRATION LOCATION 
         P_deme_Mig = P_deme_Mig/R_Mig; % Normalized mig probability for each deme
@@ -25,7 +26,7 @@ function [i, Location_Mig_Probability, Find_Location,...
         i = Mig_Location;
     else
         % Calculate the migration rate percentage for each bacteria at location i
-        P_bac = [P_deme_Mig_WT(i), P_deme_Mig_Mut1(i), P_deme_Mig_Mut2(i), P_deme_Mig_Mut3(i)];
+        P_bac = [P_deme_Mig_WT(i), P_deme_Mig_Mut1(i), P_deme_Mig_Mut2(i), P_deme_Mig_Mut3(i), P_deme_Mig_Mut4(i)];
         mN_Normal = sum(P_bac);
         % After recalculating growth rate the rate may end up being zero
         % even though originally the P_deme here was non-zero
@@ -63,6 +64,7 @@ function [i, Location_Mig_Probability, Find_Location,...
         Mut1_Selected = 0; % Mutant 1 Bacteria Selected Condition
         Mut2_Selected = 0; % Mutant 2 Bacteria Selected Condition
         Mut3_Selected = 0; % Mutant 3 Bacteria Selected Condition
+        Mut4_Selected = 0; % Mutant 4 Bacteria Selected Condition
         if Bacteria_Type_Selected == 1
             WT_Selected = 1;
         elseif Bacteria_Type_Selected == 2
@@ -71,6 +73,8 @@ function [i, Location_Mig_Probability, Find_Location,...
             Mut2_Selected = 1;
         elseif Bacteria_Type_Selected == 4
             Mut3_Selected = 1;
+        elseif Bacteria_Type_Selected == 5
+            Mut4_Selected = 1;
         end
         pos_selected = 1;
     end % if Find_Location > 0
