@@ -767,11 +767,12 @@ while (itim < ttim) % set time while loop
         % FIND INDIVIDUAL BACTERIA
             % Now that location is found need to find the location where
             % growth occurs
-        nxtotal = x(il,itim)+ m1(il,itim) + m2(il,itim) + m3(il,itim);
+        nxtotal = x(il,itim)+ m1(il,itim) + m2(il,itim) + m3(il,itim) + m4(il,itim);
         Wild_Type_Bac = x(il,itim);
         Mut1_Bac = m1(il,itim);
         Mut2_Bac = m2(il,itim);
         Mut3_Bac = m3(il,itim);
+        Mut4_Bac = m4(il,itim);
         Pop_Factor = (1 - nxtotal/CC);
         if nxtotal > CC
             Pop_Factor = 0;
@@ -815,10 +816,19 @@ while (itim < ttim) % set time while loop
             MewMax,K,MIC,Fit,Max_Monod,Cipro,Pop_Factor);
         Mut3_gN = Growth_Rate*m3(il,itim);
         
+    % MIC, MONOD, AND Pharma Function and Growth Rate for Mutant 4 bacteria
+        FF = Mut_4_FF; % Fitness factor for growth rate with Monod
+        Fit = Fit_m4; % Fitness factor for MIC
+        Max_Monod = FF*MewMax; % Max Growth Rate/min, for MIC Eqn
+        MIC = MIC_Mut4(il); % The MIC of this type of bacteria at position "il"
+        [Growth_Rate] = Growth_Rate_Function(Food_Factor,FF,...
+            MewMax,K,MIC,Fit,Max_Monod,Cipro,Pop_Factor);
+        Mut4_gN = Growth_Rate*m4(il,itim);
+        
         % Calculate the growth rate percentage for each bacteria at
         % location il
-        P_bac = [WT_gN, Mut1_gN, Mut2_gN, Mut3_gN];
-        gN_Normal = WT_gN + Mut1_gN + Mut2_gN + Mut3_gN;
+        P_bac = [WT_gN, Mut1_gN, Mut2_gN, Mut3_gN, Mut4_gN];
+        gN_Normal = WT_gN + Mut1_gN + Mut2_gN + Mut3_gN + Mut4_gN;
         % After recalculating growth rate the rate may end up being zero
         % even though originally the P_deme here was non-zero
         if gN_Normal == 0
@@ -870,7 +880,7 @@ while (itim < ttim) % set time while loop
               % until it is the most fit mutant
             Bacteria_Type_Selected = Bacteria_Type_Selected + 1;
             if Bacteria_Type_Selected > length(P_bac)
-                Bacteria_Type_Selected = 3; % length(P_bac);
+                Bacteria_Type_Selected = length(P_bac);
             end
             Mutation_Occurs = Mutation_Occurs + 1;
             Time = 0;
@@ -882,6 +892,7 @@ while (itim < ttim) % set time while loop
             % 2 = Mut1
             % 3 = Mut2
             % 4 = Mut3
+            % 5 = Mut4
         if Bacteria_Type_Selected == 1
             x(Growth_Location,itim) = x(Growth_Location,itim) + 1;   
         elseif Bacteria_Type_Selected == 2
@@ -890,6 +901,8 @@ while (itim < ttim) % set time while loop
             m2(Growth_Location,itim) = m2(Growth_Location,itim) + 1;
         elseif Bacteria_Type_Selected == 4
             m3(Growth_Location,itim) = m3(Growth_Location,itim) + 1;
+        elseif Bacteria_Type_Selected == 5
+            m4(Growth_Location,itim) = m4(Growth_Location,itim) + 1;
         end
 
     elseif  ((R_Mig+R_growth)/R_tot <= r2) && (r2 < (R_Mig+R_growth+R_death)/R_tot)
