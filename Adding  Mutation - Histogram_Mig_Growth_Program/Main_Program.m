@@ -910,8 +910,8 @@ while (itim < ttim) % set time while loop
         % This function works like Pick_Particle_Lim_Mig_Function except
         % the number of migrations allowed is not updated because no
         % bacteria has moved.
-        [WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,il] ...
-                    = Pick_Particle_Function(Tot_Num,nl,itim,x,m1,m2,m3);
+        [WT_Selected,Mut1_Selected,Mut2_Selected,Mut3_Selected,Mut4_Selected,il] ...
+                    = Pick_Particle_Function(Tot_Num,nl,itim,x,m1,m2,m3,m4);
         
         if WT_Selected > 0
             x(il,itim) = x(il,itim) - 1;
@@ -921,6 +921,8 @@ while (itim < ttim) % set time while loop
             m2(il,itim) = m2(il,itim) - 1;
         elseif Mut3_Selected > 0
             m3(il,itim) = m3(il,itim) - 1;
+        elseif Mut4_Selected > 0
+            m4(il,itim) = m4(il,itim) - 1;
         end
         
     elseif ((R_Mig+R_growth+R_death)/R_tot <= r2) && (r2 < (R_Mig+R_growth+R_death+R_conj)/R_tot)
