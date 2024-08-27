@@ -948,16 +948,18 @@ while (itim < ttim) % set time while loop
 
         Conjugation_Selected = 1;
         Cipro = Cip_xbias(il); % Cipro concentration
-        Bacteria_Num_Mtx = [x(il,itim) m1(il,itim) m2(il,itim) m3(il,itim)];
+        Bacteria_Num_Mtx = [x(il,itim) m1(il,itim) m2(il,itim) m3(il,itim) m4(il,itim)];
         MIC_wt = MIC_WT(il); % The MIC of this type of bacteria at position "il"
         MIC_m1 = MIC_Mut1(il); % The MIC of this type of bacteria at position "il"
         MIC_m2 = MIC_Mut2(il); % The MIC of this type of bacteria at position "il"
         MIC_m3 = MIC_Mut3(il); % The MIC of this type of bacteria at position "il"
+        MIC_m4 = MIC_Mut3(il); % The MIC of this type of bacteria at position "il"
         [cjN,Combine_Mtx_F_Norm] = ...
             Conjugation_Function(Start_Conj,Bacteria_Num_Mtx, ...
-                Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,...
-                MIC_wt, MIC_m1, MIC_m2, MIC_m3, ...
-                Fit_WT,Fit_m1,Fit_m2,Fit_m3,Cipro,Conjugation_Selected);
+            Conj_Rate,WT_FF,Mut_1_FF,Mut_2_FF,Mut_3_FF,Mut_4_FF,...
+            MIC_wt, MIC_m1, MIC_m2, MIC_m3, MIC_m4, ...
+            Fit_WT,Fit_m1,Fit_m2,Fit_m3,Fit_m4,...
+            Cipro,Conjugation_Selected);
                         
                             
         for row = 1:size(Combine_Mtx_F_Norm,1)
@@ -1011,6 +1013,8 @@ while (itim < ttim) % set time while loop
             m2(il,itim) = Combine_Mtx_F_Norm(pair_selected,3);
         elseif Combine_Mtx_F_Norm(pair_selected,1) == 4
             m3(il,itim) = Combine_Mtx_F_Norm(pair_selected,3);
+        elseif Combine_Mtx_F_Norm(pair_selected,1) == 5
+            m4(il,itim) = Combine_Mtx_F_Norm(pair_selected,3);
         end
         if Combine_Mtx_F_Norm(pair_selected,2) == 1
             x(il,itim) = Combine_Mtx_F_Norm(pair_selected,4);
@@ -1020,6 +1024,8 @@ while (itim < ttim) % set time while loop
             m2(il,itim) = Combine_Mtx_F_Norm(pair_selected,4);
         elseif Combine_Mtx_F_Norm(pair_selected,2) == 4
             m3(il,itim) = Combine_Mtx_F_Norm(pair_selected,4);
+        elseif Combine_Mtx_F_Norm(pair_selected,2) == 5
+            m4(il,itim) = Combine_Mtx_F_Norm(pair_selected,4);
         end
         Conjugation_Selected = 0;
         
@@ -1029,6 +1035,7 @@ while (itim < ttim) % set time while loop
         m1(il,itim) = m1(il,itim);
         m2(il,itim) = m2(il,itim);
         m3(il,itim) = m3(il,itim);
+        m4(il,itim) = m4(il,itim);
     end
 
 %% Given the Time Progression, Decide if the time is updated for the 
