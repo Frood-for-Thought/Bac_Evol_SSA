@@ -127,13 +127,14 @@ function [cjN,Combine_Mtx_F_Norm] = ...
     Combine_Mtx_F = [Combine_Mtx Fit_Val_Mtx Fit_Diff];
     
     % The raising and lowering ladder operators
-    L_Plus = [0 0 0 0; 1 0 0 0; 1 1 0 0; 1 1 1 0];
-    L_Minus = [0 1 1 1; 0 0 1 1; 0 0 0 1; 0 0 0 0];
+    L_Plus = [0 0 0 0 0; 1 0 0 0 0; 1 1 0 0 0; 1 1 1 0 0; 1 1 1 1 0];
+    L_Minus = [0 1 1 1 1; 0 0 1 1 1; 0 0 0 1 1; 0 0 0 0 1; 0 0 0 0 0];
     % The vectors for each type of bacteria
-       X_Vec = [1; 0; 0; 0];
-    Mut1_Vec = [0; 1; 0; 0];
-    Mut2_Vec = [0; 0; 1; 0];
-    Mut3_Vec = [0; 0; 0; 1];
+       X_Vec = [1; 0; 0; 0; 0];
+    Mut1_Vec = [0; 1; 0; 0; 0];
+    Mut2_Vec = [0; 0; 1; 0; 0];
+    Mut3_Vec = [0; 0; 0; 1; 0];
+    Mut4_Vec = [0; 0; 0; 0; 1];
     % Norm records if a <Bra|L|Ket> system is normalizable or orthogonal
     Norm = zeros();
     for row = 1:size(Combine_Mtx_F,1)
@@ -146,6 +147,8 @@ function [cjN,Combine_Mtx_F_Norm] = ...
             Bra = transpose(Mut2_Vec);
         elseif Combine_Mtx_F(row,1) == 4
             Bra = transpose(Mut3_Vec);
+        elseif Combine_Mtx_F(row,1) == 5
+            Bra = transpose(Mut4_Vec);
         end
         % This assigns a Ket matrix to each type of bacteria
         if Combine_Mtx_F(row,2) == 1
@@ -156,6 +159,8 @@ function [cjN,Combine_Mtx_F_Norm] = ...
             Ket = Mut2_Vec;
         elseif Combine_Mtx_F(row,2) == 4
             Ket = Mut3_Vec;
+        elseif Combine_Mtx_F(row,2) == 5
+            Ket = Mut4_Vec;
         end
         % The fitness will decrease from Bra to Ket and the epigenetic
         % pathway of the Bra is one step LESS than the Ket, so genetic
