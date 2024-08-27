@@ -1055,8 +1055,9 @@ while (itim < ttim) % set time while loop
         m1(:,itim) = m1(:,oldtim);
         m2(:,itim) = m2(:,oldtim);
         m3(:,itim) = m3(:,oldtim);
+        m4(:,itim) = m4(:,oldtim);
         % Also Need to Reset Migration Parameters
-            Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim);
+            Count_Num_Mig = x(1:nl,itim) + m1(1:nl,itim) + m2(1:nl,itim) + m3(1:nl,itim) + m4(1:nl,itim);
             All_Particles = sum(Count_Num_Mig); % Create a random order of all the particles to pick
             Rand_Part_Mtx_El = 0;
     end
@@ -1071,6 +1072,7 @@ while (itim < ttim) % set time while loop
            mut1(ill,itim) = m1(ill,itim);
            mut2(ill,itim) = m2(ill,itim);
            mut3(ill,itim) = m3(ill,itim);
+           mut4(ill,itim) = m4(ill,itim);
            % For this "for" loop only, re-record the values of the old time
                % itim into the new time ixxx
                % This cycle continues before it reaches itim  + 1, 
@@ -1083,25 +1085,9 @@ while (itim < ttim) % set time while loop
                 m1(ill,ixxx) = m1(ill,itim);
                 m2(ill,ixxx) = m2(ill,itim);
                 m3(ill,ixxx) = m3(ill,itim);
+                m4(ill,ixxx) = m4(ill,itim);
            end
         end % end system position loop
-
-%     % Count the number of bacteria in each Deme
-%     Num_WT_Bac = 0;
-%     Num_Mut1_Bac = 0;
-%     Num_Mut2_Bac = 0;
-%     Num_Mut3_Bac = 0;
-%     if itim > 1    
-%         Tot_Num = 0;
-%         for il = 1:nl
-%             nxtotal = x(il,itim) + m1(il,itim) + m2(il,itim) + m3(il,itim);
-%             Tot_Num = Tot_Num + nxtotal;
-%             Num_WT_Bac = Num_WT_Bac + x(il,itim);
-%             Num_Mut1_Bac = Num_Mut1_Bac + m1(il,itim);
-%             Num_Mut2_Bac = Num_Mut2_Bac + m2(il,itim);
-%             Num_Mut3_Bac = Num_Mut3_Bac + m3(il,itim);
-%         end
-%     end
         
         
         %% RECORD VIDEO
@@ -1146,8 +1132,11 @@ while (itim < ttim) % set time while loop
             xdata4=xpos(1:nl);
             mutdata4=mut3(1:nl,(itim));
             mutdata4(mutdata4==0)=nan;
+            xdata5=xpos(1:nl);
+            mutdata5=mut4(1:nl,(itim));
+            mutdata5(mutdata5==0)=nan;
             yyaxis left
-            plot(xdata1,ydata1,'b',xdata2,mutdata2,'r',xdata3,mutdata3,'g',xdata4,mutdata4,'m','LineWidth',2);
+            plot(xdata1,ydata1,'b',xdata2,mutdata2,'r',xdata3,mutdata3,'g',xdata4,mutdata4,'m',xdata5,mutdata5,'LineWidth',2);
             xlim([1 nl])
             ylim([0 (CC+100)])
             yyaxis right
@@ -1159,9 +1148,14 @@ while (itim < ttim) % set time while loop
                 Bacterial_Label_M1 = 'Mutant 1, Cip Fit = %d, Food Fit = %.2f';
                 Bacterial_Label_M2 = 'Mutant 2, Cip Fit = %d, Food Fit = %.2f';
                 Bacterial_Label_M3 = 'Mutant 3, Cip Fit = %d, Food Fit = %.2f';
-                legend({A,sprintf(Bacterial_Label_M1,Fit_m1,Mut_1_FF),...
+                Bacterial_Label_M4 = 'Mutant 4, Cip Fit = %d, Food Fit = %.2f';
+                legend({...
+                    A,...
+                    sprintf(Bacterial_Label_M1,Fit_m1,Mut_1_FF),...
                     sprintf(Bacterial_Label_M2,Fit_m2,Mut_2_FF),...
-                    sprintf(Bacterial_Label_M3,Fit_m3,Mut_3_FF)},'Location','northwest');
+                    sprintf(Bacterial_Label_M3,Fit_m3,Mut_3_FF),...
+                    sprintf(Bacterial_Label_M4,Fit_m4,Mut_4_FF)...
+                    },'Location','northwest');
             xlabel ('Deme Position (Length = 310µm)', 'fontsize', 16);
             Time_In_Min = itim/60;
             Time_In_Hours = itim/3600;
