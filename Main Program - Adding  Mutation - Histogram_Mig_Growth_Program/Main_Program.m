@@ -36,7 +36,7 @@ WT_FF = 1.0; % The Food Fitness of Wild Type bacteria
 Mut_1_FF = 0.95; % The Food Fitness of Mutant bacteria 1
 Mut_2_FF = 0.90;
 Mut_3_FF = 0.85;
-Mut_4_FF = 0.95;
+Mut_4_FF = 0.97;
 
 % FGTA: Beta = Fit*MIC*(10 - 9*(g(s)/g_max))
 if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1) || (Mut_4_FF > 1)

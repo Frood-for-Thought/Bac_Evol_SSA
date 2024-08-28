@@ -8,6 +8,8 @@ function [cjN,Combine_Mtx_F_Norm] = ...
     
 %     field = 'a';
     row = 0;
+    % Combine_Mtx has the different permutations of doners and recipients
+    % on rows 1 and 2, then their respective populations on rows 3 and 4.
     Combine_Mtx = zeros();
     for i = 1:length(Bacteria_Num_Mtx)
         for j = 1:length(Bacteria_Num_Mtx)
@@ -23,32 +25,30 @@ function [cjN,Combine_Mtx_F_Norm] = ...
 %     s = struct(field,value);
 %     s.a
 
-    Pair_Mtx = zeros();
-    Row = 1;
-    for Every_Second_Row = 1:2:size(Combine_Mtx,1)
-        Pair_Mtx(Row,1:size(Combine_Mtx,2)) = Combine_Mtx(Every_Second_Row,1:size(Combine_Mtx,2));
-        Row = Row + 1;
+    % Find the unique combinations for all the permutations.
+    unique_combinations = [];
+    for k  = 1:size(Combine_Mtx, 1)
+       pair = Combine_Mtx(k, 1:2);
+       if isempty(unique_combinations) ||...
+          ~any(ismember(unique_combinations, flip(pair), 'rows'))
+               unique_combinations = [unique_combinations; pair];
+       end
     end
-    for row = 1:size(Pair_Mtx,1)
-        if Pair_Mtx(row,3) < Start_Conj
-            Pair_Mtx(row,3) = 0;
-        end
-        if Pair_Mtx(row,4) < Start_Conj
-            Pair_Mtx(row,4) = 0;
-        end
-    end
-
+    
     % Calculate the conjugation rate at position "il"
-    Conj_Rate_Mtx = zeros();
-    for row = 1:size(Pair_Mtx,1)
-        donor_cells = Pair_Mtx(row, 3);
-        recipient_cells = Pair_Mtx(row, 4);
+    Conj_Rate_Mtx = zeros(size(unique_combinations, 1), 1);
+    for idx = 1:size(unique_combinations, 1) % size(matrix, 1) returns the number of rows.
+        % Find the rows in Combine_Mtx that matches the current unique
+        % combination, and return only the first match.
+        row = find(ismember(Combine_Mtx(:, 1:2), unique_combinations(idx, :), 'rows'), 1);
+        donor_cells = Combine_Mtx(row, 3);
+        recipient_cells = Combine_Mtx(row, 4);
         if donor_cells == 0 || recipient_cells == 0
             % If either population is zero, the conjugation rate is zero
-            Conj_Rate_Mtx(row, 1) = 0;
+            Conj_Rate_Mtx(idx, 1) = 0;
         else
             % Calculate the conjugation rate for the current row
-            Conj_Rate_Mtx(row, 1) = Conj_Rate * donor_cells * recipient_cells;
+            Conj_Rate_Mtx(idx, 1) = Conj_Rate * donor_cells * recipient_cells;
         end
     end
 
