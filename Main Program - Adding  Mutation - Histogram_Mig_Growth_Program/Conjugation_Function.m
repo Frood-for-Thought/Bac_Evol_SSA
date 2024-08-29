@@ -6,55 +6,35 @@ function [cjN,Combine_Mtx_F_Norm] = ...
                 Fit_WT,Fit_m1,Fit_m2,Fit_m3,Fit_m4,...
                 Cipro,Conjugation_Selected)
     
-%     field = 'a';
-    row = 0;
+
+    % Create two grids with B1 having it's numbers match which row they're
+    % on, and B2 having numbers match which column they're on, 
+    % with length(Bacteria_Num_Mtx).
+    [B1, B2] = ndgrid(1:length(Bacteria_Num_Mtx), 1:length(Bacteria_Num_Mtx));
+    valid_pairs = B2 ~= B1;
+    
     % Combine_Mtx has the different permutations of doners and recipients
     % on rows 1 and 2, then their respective populations on rows 3 and 4.
-    Combine_Mtx = zeros();
-    for i = 1:length(Bacteria_Num_Mtx)
-        for j = 1:length(Bacteria_Num_Mtx)
-            if (i ~= j)
-                row = row + 1;
-                Combine_Mtx(row,1) = i;
-                Combine_Mtx(row,2) = j;
-                Combine_Mtx(row,3) = Bacteria_Num_Mtx(i);
-                Combine_Mtx(row,4) = Bacteria_Num_Mtx(j);
-            end
-        end
-    end
-%     s = struct(field,value);
-%     s.a
+    Combine_Mtx = [
+               B2(valid_pairs), B1(valid_pairs),  ...
+               Bacteria_Num_Mtx(B2(valid_pairs))',...
+               Bacteria_Num_Mtx(B1(valid_pairs))' ...
+               ];
+           
+    sorted_pairs = sort(Combine_Mtx(:, 1:2), 2);
+    [~, unique_indices] = unique(sorted_pairs, 'rows', 'stable');
 
-    % Find the unique combinations for all the permutations.
-    unique_combinations = [];
-    for k  = 1:size(Combine_Mtx, 1)
-       pair = Combine_Mtx(k, 1:2);
-       if isempty(unique_combinations) ||...
-          ~any(ismember(unique_combinations, flip(pair), 'rows'))
-               unique_combinations = [unique_combinations; pair];
-       end
-    end
-    
-    % Calculate the conjugation rate at position "il"
-    Conj_Rate_Mtx = zeros(size(unique_combinations, 1), 1);
-    for idx = 1:size(unique_combinations, 1) % size(matrix, 1) returns the number of rows.
-        % Find the rows in Combine_Mtx that matches the current unique
-        % combination, and return only the first match.
-        row = find(ismember(Combine_Mtx(:, 1:2), unique_combinations(idx, :), 'rows'), 1);
-        donor_cells = Combine_Mtx(row, 3);
-        recipient_cells = Combine_Mtx(row, 4);
-        if donor_cells == 0 || recipient_cells == 0
-            % If either population is zero, the conjugation rate is zero
-            Conj_Rate_Mtx(idx, 1) = 0;
-        else
-            % Calculate the conjugation rate for the current row
-            Conj_Rate_Mtx(idx, 1) = Conj_Rate * donor_cells * recipient_cells;
-        end
-    end
+    % Calculate the conjugation rate at position "il".
+    % Find the rows in Combine_Mtx that matches the current unique combination.
+    donor_cells = Combine_Mtx(unique_indices, 3);
+    recipient_cells = Combine_Mtx(unique_indices, 4);
+    Conj_Rate_Mtx = Conj_Rate * donor_cells .* recipient_cells;
+    % If either population is zero, the conjugation rate is zero.
+    Conj_Rate_Mtx(donor_cells == 0 | recipient_cells == 0) = 0;
 
     % Since demes are in units of 10, cjN growth rate is 10 times more likely
     % If there is only one type of bacteria, then conjugation is 0
-    cjN = sum(Conj_Rate_Mtx)*10;
+    cjN = sum(Conj_Rate_Mtx) * 10;
 
     %% Make variable Conjugation_Selected, when it gets selected the if
     % statement can activate here to avoid unnecessary calculations
