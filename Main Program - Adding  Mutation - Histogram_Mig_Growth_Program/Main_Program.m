@@ -15,6 +15,7 @@ if Even == 0 % Even number
     disp('Cannot use this value. nl has to be odd.');
     return;
 end
+
 w = zeros(nl,ttim); % Initialize wild type baceria array
 mut1 = zeros(nl,ttim); % Initialize mutant 1 array
 mut2 = zeros(nl,ttim); % Initialize mutant 2 array
@@ -36,7 +37,7 @@ WT_FF = 1.0; % The Food Fitness of Wild Type bacteria
 Mut_1_FF = 0.95; % The Food Fitness of Mutant bacteria 1
 Mut_2_FF = 0.90;
 Mut_3_FF = 0.85;
-Mut_4_FF = 0.97;
+Mut_4_FF = 0.80;
 
 % FGTA: Beta = Fit*MIC*(10 - 9*(g(s)/g_max))
 if (WT_FF > 1) || (Mut_1_FF > 1) || (Mut_2_FF > 1) || (Mut_3_FF > 1) || (Mut_4_FF > 1)
