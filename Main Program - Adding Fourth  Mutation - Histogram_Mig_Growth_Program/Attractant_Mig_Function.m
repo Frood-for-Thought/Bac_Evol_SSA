@@ -117,7 +117,7 @@ Gc = Gc - (Gc - Lowest_Grad_Fastest_Run)*Conc_Ratio;
 % The model will use a Mobility Constant approximation which calculates the
 % Vd in the linear region between Ki < c < Ka as a limitation of the
 % average run speed
-Xo = Vd_max/(Max_c_df_over_dc*Grad);
+Xo = Vd_max/(Max_c_df_over_dc*Grad)
 % In the repellant paper, as the concentration increases, then the run
 % speed, Vo, increases thereby increasing the Vd_max, which could explain
 % higher speeds at greater concentrations.
