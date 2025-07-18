@@ -1,0 +1,5 @@
+The D-DEME algorithm was created several years prior than now to solve for a chemotaxis probability distribution.
+This is a python conversion of the program from MATLAB.
+Generate_Dynamic_Data_Points - generates the ensemble of data points each iteration from the run-and-tumble algorithm using parallel computing.
+Calc_Alpha_ML_Function - The ML algorithm which avoids backpropagation to fold the ensemble gradient into the learning rate.
+Find_Alpha_RawData_Program - The main execution program to utilize the run-and-tumble, and ML algorithms.
