@@ -77,3 +77,75 @@ class LossEvaluator:
             return None  # Not enough data to compute gradient
         grad = 2 * (mu - torch.tensor(self.v_d, dtype=torch.float32)) * dmu_dα + torch.tensor(self.lambda_var, dtype=torch.float32) * dvar_dα
         return grad
+
+    def decide_next_alpha(self,
+                          alpha_k: float,
+                          h: float,
+                          slope_tol: float = 1e-3,
+                          fitness_tol: float = 0.1,
+                          gamma: float = 1.0,
+                          clip_max_step: float = 1.0,
+                          decimals: int = 6) -> Optional[float]:
+        """
+        Decide next α using hybrid criteria:
+          - If slope ≈ 0 and far from target → try α + h
+          - If slope contradicts fitness direction → step forward
+          - Else → gradient step via ∂L/∂α
+        Parameters:
+            alpha_k (float): Current α.
+            h (float): Step size (usually from suggest_step_size).
+            slope_tol (float): Threshold for detecting a flat slope.
+            fitness_tol (float): When to consider mu far from v_d.
+            gamma (float): Learning rate for gradient.
+            clip_max_step (float): Max allowed α step.
+            decimals (int): Matching precision for α lookup.
+        Returns:
+            alpha_next (float): Updated α_k+1
+        """
+        α_k_rounded = round(float(alpha_k), decimals)
+        α_kp1 = round(float(alpha_k + h), decimals)
+
+        rec_k = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == α_k_rounded), None)
+        rec_kp1 = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == α_kp1), None)
+
+        if rec_k is None or rec_kp1 is None:
+            print(f"Missing macro records at α = {α_k_rounded} or α + h = {α_kp1}")
+            return None
+
+        mu_k = rec_k["mu"].item()
+        mu_kp1 = rec_kp1["mu"].item()
+        fitness_k = abs(mu_k - self.v_d)
+        fitness_kp1 = abs(mu_kp1 - self.v_d)
+
+        dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu", decimals=decimals)
+        dvar_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="var", decimals=decimals)
+
+        if dmu_dα is None or dvar_dα is None:
+            print(f"Missing finite differences at α = {alpha_k}")
+            return None
+
+        dL_dα = self.dloss_dalpha(alpha=alpha_k, decimals=decimals)
+        if dL_dα is None:
+            print(f"Missing ∂L/∂α at α = {alpha_k}")
+            return None
+
+        print(f"dμ/dα = {dmu_dα:.6f}, |μ(α) - v_d| = {fitness_k:.6f}")
+        print(f"μ(α_k+1) = {mu_kp1:.6f}, fitness_k+1 = {fitness_kp1:.6f}")
+        print(f"∂L/∂α = {dL_dα:.6f}")
+
+        # Rule 1: Slope is too flat and alpha_k is far from target.
+        if abs(dmu_dα) < slope_tol and fitness_k > fitness_tol:
+            print("Slope too small and far from target → stepping forward")
+            return alpha_k + h
+
+        # Rule 2: Slope points in wrong way of fitness direction → override
+        slope_sign = torch.sign(torch.tensor(dmu_dα)).item()
+        fitness_sign = torch.sign(torch.tensor(mu_k - mu_kp1)).item()
+        if slope_sign != fitness_sign:
+            print("Slope contradicts fitness → overriding gradient")
+            return alpha_k + h
+
+        # Rule 3: Normal gradient step
+        step = -gamma * dL_dα
+        print(f"🔷 Gradient step → α_k+1 = α_k + {step:.6f}")
+        return alpha_k + step
