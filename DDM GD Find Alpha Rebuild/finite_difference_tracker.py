@@ -113,7 +113,7 @@ class FiniteDifferenceTracker:
             stats (MacroStats): The macro-level statistics tracker.
             decimals (int): Rounding precision for α comparison.
         """
-        self.fd_records.clear() # Clear out old
+        self.fd_records.clear()  # Clear out old
         # Sort stats.records by α (in-place)
         stats.records.sort(key=lambda r: round(float(r["alpha"]), decimals))
 
