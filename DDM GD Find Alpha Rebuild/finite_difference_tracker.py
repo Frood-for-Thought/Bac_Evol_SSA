@@ -94,7 +94,7 @@ class FiniteDifferenceTracker:
 
         fd_record = {
             "alpha_k": α_k,
-            "alpha_k+1": α_kp1,
+            "alpha_kp1": α_kp1,
             "dmu_dalpha": dmu.item(),
             "dvar_dalpha": dvar.item(),
             "h": h

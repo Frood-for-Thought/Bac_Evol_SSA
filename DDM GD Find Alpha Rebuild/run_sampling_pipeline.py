@@ -2,6 +2,7 @@ import torch
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from landscape_analysis import detect_sign_transitions
+from loss_evaluator import LossEvaluator
 
 
 def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigma: float = 0.1) -> torch.Tensor:
@@ -50,6 +51,7 @@ def main():
     alpha_range = torch.arange(α_min, α_max, step=1.0, dtype=torch.float32)
     n = 1000000
     v_d = 7.0
+    lambda_var = 1.0
 
     # Collect macro observations for each α
     for α in alpha_range:
@@ -80,9 +82,36 @@ def main():
 
     # Detect μ(α) - v_d sign changes
     transitions = detect_sign_transitions(stats, v_d=v_d)
-    print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
-    for α_left, α_right in transitions:
+    if not transitions:
+        raise RuntimeError("No sign transitions detected.")
+    else:
+        print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
+        α_left, α_right = transitions[0]  # Select the first transition interval
         print(f"Between α = {α_left} and α = {α_right}")
+    # Ensure α_left is recorded.
+    if not any(abs(r["alpha"].item() - α_left) < 1e-6 for r in stats.records):
+        samples_left = sample_v_func_NU(alpha=α_left, n=n)
+        stats.macro_observations(alpha=α_left, samples=samples_left)
+
+    # Recompute all finite differences.
+    fd_tracker.compute_all_differences(stats)
+
+    # Retrieve μ, var, and estimate derivatives at α_left.
+    rec_left = next(r for r in stats.records if abs(r["alpha"].item() - α_left) < 1e-6)
+    mu_left = rec_left["mu"]
+    var_left = rec_left["var"]
+    dmu_dα = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
+    dvar_dα = fd_tracker.estimate_derivative_at(alpha=α_left, kind="var")
+
+    # Compute loss and gradient.
+    loss_fn = LossEvaluator(stats=stats, fd_tracker=fd_tracker, v_d=v_d, lambda_var=1.0)
+    loss_val = loss_fn.loss(alpha=α_left)
+    grad_val = loss_fn.dloss_dalpha(alpha=α_left)
+    print(f"\n--- One Loss Iteration at α = {α_left:.6f} ---")
+    print(f"μ(α) = {mu_left.item():.6f}, Var = {var_left.item():.6f}")
+    print(f"dμ/dα ≈ {dmu_dα:.6f}, dVar/dα ≈ {dvar_dα:.6f}")
+    print(f"Loss(α) = {loss_val:.6f}")
+    print(f"dLoss/dα = {grad_val:.6f}")
 
 
 if __name__ == "__main__":
