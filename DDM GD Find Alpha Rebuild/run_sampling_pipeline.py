@@ -2,6 +2,7 @@ import torch
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 
+
 def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigma: float = 0.1) -> torch.Tensor:
     """
     PyTorch-compatible stochastic function with piecewise expectation.
@@ -33,7 +34,8 @@ def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigm
 
     noise = torch.normal(mean=0.0, std=sigma, size=(n,))
     samples = mean + noise  # broadcasting scalar mean over n noise samples
-    return samples  # Return a tensor of a batch of n stochastic samples with torch.Size([1000]). Each sample is: vj​(α) = mean(α) + Gaussian noise
+    return samples  # Return a tensor of a batch of n stochastic samples with torch.Size([1000]).
+    # Each sample is: vj​(α) = mean(α) + Gaussian noise
 
 
 def main():
