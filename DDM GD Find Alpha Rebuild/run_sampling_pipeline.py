@@ -113,6 +113,9 @@ def main():
     print(f"Loss(α) = {loss_val:.6f}")
     print(f"dLoss/dα = {grad_val:.6f}")
 
+    # Get step size based on fitness
+    h = stats.suggest_step_size(alpha=α_left, v_d=v_d)
+
 
 if __name__ == "__main__":
     main()

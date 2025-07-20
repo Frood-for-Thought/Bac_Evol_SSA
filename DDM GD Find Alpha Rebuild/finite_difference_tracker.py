@@ -129,12 +129,10 @@ class FiniteDifferenceTracker:
         """
         Estimates the derivative (mean or variance) at a specific α using surrounding finite differences.
         If both left and right intervals exist, average them. Otherwise, use whichever exists.
-
         Parameters:
             alpha (float): The α value at which to estimate the derivative.
             kind (str): Either "mu" or "var".
             decimals (int): Precision for float matching.
-
         Returns:
             float or None: Estimated slope at α
         """
