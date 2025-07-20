@@ -1,6 +1,7 @@
 import torch
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
+from landscape_analysis import detect_sign_transitions
 
 
 def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigma: float = 0.1) -> torch.Tensor:
@@ -75,6 +76,12 @@ def main():
     print("\nAll finite differences:")
     for fd in fd_tracker.fd_records:
         print(fd)
+
+    # Detect μ(α) - v_d sign changes
+    transitions = detect_sign_transitions(stats, v_d=0.0)
+    print("\nDetected sign transitions in μ(α) - v_d:")
+    for α_left, α_right in transitions:
+        print(f"Between α = {α_left} and α = {α_right}")
 
 
 if __name__ == "__main__":
