@@ -49,6 +49,7 @@ def main():
     α_max = 22
     alpha_range = torch.arange(α_min, α_max, step=1.0, dtype=torch.float32)
     n = 1000000
+    v_d = 7.0
 
     # Collect macro observations for each α
     for α in alpha_range:
@@ -78,8 +79,8 @@ def main():
         print(fd)
 
     # Detect μ(α) - v_d sign changes
-    transitions = detect_sign_transitions(stats, v_d=0.0)
-    print("\nDetected sign transitions in μ(α) - v_d:")
+    transitions = detect_sign_transitions(stats, v_d=v_d)
+    print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
     for α_left, α_right in transitions:
         print(f"Between α = {α_left} and α = {α_right}")
 
