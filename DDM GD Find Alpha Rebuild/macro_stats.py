@@ -42,11 +42,11 @@ class MacroStats:
         # Round α to consistent float precision
         alpha_rounded = round(float(alpha), decimals)
         alpha_tensor = torch.tensor(alpha_rounded, dtype=torch.float32)
-        mu = samples.mean() # Sample mean.
-        var = samples.var(unbiased=True) # Sample variance.
-        std = torch.sqrt(var) # Sample standard deviation.
+        mu = samples.mean()  # Sample mean.
+        var = samples.var(unbiased=True)  # Sample variance.
+        std = torch.sqrt(var)  # Sample standard deviation.
         stderr_ci = 2 * std / torch.sqrt \
-            (torch.tensor(len(samples), dtype=torch.float32)) # Standard error bound (95% CI).
+            (torch.tensor(len(samples), dtype=torch.float32))  # Standard error bound (95% CI).
 
         # Create the record as a dict of torch scalars
         record = {
