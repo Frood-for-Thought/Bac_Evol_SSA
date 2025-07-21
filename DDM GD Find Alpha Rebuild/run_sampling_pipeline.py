@@ -80,7 +80,7 @@ def main():
     for fd in fd_tracker.fd_records:
         print(fd)
 
-    # Detect μ(α) - v_d sign changes
+    # Detect μ(α) - v_d sign changes.
     transitions = detect_sign_transitions(stats, v_d=v_d)
     if not transitions:
         raise RuntimeError("No sign transitions detected.")
@@ -93,28 +93,23 @@ def main():
         samples_left = sample_v_func_NU(alpha=α_left, n=n)
         stats.macro_observations(alpha=α_left, samples=samples_left)
 
-    # Recompute all finite differences.
-    fd_tracker.compute_all_differences(stats)
+    # Initialize LossEvaluator with injected sampling function
+    loss_eval = LossEvaluator(
+        stats=stats,
+        fd_tracker=fd_tracker,
+        v_d=v_d,
+        lambda_var=lambda_var,
+        sample_func=sample_v_func_NU  # Inject the sampling function
+    )
 
-    # Retrieve μ, var, and estimate derivatives at α_left.
-    rec_left = next(r for r in stats.records if abs(r["alpha"].item() - α_left) < 1e-6)
-    mu_left = rec_left["mu"]
-    var_left = rec_left["var"]
-    dmu_dα = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
-    dvar_dα = fd_tracker.estimate_derivative_at(alpha=α_left, kind="var")
-
-    # Compute loss and gradient.
-    loss_fn = LossEvaluator(stats=stats, fd_tracker=fd_tracker, v_d=v_d, lambda_var=1.0)
-    loss_val = loss_fn.loss(alpha=α_left)
-    grad_val = loss_fn.dloss_dalpha(alpha=α_left)
-    print(f"\n--- One Loss Iteration at α = {α_left:.6f} ---")
-    print(f"μ(α) = {mu_left.item():.6f}, Var = {var_left.item():.6f}")
-    print(f"dμ/dα ≈ {dmu_dα:.6f}, dVar/dα ≈ {dvar_dα:.6f}")
-    print(f"Loss(α) = {loss_val:.6f}")
-    print(f"dLoss/dα = {grad_val:.6f}")
-
-    # Get step size based on fitness
-    h = stats.suggest_step_size(alpha=α_left, v_d=v_d)
+    # Decide next alpha based on current α_left
+    alpha_next = loss_eval.decide_next_alpha(
+        alpha_k=α_left,
+        n=n,
+        gamma=1.0,
+        # slope_tol=1e-3,
+        # fitness_tol=0.1
+    )
 
 
 if __name__ == "__main__":
