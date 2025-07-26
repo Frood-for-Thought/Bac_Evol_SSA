@@ -83,6 +83,8 @@ class LossEvaluator:
                       alpha_k: float,
                       gamma: float,
                       n: int,
+                      min_step_size: float,
+                      fitness_thresh: float,
                       decimals: int = 6) -> Optional[float]:
         """
         Decide next α using hybrid criteria:
@@ -102,6 +104,10 @@ class LossEvaluator:
         if loss_k is None or grad_k is None:
             raise ValueError(f"Missing loss or gradient at α = {alpha_k}")
 
+        match = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == alpha_k), None)
+        mu_k = match["mu"].item()
+        fitness_error = torch.abs(mu_k - torch.tensor(self.v_d, dtype=mu_k.dtype))
+
         # Gradient step: α_next = α_k - γ * grad.
         alpha_k_tensor = torch.tensor(alpha_k, dtype=torch.float32)
         step = -gamma * grad_k
@@ -118,4 +124,4 @@ class LossEvaluator:
         print(f"Tentative α_k+1 = {alpha_kp1.item():.6f}, Loss_k+1 = {loss_kp1.item():.6f}")
 
         # Get probing step size
-        # h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)
+        h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)

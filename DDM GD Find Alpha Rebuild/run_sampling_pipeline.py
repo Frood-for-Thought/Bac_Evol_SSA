@@ -107,6 +107,7 @@ def main():
         alpha_k=α_left,
         n=n,
         gamma=1.0,
+        min_step_size=0.1
         # slope_tol=1e-3,
         # fitness_tol=0.1
     )
