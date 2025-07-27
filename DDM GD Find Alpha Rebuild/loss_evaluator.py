@@ -85,6 +85,10 @@ class LossEvaluator:
                       n: int,
                       min_step_size: float,
                       fitness_thresh: float,
+                      slope_thresh: float,
+                      alpha_left: float,
+                      alpha_right: float,
+                      use_gradient_override: Optional[bool] = None,  # Manual override (None = automatic mode)
                       decimals: int = 6) -> Optional[float]:
         """
         Decide next α using hybrid criteria:
@@ -106,6 +110,7 @@ class LossEvaluator:
 
         match = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == alpha_k), None)
         mu_k = match["mu"].item()
+        dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu", decimals=decimals)
         fitness_error = torch.abs(mu_k - torch.tensor(self.v_d, dtype=mu_k.dtype))
 
         # Gradient step: α_next = α_k - γ * grad.
@@ -113,15 +118,43 @@ class LossEvaluator:
         step = -gamma * grad_k
         alpha_kp1 = alpha_k_tensor + step
 
-        # Evaluate temporary loss at α_k+1 (without storing permanently)
-        samples_next = self.sample_func(alpha=alpha_kp1.item(), n=n)
-        mu_next = samples_next.mean()
-        var_next = samples_next.var(unbiased=True)
-        loss_kp1 = (mu_next - torch.tensor(self.v_d, dtype=mu_next.dtype)) ** 2 + \
-                   torch.tensor(self.lambda_var, dtype=var_next.dtype) * var_next
+        if use_gradient_override is True:
+            # Determine bracket direction, target_direction ∈ {+1, -1, 0}
+            if alpha_k < alpha_left:
+                target_direction = +1  # Must move right
+            elif alpha_k > alpha_right:
+                target_direction = -1  # Must move left
+            else:
+                target_direction = 0  # Inside bracket; direction constraint lifted
 
-        print(f"α_k = {alpha_k:.6f}, Loss_k = {loss_k:.6f}, Grad = {grad_k:.6f}")
-        print(f"Tentative α_k+1 = {alpha_kp1.item():.6f}, Loss_k+1 = {loss_kp1.item():.6f}")
+            # Check if direction of update matches intended bracket direction
+            step_sign = torch.sign(alpha_kp1 - alpha_k_tensor).item()
+            if target_direction != 0 and step_sign != target_direction:
+                step = -step
+                alpha_kp1 = alpha_k_tensor + step
+            return alpha_kp1.item()
+        else:
+            # Evaluate temporary loss at α_k+1 (without storing permanently)
+            samples_next = self.sample_func(alpha=alpha_kp1.item(), n=n)
+            mu_next = samples_next.mean()
+            var_next = samples_next.var(unbiased=True)
+            # Compute loss at α_k+1 using same loss formula:
+            #     L(α) = (μ(α) - v_d)^2 + λ ⋅ Var(α)
+            # This is used to evaluate whether the gradient step was helpful.
+            loss_kp1 = (mu_next - torch.tensor(self.v_d, dtype=mu_next.dtype)) ** 2 + \
+                       torch.tensor(self.lambda_var, dtype=var_next.dtype) * var_next
 
-        # Get probing step size
-        h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)
+            # If fitness_error > fitness_thresh, likely stuck at a false plateau and forward probe is justified.
+            # If fitness_error < fitness_thresh, likely at convergence. Forward probe might push past the solution.
+            if abs(dmu_dα) < slope_thresh and fitness_error > fitness_thresh:
+                # Get probing step size.
+                h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)
+                return (alpha_k_tensor + h).item()  # Try small forward probe
+            # If gradient step improved the loss → accept it.
+            elif loss_kp1 < loss_k:
+                return alpha_kp1.item()
+            # Gradient made loss worse but slope is not collapsed → likely overshoot.
+            # Fallback to a small RM-like probe step.
+            else:
+                h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)
+                return (alpha_k_tensor + h).item()
