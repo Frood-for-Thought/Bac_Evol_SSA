@@ -91,12 +91,30 @@ class LossEvaluator:
                       use_gradient_override: Optional[bool] = None,  # Manual override (None = automatic mode)
                       decimals: int = 6) -> Optional[float]:
         """
-        Decide next α using hybrid criteria:
-          - If slope ≈ 0 and far from target → try α + h
-          - If slope contradicts fitness direction → step forward
-          - Else → gradient step via ∂L/∂α
+        Decide the next alpha (α_k+1) using a hybrid step selection strategy:
+        Manual override:
+            - If use_gradient_override is True:
+                ▸ Take full gradient step even if it overshoots, as long as it points in the bracketed direction.
+                ▸ If step would move α away from bracketed region [α_left, α_right], reverse it.
+        Automatic mode:
+            - If slope is collapsed (|dμ/dα| < slope_thresh) and we're far from target (loss_k > fitness_thresh):
+                ▸ Likely stuck on a plateau → take a cautious RM-like probe step (α + h)
+            - Else, evaluate tentative α_k+1 = α_k - γ ∂L/∂α:
+                ▸ If it improves loss: accept the gradient step
+                ▸ Else (gradient worsens loss): fallback to RM-like probe step (α + h)
+        Inputs:
+            alpha_k            : Current α
+            gamma              : Learning rate multiplier
+            n                  : Sample count for tentative evaluation
+            min_step_size      : Minimum allowable step size
+            fitness_thresh     : Threshold to consider solution “close enough”
+            slope_thresh       : Collapse threshold for |dμ/dα|
+            alpha_left         : Left edge of bracket (from sign transition)
+            alpha_right        : Right edge of bracket (from sign transition)
+            use_gradient_override : If True, always apply gradient step if direction is valid (manual override)
+            decimals           : Rounding precision for alpha lookup
         Returns:
-            alpha_next (float): Updated α_k+1
+            alpha_next (float): Suggested next step (α_k+1)
         """
         # Round α to avoid floating-point issues
         alpha_k = round(float(alpha_k), decimals)
