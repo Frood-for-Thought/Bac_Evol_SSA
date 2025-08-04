@@ -102,25 +102,40 @@ def main():
         sample_func=sample_v_func_NU  # Inject the sampling function
     )
 
-    # Estimate dμ/dα externally
-    dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
-    gamma = 1.0/dmu_dalpha
+    # === Loop through two optimization iterations ===
+    alpha_k = α_left  # Start from the left of the first detected transition
 
-    # Decide next alpha based on current α_left
-    alpha_next = loss_eval.decide_next_alpha(
-        alpha_k=α_left,
-        n=n,
-        gamma=gamma,
-        min_step_size=0.1,
-        fitness_thresh=0.1,
-        slope_thresh=1e-3,
-        alpha_left=α_left,
-        alpha_right=α_right,
-        use_gradient_override=True  # Or True / False to control override behavior
-    )
+    for i in range(10):
+        # Ensure αlpha_k is recorded, observe and update finite differences.
+        if not any(abs(r["alpha"].item() - alpha_k) < 1e-6 for r in stats.records):
+            samples = sample_v_func_NU(alpha=alpha_k, n=n)
+            stats.macro_observations(alpha=alpha_k, samples=samples)
+            fd_tracker.compute_all_differences(stats)
 
-    print(f"alpha_left = {α_left}")
-    print(f"alpha_next = {alpha_next}")
+        # Estimate dμ/dα externally
+        dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
+        gamma = 1.0/dmu_dalpha
+
+        # Decide next alpha based on current α_left
+        alpha_next = loss_eval.decide_next_alpha(
+            alpha_k=alpha_k,
+            n=n,
+            gamma=gamma,
+            min_step_size=0.1,
+            fitness_thresh=0.1,
+            slope_thresh=1e-3,
+            alpha_left=α_left,
+            alpha_right=α_right,
+            use_gradient_override=True  # Or True / False to control override behavior
+        )
+
+        print(f"\nIteration {i+1}")
+        print(f"  alpha_k    = {alpha_k}")
+        print(f"  gamma      = {gamma}")
+        print(f"  alpha_next = {alpha_next}")
+
+        # Prepare for next iteration
+        alpha_k = alpha_next
 
 
 if __name__ == "__main__":
