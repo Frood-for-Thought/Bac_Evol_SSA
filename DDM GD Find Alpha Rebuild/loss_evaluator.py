@@ -127,7 +127,7 @@ class LossEvaluator:
             raise ValueError(f"Missing loss or gradient at α = {alpha_k}")
 
         match = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == alpha_k), None)
-        mu_k = match["mu"].item()
+        mu_k = match["mu"]
         dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu", decimals=decimals)
         fitness_error = torch.abs(mu_k - torch.tensor(self.v_d, dtype=mu_k.dtype))
 
@@ -151,6 +151,7 @@ class LossEvaluator:
                 step = -step
                 alpha_kp1 = alpha_k_tensor + step
             return alpha_kp1.item()
+        # REVERT TO STEP SIZE ENFORCEMENT, NOT LOSS FUNCTION.
         else:
             # Evaluate temporary loss at α_k+1 (without storing permanently)
             samples_next = self.sample_func(alpha=alpha_kp1.item(), n=n)

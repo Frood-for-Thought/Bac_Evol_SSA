@@ -102,15 +102,25 @@ def main():
         sample_func=sample_v_func_NU  # Inject the sampling function
     )
 
+    # Estimate dμ/dα externally
+    dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
+    gamma = 1.0/dmu_dalpha
+
     # Decide next alpha based on current α_left
     alpha_next = loss_eval.decide_next_alpha(
         alpha_k=α_left,
         n=n,
-        gamma=1.0,
-        min_step_size=0.1
-        # slope_tol=1e-3,
-        # fitness_tol=0.1
+        gamma=gamma,
+        min_step_size=0.1,
+        fitness_thresh=0.1,
+        slope_thresh=1e-3,
+        alpha_left=α_left,
+        alpha_right=α_right,
+        use_gradient_override=True  # Or True / False to control override behavior
     )
+
+    print(f"alpha_left = {α_left}")
+    print(f"alpha_next = {alpha_next}")
 
 
 if __name__ == "__main__":
