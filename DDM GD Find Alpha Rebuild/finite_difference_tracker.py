@@ -211,6 +211,19 @@ class FiniteDifferenceTracker:
                     # mu is already a tensor — convert to float for calculation
                     mu_val = rec["mu"].item() if hasattr(rec["mu"], "item") else float(rec["mu"])
                     mus_in_range.append(mu_val)
-        else:
-            # No window specified, clear bounds to default {}
-            self.linear_windows = {}
+
+            # Compute Polyak–Ruppert slope m_k using vectorized PyTorch ops
+            if alphas_in_range and mus_in_range:
+                with torch.no_grad():
+                    a = torch.as_tensor(alphas_in_range, dtype=torch.float32)
+                    mu = torch.as_tensor(mus_in_range, dtype=torch.float32)
+
+                    # Σ α_i μ(α_i)
+                    num = torch.dot(a, mu)
+                    # Σ α_i^2 + ε
+                    denom = torch.dot(a, a) + torch.as_tensor(self.epsilon, dtype=a.dtype, device=a.device)
+
+                    if torch.isfinite(denom) and denom.item() != 0.0:
+                        m_k = num / denom
+                        self.m_k = m_k
+                        self.slope_history.append(m_k)  # keep for later stability checks
