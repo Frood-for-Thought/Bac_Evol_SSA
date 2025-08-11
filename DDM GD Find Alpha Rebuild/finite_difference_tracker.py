@@ -25,6 +25,9 @@ class FiniteDifferenceTracker:
         self.stderr_tol = stderr_tol              # multiplier for stderr-based agreement
         # Most recent slope estimate
         self.m_k = None  ## type: torch.Tensor or None
+        self.linear_mode_enabled: bool = False  # flag: only record if True
+        self.record_start_index = 0  # index in stats.records to begin slope estimation
+        self.linear_windows = {}
 
     @staticmethod
     def get_alpha_pair(stats: MacroStats, alpha_k: float, atol: float = 0.01):
@@ -159,3 +162,55 @@ class FiniteDifferenceTracker:
             return left[key]
         else:
             return None  # No estimate available
+
+    def run_linear_estimation(self,
+                              stats: 'MacroStats',
+                              enabled: bool = None,
+                              window: list = None,
+                              reset: bool = False):
+        """
+        Public entry: toggles linear mode and runs PR slope estimation if enabled.
+        """
+        # Toggle master switch
+        if enabled is not None:
+            self.linear_mode_enabled = bool(enabled)
+
+        # Only run the estimator if enabled
+        if self.linear_mode_enabled:
+            self._linear_estimation_function(stats, window=window, reset=reset)
+
+    def _linear_estimation_function(self,
+                                    stats: 'MacroStats',
+                                    window: list = None,
+                                    reset: bool = False
+                                    ):
+
+        # Store the current window configuration.
+        if window is not None:  # Only do this if a window specification was passed in.
+            # Just store the alpha bounds directly
+            self.linear_windows = tuple(window)  # e.g., (alpha_min, alpha_max)
+
+            # If reset flag is True OR there is no existing window configuration
+            if reset or not self.slope_history:
+                # Clear Polyak–Ruppert slope tracking state
+                self.slope_history.clear()
+                self.m_k = None
+                self.record_start_index = 0
+
+        # If bounds exist, scan through stats.records to find matching alphas
+        if self.linear_windows:
+            alpha_min, alpha_max = self.linear_windows
+            # Temporary holders for in-range alpha and mu values
+            alphas_in_range = []
+            mus_in_range = []
+
+            for rec in stats.records:
+                a_val = rec["alpha"].item() if hasattr(rec["alpha"], "item") else float(rec["alpha"])
+                if alpha_min <= a_val <= alpha_max:
+                    alphas_in_range.append(a_val)
+                    # mu is already a tensor — convert to float for calculation
+                    mu_val = rec["mu"].item() if hasattr(rec["mu"], "item") else float(rec["mu"])
+                    mus_in_range.append(mu_val)
+        else:
+            # No window specified, clear bounds to default {}
+            self.linear_windows = {}
