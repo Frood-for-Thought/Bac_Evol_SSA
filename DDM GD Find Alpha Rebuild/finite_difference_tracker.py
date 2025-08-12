@@ -24,10 +24,13 @@ class FiniteDifferenceTracker:
         self.slope_tol = slope_tol                # convergence threshold for m_k
         self.stderr_tol = stderr_tol              # multiplier for stderr-based agreement
         # Most recent slope estimate
-        self.m_k = None  ## type: torch.Tensor or None
+        self.m_k = None  # type: torch.Tensor or None
         self.linear_mode_enabled: bool = False  # flag: only record if True
         self.record_start_index = 0  # index in stats.records to begin slope estimation
         self.linear_windows = {}
+        # Linear Slope Check
+        self.linear_slope_ready = False  # becomes True when |m_k - m_{k-1}| < slope_tol
+        self.last_delta_m = None  # tracks the most recent |Δm|
 
     @staticmethod
     def get_alpha_pair(stats: MacroStats, alpha_k: float, atol: float = 0.01):
@@ -227,3 +230,13 @@ class FiniteDifferenceTracker:
                         m_k = num / denom
                         self.m_k = m_k
                         self.slope_history.append(m_k)  # keep for later stability checks
+
+            # After: self.slope_history.append(m_k)
+            if len(self.slope_history) >= 2:
+                with torch.no_grad():
+                    delta_m = torch.abs(self.slope_history[-1] - self.slope_history[-2])
+                    self.last_delta_m = delta_m
+                    # Criterion 1: slope stabilization
+                    self.linear_slope_ready = bool(delta_m.item() < self.slope_tol)
+
+            return self.m_k, self.linear_slope_ready
