@@ -1,4 +1,5 @@
 import torch
+import math
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from landscape_analysis import detect_sign_transitions
@@ -44,7 +45,7 @@ def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigm
 def main():
     # Initialize macro stats tracker and finite difference tracker
     stats = MacroStats()
-    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=0.001, stderr_tol=2.0)
+    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=2.0)
 
     # Define sampling parameters
     α_min = 0
@@ -132,8 +133,11 @@ def main():
             fd_tracker.compute_all_differences(stats)
 
         # Estimate dμ/dα externally
-        dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=α_left, kind="mu")
-        gamma = 1.0/dmu_dalpha
+        dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
+        # Prevent blow-ups from dμ/dα
+        if (dmu_dalpha is None) or (not math.isfinite(dmu_dalpha)) or (abs(dmu_dalpha) < 1e-8):
+            dmu_dalpha = 1.0  # safe default scale
+        gamma = 1.0 / abs(dmu_dalpha)  # scale only; let grad set direction
 
         # Decide next alpha based on current α_left
         alpha_next = loss_eval.decide_next_alpha(

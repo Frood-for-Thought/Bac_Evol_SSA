@@ -31,6 +31,9 @@ class FiniteDifferenceTracker:
         # Linear Slope Check
         self.linear_slope_ready = False  # becomes True when |m_k - m_{k-1}| < slope_tol
         self.last_delta_m = None  # tracks the most recent |Δm|
+        # _last_inrange_count track how many α samples are currently inside the sign-change interval.
+        # Used to ensure the function only append/update slope readiness when a *new* point enters.
+        self._last_inrange_count = 0
 
     @staticmethod
     def get_alpha_pair(stats: MacroStats, alpha_k: float, atol: float = 0.01):
@@ -199,6 +202,7 @@ class FiniteDifferenceTracker:
                 self.slope_history.clear()
                 self.m_k = None
                 self.record_start_index = 0
+                self._last_inrange_count = 0
 
         # If bounds exist, scan through stats.records to find matching alphas
         if self.linear_windows:
@@ -221,22 +225,33 @@ class FiniteDifferenceTracker:
                     a = torch.as_tensor(alphas_in_range, dtype=torch.float32)
                     mu = torch.as_tensor(mus_in_range, dtype=torch.float32)
 
-                    # Σ α_i μ(α_i)
-                    num = torch.dot(a, mu)
-                    # Σ α_i^2 + ε
-                    denom = torch.dot(a, a) + torch.as_tensor(self.epsilon, dtype=a.dtype, device=a.device)
+                    # Centered least-squares slope to remove intercept bias
+                    # m_k = Σ( (α_i − ᾱ)(μ_i − μ̄) ) / [ Σ( (α_i − ᾱ)^2 ) + ε ]
+                    a_c = a - a.mean()  # α_i − ᾱ
+                    mu_c = mu - mu.mean()  # μ_i − μ̄
+
+                    # Σ (α_i − ᾱ)^2 + ε   (denominator)
+                    denom = torch.dot(a_c, a_c) + torch.as_tensor(self.epsilon, dtype=a.dtype, device=a.device)
+
+                    # Σ (α_i − ᾱ)(μ_i − μ̄)   (numerator)
+                    num = torch.dot(a_c, mu_c)
 
                     if torch.isfinite(denom) and denom.item() != 0.0:
                         m_k = num / denom
                         self.m_k = m_k
-                        self.slope_history.append(m_k)  # keep for later stability checks
 
-            # After: self.slope_history.append(m_k)
-            if len(self.slope_history) >= 2:
-                with torch.no_grad():
-                    delta_m = torch.abs(self.slope_history[-1] - self.slope_history[-2])
-                    self.last_delta_m = delta_m
-                    # Criterion 1: slope stabilization
-                    self.linear_slope_ready = bool(delta_m.item() < self.slope_tol)
+            # after computing self.m_k
+            current_count = len(alphas_in_range)
+            if current_count > self._last_inrange_count and self.m_k is not None:
+                # Compute m_k slope history.
+                self.slope_history.append(m_k)  # keep for later stability checks
+                # update readiness
+                if len(self.slope_history) >= 2:
+                    with torch.no_grad():
+                        delta_m = torch.abs(self.slope_history[-1] - self.slope_history[-2])
+                        self.last_delta_m = delta_m
+                        # Criterion 1: slope stabilization
+                        self.linear_slope_ready = bool(delta_m.item() < self.slope_tol)
+                self._last_inrange_count = current_count
 
             return self.m_k, self.linear_slope_ready
