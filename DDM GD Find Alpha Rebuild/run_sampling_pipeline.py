@@ -112,25 +112,23 @@ def main():
     alpha_k = α_left  # Start from the left of the first detected transition
 
     for i in range(20):
-        # Update PR slope each iteration (no reset), then report readiness.
-        fd_tracker.run_linear_estimation(stats, enabled=True, window=None, reset=False)
-        if fd_tracker.last_delta_m is not None:
-            print(
-                f"[PR] m_k={float(fd_tracker.m_k):.6f}, "
-                f"|Δm|={float(fd_tracker.last_delta_m):.6g}, ready={fd_tracker.linear_slope_ready}")
-        else:
-            print("[PR] collecting slopes…")
-        m_k = fd_tracker.m_k
-        delta_m = fd_tracker.last_delta_m
-        print(f"[PR] m_k={float(m_k) if m_k is not None else None}, "
-              f"|Δm|={float(delta_m) if delta_m is not None else None}, "
-              f"ready={fd_tracker.linear_slope_ready}")
-
         # Ensure αlpha_k is recorded, observe and update finite differences.
         if not any(abs(r["alpha"].item() - alpha_k) < 1e-6 for r in stats.records):
             samples = sample_v_func_NU(alpha=alpha_k, n=n)
             stats.macro_observations(alpha=alpha_k, samples=samples)
             fd_tracker.compute_all_differences(stats)
+
+        # Update PR slope each iteration (no reset), then report readiness.
+        fd_tracker.run_linear_estimation(stats, enabled=True, window=None, reset=False)
+        if fd_tracker.last_delta_m is not None:
+            print(f"[PR] m_k={float(m_k) if m_k is not None else None}, "
+                  f"|Δm|={float(delta_m) if delta_m is not None else None}, "
+                  f"ready={fd_tracker.linear_slope_ready}")
+
+        else:
+            print("[PR] collecting slopes…")
+        m_k = fd_tracker.m_k
+        delta_m = fd_tracker.last_delta_m
 
         # Estimate dμ/dα externally
         dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")

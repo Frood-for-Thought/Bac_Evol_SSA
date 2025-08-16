@@ -244,7 +244,7 @@ class FiniteDifferenceTracker:
             current_count = len(alphas_in_range)
             if current_count > self._last_inrange_count and self.m_k is not None:
                 # Compute m_k slope history.
-                self.slope_history.append(m_k)  # keep for later stability checks
+                self.slope_history.append(self.m_k)  # keep for later stability checks
                 # update readiness
                 if len(self.slope_history) >= 2:
                     with torch.no_grad():
