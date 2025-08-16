@@ -24,14 +24,14 @@ def detect_sign_transitions(stats: MacroStats, v_d: float, atol: float = 1e-6):
         intervals where the sign of (μ(α) - v_d) changes.
     """
     transitions = []
-    records = sorted(stats.records, key=lambda r: r["alpha"].item())  # ensure correct order
+    records_ordered = sorted(stats.records, key=lambda r: r["alpha"].item())  # ensure correct order
 
-    for i in range(1, len(records)):
-        mu_i, mu_prev = stats.records[i]["mu"], stats.records[i-1]["mu"]
+    for i in range(1, len(records_ordered)):
+        mu_i, mu_prev = records_ordered[i]["mu"], records_ordered[i-1]["mu"]
         sign_i = torch.sign(mu_i - v_d).item()
         sign_prev = torch.sign(mu_prev - v_d).item()
         if sign_i != sign_prev:
-            α_left = stats.records[i-1]["alpha"].item()
-            α_right = stats.records[i]["alpha"].item()
+            α_left = records_ordered[i-1]["alpha"].item()
+            α_right = records_ordered[i]["alpha"].item()
             transitions.append((α_left, α_right))
     return transitions
