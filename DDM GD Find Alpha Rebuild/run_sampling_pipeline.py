@@ -45,7 +45,8 @@ def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigm
 def main():
     # Initialize macro stats tracker and finite difference tracker
     stats = MacroStats()
-    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=2.0)
+    # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
+    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-6, stderr_tol=2.0)
 
     # Define sampling parameters
     α_min = 0
@@ -111,7 +112,7 @@ def main():
     # Loop through two optimization iterations
     alpha_k = α_left  # Start from the left of the first detected transition
 
-    for i in range(20):
+    for i in range(300):
         # Ensure αlpha_k is recorded, observe and update finite differences.
         if not any(abs(r["alpha"].item() - alpha_k) < 1e-6 for r in stats.records):
             samples = sample_v_func_NU(alpha=alpha_k, n=n)
@@ -157,6 +158,11 @@ def main():
 
         # Prepare for next iteration
         alpha_k = alpha_next
+
+    # Display all computed finite differences (optional)
+    print("\nAll finite differences:")
+    for fd in fd_tracker.fd_records:
+        print(fd)
 
 if __name__ == "__main__":
     main()

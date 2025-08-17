@@ -23,7 +23,7 @@ class FiniteDifferenceTracker:
         self.epsilon = epsilon                    # numerical stability (denominator guard)
         self.slope_tol = slope_tol                # convergence threshold for m_k
         self.stderr_tol = stderr_tol              # multiplier for stderr-based agreement
-        # Most recent slope estimate
+        # Most recent slope estimate; m_k denotes the slope estimate of the expectation function μ(α) at iteration k.
         self.m_k = None  # type: torch.Tensor or None
         self.linear_mode_enabled: bool = False  # flag: only record if True
         self.record_start_index = 0  # index in stats.records to begin slope estimation
