@@ -1,4 +1,5 @@
 import torch
+import math
 from typing import Optional
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
@@ -79,6 +80,33 @@ class LossEvaluator:
         grad = 2 * (mu - torch.tensor(self.v_d, dtype=torch.float32)) * dmu_dα + torch.tensor(self.lambda_var, dtype=torch.float32) * dvar_dα
         return grad
 
+    def _ensure_record(self, alpha: float, n: int, decimals: int = 6):
+        """
+        Ensure that a MacroStats record exists at the given α (rounded to `decimals`).
+
+        If a record at α is already present in `self.stats.records`, it is returned.
+        Otherwise this method:
+          1) draws `n` samples at α using `self.sample_func`,
+          2) logs them via `self.stats.macro_observations(alpha, samples)`, and
+          3) recomputes finite differences with `self.fd_tracker.compute_all_differences(self.stats)`,
+        then looks up and returns the (now) existing record.
+
+        :param alpha: The α value whose macro statistics are required.
+        :param n: Number of samples to draw if a new record must be created.
+        :param decimals: Rounding precision used to match/insert α in the records table (default: 6).
+        :return: The record dict for α (e.g., with keys 'alpha', 'mu', 'var', ...), or None if creation failed.
+        """
+        alpha = round(float(alpha), decimals)
+        rec = next((r for r in self.stats.records
+                    if round(float(r["alpha"]), decimals) == alpha), None)
+        if rec is None:
+            samples = self.sample_func(alpha=alpha, n=n)
+            self.stats.macro_observations(alpha=alpha, samples=samples)
+            self.fd_tracker.compute_all_differences(self.stats)
+            rec = next((r for r in self.stats.records
+                        if round(float(r["alpha"]), decimals) == alpha), None)
+        return rec
+
     def decide_next_alpha(self,
                       alpha_k: float,
                       gamma: float,
@@ -118,13 +146,18 @@ class LossEvaluator:
         """
         # Round α to avoid floating-point issues
         alpha_k = round(float(alpha_k), decimals)
+        # Ensure data is at α_k
+        rec_k = self._ensure_record(alpha_k, n=n, decimals=decimals)
 
-        # Current loss and gradient
+        # Try normal loss/grad
         loss_k = self.loss(alpha=alpha_k)
         grad_k = self.dloss_dalpha(alpha=alpha_k)
 
-        if loss_k is None or grad_k is None:
-            raise ValueError(f"Missing loss or gradient at α = {alpha_k}")
+        # If missing/bad, rebuild loss from rec_k
+        if (loss_k is None) or (not math.isfinite(loss_k)):
+            mu_k, var_k = rec_k["mu"], rec_k["var"]
+            loss_k = (mu_k - torch.tensor(self.v_d, dtype=mu_k.dtype))**2 + \
+                     torch.tensor(self.lambda_var, dtype=var_k.dtype) * var_k
 
         match = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == alpha_k), None)
         mu_k = match["mu"]
