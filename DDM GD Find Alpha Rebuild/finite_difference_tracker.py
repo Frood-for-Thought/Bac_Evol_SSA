@@ -196,7 +196,7 @@ class FiniteDifferenceTracker:
         else:
             return None  # No estimate available
 
-    def centered_residual(self, alpha, mu_val):
+    def _centered_residual(self, alpha, mu_val):
         """
         Compute r_cent(α) = (μ(α) - μ̄) - m_k * (α - ᾱ).
         # ------------------------------------------------------------------
@@ -234,7 +234,7 @@ class FiniteDifferenceTracker:
         where r_cent(α) = (μ(α) - μ̄) - m_k * (α - ᾱ).
         """
         # Compute centered residual; if unavailable (no m_k or means yet), return a safe False
-        r = self.centered_residual(alpha, mu_val)
+        r = self._centered_residual(alpha, mu_val)
         if r is None or self.stderr_tol is None:
             return False, r, None
         # s(α) = sqrt(var); the bound uses an approximate 95% CI width 2*s/sqrt(n) scaled by stderr_tol
