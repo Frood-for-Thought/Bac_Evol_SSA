@@ -161,8 +161,50 @@ def main():
 
     # Display all computed finite differences (optional)
     print("\nAll finite differences:")
+    print("\nAll finite differences (with macro observations):")
+    atol = 1e-6
+
     for fd in fd_tracker.fd_records:
-        print(fd)
+        # Show the finite-difference record itself
+        print(f"\nFD: {fd}")
+
+        a_k = fd["alpha_k"]
+        a_kp1 = fd["alpha_kp1"]
+
+        # Find matching macro records for α_k and α_{k+1}
+        def _get_alpha_val(x):
+            return x.item() if hasattr(x, "item") else float(x)
+
+        rec_k = next((r for r in stats.records if abs(_get_alpha_val(r["alpha"]) - a_k) < atol), None)
+        rec_kp1 = next((r for r in stats.records if abs(_get_alpha_val(r["alpha"]) - a_kp1) < atol), None)
+
+        def _show(label, rec):
+            if rec is None:
+                print(f"  {label}: <no record>")
+                return
+            a = _get_alpha_val(rec["alpha"])
+            mu = _get_alpha_val(rec["mu"])
+            var = _get_alpha_val(rec["var"])
+            n = rec.get("n", None)
+            std = rec.get("std", None)
+            ci = rec.get("stderr_ci", None)
+
+            base = f"  {label} α={a:.6f}, μ={mu:.6f}, var={var:.6f}"
+            if n is not None: base += f", n={int(n)}"
+            if std is not None: base += f", std={_get_alpha_val(std):.6f}"
+            if ci is not None: base += f", stderr_ci={_get_alpha_val(ci):.6f}"
+            print(base)
+
+        _show("alpha_k   ", rec_k)
+        _show("alpha_k+1 ", rec_kp1)
+
+    # After showing all finite differences + macro observations,
+    # this displays latest Polyak–Ruppert status from the tracker.
+    print("\n[PR] m_k={}, |Δm|={}, ready={}".format(
+        float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
+        float(fd_tracker.last_delta_m) if fd_tracker.last_delta_m is not None else None,
+        fd_tracker.linear_slope_ready
+    ))
 
 if __name__ == "__main__":
     main()
