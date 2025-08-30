@@ -164,7 +164,6 @@ class LossEvaluator:
                 f"loss_k={loss_k}, grad_k={grad_k}"
             )
 
-
         # If missing/bad, rebuild loss from rec_k
         if (loss_k is None) or (not math.isfinite(loss_k)):
             mu_k, var_k = rec_k["mu"], rec_k["var"]
@@ -185,6 +184,9 @@ class LossEvaluator:
         # cap gamma at (1 - eta) / (2 * m_k^2), with a tiny margin eta in (0, 0.1].
         # This keeps |1 - 2 * gamma * m_k^2| < 1 and avoids the huge jumps away from convergence.
         mk = self.fd_tracker.m_k
+        # So the only ways that scaling would be “not used” in practice are:
+        # The guard set dmu_dalpha = 1.0 (e.g., slope missing/tiny/non-finite), which makes gamma = 1.0.
+        # The gamma cap is enabled and use_gradient_override=False, so LossEvaluator reduces gamma.
         if (mk is not None) and self.fd_tracker.linear_slope_ready:
             mk_val = float(mk.item() if hasattr(mk, "item") else mk)
             mk2 = mk_val * mk_val
