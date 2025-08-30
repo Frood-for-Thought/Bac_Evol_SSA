@@ -152,6 +152,18 @@ class LossEvaluator:
         # Try normal loss/grad
         loss_k = self.loss(alpha=alpha_k)
         grad_k = self.dloss_dalpha(alpha=alpha_k)
+        # FAIL FAST on bad gradient/loss.
+        if grad_k is None or not math.isfinite(float(grad_k)):
+            raise RuntimeError(
+                f"[GD-ERROR] Non-finite or missing gradient at α={alpha_k}. "
+                f"loss_k={loss_k}, grad_k={grad_k}"
+            )
+        if loss_k is None or not math.isfinite(float(loss_k)):
+            raise RuntimeError(
+                f"[GD-ERROR] Non-finite or missing loss at α={alpha_k}. "
+                f"loss_k={loss_k}, grad_k={grad_k}"
+            )
+
 
         # If missing/bad, rebuild loss from rec_k
         if (loss_k is None) or (not math.isfinite(loss_k)):
@@ -166,8 +178,39 @@ class LossEvaluator:
 
         # Gradient step: α_next = α_k - γ * grad.
         alpha_k_tensor = torch.tensor(alpha_k, dtype=torch.float32)
+        # -----------------------------------------------------------------------------
+        # Adaptive gamma cap from linear analysis:
+        # (alpha_{k+1} - alpha_star) = (1 - 2 * gamma * m_k^2) * (alpha_k - alpha_star).
+        # Convergence requires 0 < gamma < 1 / m_k^2. To avoid oscillations and blow-ups,
+        # cap gamma at (1 - eta) / (2 * m_k^2), with a tiny margin eta in (0, 0.1].
+        # This keeps |1 - 2 * gamma * m_k^2| < 1 and avoids the huge jumps away from convergence.
+        mk = self.fd_tracker.m_k
+        if (mk is not None) and self.fd_tracker.linear_slope_ready:
+            mk_val = float(mk.item() if hasattr(mk, "item") else mk)
+            mk2 = mk_val * mk_val
+            if mk2 > 0.0 and math.isfinite(mk2):
+                eta = 0.05  # small safety margin
+                gamma_cap = (1.0 - eta) / (2.0 * mk2)
+                if gamma > gamma_cap:
+                    gamma = gamma_cap
+
         step = -gamma * grad_k
         alpha_kp1 = alpha_k_tensor + step
+
+        # FAIL FAST on non-finite step/α_{k+1}
+        mk = self.fd_tracker.m_k
+        mk_val = (float(mk.item()) if (mk is not None and hasattr(mk, "item")) else
+                  (float(mk) if mk is not None else None))
+        if not math.isfinite(float(step)) or not math.isfinite(float(alpha_kp1)):
+            raise RuntimeError(
+                "[GD-ERROR] Non-finite update detected.\n"
+                f"  alpha_k={alpha_k}\n"
+                f"  gamma={gamma}\n"
+                f"  grad_k={grad_k}\n"
+                f"  step={step}\n"
+                f"  alpha_kp1={alpha_kp1}\n"
+                f"  m_k={mk_val}"
+            )
 
         if use_gradient_override is True:
             # Determine bracket direction, target_direction ∈ {+1, -1, 0}
