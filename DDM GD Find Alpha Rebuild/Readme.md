@@ -43,7 +43,7 @@ sample_v_func_NU()  →  MacroStats.macro_observations()  →  FiniteDifferenceT
   3. iterates updates of α using guarded step sizes. It also normalizes step-size by the local slope and applies a **γ-cap** derived from linear stability analysis (details below).
 
 * **`macro_stats.py`** ingests a batch of samples at a given α and stores a record with:
-  \$\mu,; s^2,; s,; \text{stderr}, \text{stderr\_ci}, n\$. It also proposes a **small, safe probe step** \$h\$ when needed (e.g., to escape a false plateau).
+  $\mu,\, s^2,\, s,\, \text{stderr},\, \text{stderr\_ci},\, n$. It also proposes a **small, safe probe step** \$h\$ when needed (e.g., to escape a false plateau).
 
 * **`finite_difference_tracker.py`** computes forward differences for \$\mu\$ and \$s^2\$, and (optionally) a **centered Polyak–Ruppert (PR) slope** \$m\_k\$ of \$\mu\$ vs. α over a window $\[α\_{\min},α\_{\max}]\$. It keeps a “linear-slope-ready” flag once \$m\_k\$ stabilizes and exposes a **centered-residual gate** to sanity-check local linearity:
   \$ r\_{\text{cent}}(α)={\mu(α)-\bar\mu}-m\_k{\alpha-\bar\alpha}\$ should be no larger than a stderr-based bound.
