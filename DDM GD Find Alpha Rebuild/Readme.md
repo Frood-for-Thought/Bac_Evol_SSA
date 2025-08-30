@@ -18,9 +18,11 @@ $$
 
 where \$\mu(α)\$ and \$s^2(α)\$ are the **batch** mean and variance at α. The optional variance penalty \$λ≥0\$ trades off accuracy vs. stability. The code computes
 
-$\dfrac{dL}{d\alpha}
-= 2\bigl(\mu(\alpha)-v_d\bigr)\,\dfrac{d\mu}{d\alpha}
-+ \lambda\,\dfrac{d\,s^2}{d\alpha}.$
+$$
+\frac{dL}{d\alpha}
+= 2\bigl(\mu(\alpha)-v_d\bigr)\,\frac{d\mu}{d\alpha}
+\;+\; \lambda\,\frac{d\,s^2}{d\alpha}.
+$$
 
 using finite differences for the derivatives.
 
