@@ -55,6 +55,8 @@ def main():
     n = 1000000
     v_d = 7.0
     lambda_var = 1.0
+    # Safety margin for the gamma cap derived from m_k (keeps |1-2*gamma*m_k^2| < 1)
+    eta_for_gamma_cap = 0.05  # 5% margin
 
     # Collect macro observations for each α
     for α in alpha_range:
@@ -132,6 +134,66 @@ def main():
 
         # Update PR slope each iteration (no reset), then report readiness.
         fd_tracker.run_linear_estimation(stats, enabled=True, window=None, reset=False)
+
+        # -----------------------------------------------------------------------------
+        # Clarification of the “linear recursion” and the bounds:
+        #
+        # 1) Define the tracking error:
+        #      e_k := alpha_k - alpha_star
+        #    Using the linear model above, the gradient near alpha_star is:
+        #      dL/dalpha |_alpha_k  ~=  2 * m_k^2 * e_k
+        #
+        # 2) One GD step:
+        #      alpha_{k+1} = alpha_k - gamma * (2 * m_k^2 * e_k)
+        #    Subtract alpha_star from both sides:
+        #      e_{k+1} = (alpha_{k+1} - alpha_star)
+        #              = (alpha_k - alpha_star) - 2 * gamma * m_k^2 * e_k
+        #              = (1 - 2 * gamma * m_k^2) * e_k
+        #    This is the linear recursion with multiplier q := (1 - 2 * gamma * m_k^2).
+        #
+        #    Intuition: the recursion says each new error e_{k+1} is just the old
+        #    error e_k multiplied by a constant factor q. So the whole behavior
+        #    depends on |q|:
+        #       - if |q| < 1 → errors shrink
+        #       - if |q| = 1 → errors persist
+        #       - if |q| > 1 → errors grow
+        #
+        # 3) What “convergence” means here:
+        #      We need |e_{k+1}| < |e_k| for errors to shrink.
+        #      That requires |q| < 1  <=>  |1 - 2 * gamma * m_k^2| < 1.
+        #      Solving gives:  0 < gamma < 1 / m_k^2.
+        #
+        #    Detailed steps:
+        #      - Start:  |1 - 2 * gamma * m_k^2| < 1
+        #      - Equivalent to: -1 < 1 - 2 * gamma * m_k^2 < 1
+        #      - Left inequality:  -1 < 1 - 2γm_k^2  ⇒  -2 < -2γm_k^2  ⇒  γ < 1/m_k^2
+        #      - Right inequality: 1 - 2γm_k^2 < 1   ⇒  -2γm_k^2 < 0   ⇒  γ > 0
+        #      - Combined: 0 < γ < 1/m_k^2
+        #
+        # 4) Behavior by gamma range (assume m_k^2 > 0; the square handles m_k < 0 too):
+        #      - 0 < gamma < 1/(2 m_k^2):       q in (0, 1)     → monotone convergence (no sign flips).
+        #      - gamma = 1/(2 m_k^2):           q = 0           → one-step to alpha_star in  ideal linear/noiseless case
+        #      - 1/(2 m_k^2) < gamma < 1/m_k^2: q in (-1, 0)    → convergent but oscillatory (e_k flips sign each step).
+        #      - gamma = 1/m_k^2:               q = -1          → no contraction; persistent large oscillation.
+        #      - gamma > 1/m_k^2:               |q| > 1         → divergence (errors grow).
+        #
+        # 5) Why this matches the intuition:
+        #      - When gamma is “too big” relative to the local curvature scale m_k^2,
+        #        the step overshoots, flips the sign, and if |q| >= 1 the amplitude does not decay
+        #        (oscillates or explodes).
+        #      - Setting gamma ~ 1 normalizes by nothing; if m_k ~ 1 (common in linear patches),
+        #        then q ~ 1 - 2*1*1 = -1, i.e., the problematic oscillation factor.
+        #      - The square m_k^2 is why the condition depends only on the *magnitude* of slope,
+        #        not its sign — negative slopes behave the same.
+        #
+        # 6) Effect of the variance term (lambda > 0):
+        #      - The gradient gains + lambda * d(s^2)/dalpha. If that term is small near the target
+        #        or comparatively flat, the m_k^2-driven analysis dominates. If it is not small,
+        #        it perturbs q slightly; the same form still holds locally with m_k replaced by the
+        #        effective local slope factor of the full gradient.
+        # -----------------------------------------------------------------------------
+        m_k = fd_tracker.m_k
+        delta_m = fd_tracker.last_delta_m
         if fd_tracker.last_delta_m is not None:
             print(f"[PR] m_k={float(m_k) if m_k is not None else None}, "
                   f"|Δm|={float(delta_m) if delta_m is not None else None}, "
@@ -139,15 +201,37 @@ def main():
 
         else:
             print("[PR] collecting slopes…")
-        m_k = fd_tracker.m_k
-        delta_m = fd_tracker.last_delta_m
 
         # Estimate dμ/dα externally
         dmu_dalpha = fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
         # Prevent blow-ups from dμ/dα
         if (dmu_dalpha is None) or (not math.isfinite(dmu_dalpha)) or (abs(dmu_dalpha) < 1e-8):
             dmu_dalpha = 1.0  # safe default scale
-        gamma = 1.0 / abs(dmu_dalpha)  # scale only; let grad set direction
+        # Slope-normalized step scaling:
+        # dmu_dalpha ≈ local sensitivity μ'(α_k). We set γ = 1 / |μ'| so that the raw GD step.
+        #   Δα = −γ · dL/dα  ≈  −(1/|μ'|) · 2(μ − v_d) · μ'  =  −2 · (μ − v_d) · sign(μ').
+        # The step size depends on the error (μ − v_d) but is ≈ invariant to the local slope magnitude.
+        # This avoids huge Δα on steep regions and vanishing Δα on flat regions.
+        # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
+        gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
+
+        # Adaptive stability cap on gamma (ONLY when PR slope is ready).
+        # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
+        # Best non-oscillatory contraction at gamma = 1/(2*m_k^2).
+        if fd_tracker.linear_slope_ready and (m_k is not None):
+            mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
+            if math.isfinite(mk_val):
+                mk2 = mk_val * mk_val
+                if mk2 > 0.0:
+                    gamma_cap = (1.0 - eta_for_gamma_cap) / (2.0 * mk2)
+                    # Fail fast if cap is nonsensical
+                    if not math.isfinite(gamma_cap) or gamma_cap <= 0.0:
+                        raise RuntimeError(
+                            f"[GD-ERROR] Bad gamma_cap from m_k: m_k={mk_val}, gamma_cap={gamma_cap}"
+                        )
+                    # Cap gamma (keep original scaling but make it safe).
+                    if gamma > gamma_cap:
+                        gamma = gamma_cap
 
         # Decide next alpha based on current α_left
         alpha_next = loss_eval.decide_next_alpha(
