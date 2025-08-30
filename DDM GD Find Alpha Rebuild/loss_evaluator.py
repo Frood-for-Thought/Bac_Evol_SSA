@@ -183,6 +183,22 @@ class LossEvaluator:
             if target_direction != 0 and step_sign != target_direction:
                 step = -step
                 alpha_kp1 = alpha_k_tensor + step
+
+            # Override-only safety: if α_{k+1} is non-finite, snap to bracket edge in the step direction.
+            if not torch.isfinite(alpha_kp1):
+                br_left  = float(min(alpha_left, alpha_right))
+                br_right = float(max(alpha_left, alpha_right))
+                eps = torch.finfo(alpha_kp1.dtype).eps  # tiny nudge to stay inside
+                # choose edge consistent with intended direction (or actual step sign if inside bracket)
+                dir_sign = target_direction if target_direction != 0 else step_sign
+                if dir_sign > 0:
+                    return br_right - eps
+                elif dir_sign < 0:
+                    return br_left + eps
+                else:
+                    # zero/undefined direction: no-op to avoid NaN
+                    return alpha_k_tensor.item()
+
             return alpha_kp1.item()
         # REVERT TO STEP SIZE ENFORCEMENT, NOT LOSS FUNCTION.
         else:

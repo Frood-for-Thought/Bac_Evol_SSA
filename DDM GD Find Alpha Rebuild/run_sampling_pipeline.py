@@ -46,7 +46,7 @@ def main():
     # Initialize macro stats tracker and finite difference tracker
     stats = MacroStats()
     # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
-    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-6, stderr_tol=2.0)
+    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=2.0)
 
     # Define sampling parameters
     α_min = 0
@@ -61,15 +61,12 @@ def main():
         samples = sample_v_func_NU(alpha=α, n=n)
         stats.macro_observations(alpha=α, samples=samples)
 
-    # Compute all forward finite differences
-    fd_tracker.compute_all_differences(stats)
-
     # Insert another value in between
     α_insert = 10.5
     samples_insert = sample_v_func_NU(alpha=α_insert, n=n)
     stats.macro_observations(alpha=α_insert, samples=samples_insert)
 
-    # Recompute all finite differences after insertion
+    # Compute all forward finite differences
     fd_tracker.compute_all_differences(stats)
 
     # Display finite differences near the insertion point
@@ -118,6 +115,20 @@ def main():
             samples = sample_v_func_NU(alpha=alpha_k, n=n)
             stats.macro_observations(alpha=alpha_k, samples=samples)
             fd_tracker.compute_all_differences(stats)
+
+        # Centered-residual gate (LOG ONLY; does not change behavior)
+        # Pull the μ, var at the *current* alpha_k (we just ensured it exists).
+        rec_k = next(r for r in stats.records if abs(r["alpha"].item() - alpha_k) < 1e-6)
+        resid_ok, r_cent, bound = fd_tracker.residual_gate(
+            alpha=rec_k["alpha"],    # tensor is fine
+            mu_val=rec_k["mu"],      # tensor
+            var_val=rec_k["var"],    # tensor
+            n=n
+        )
+        print(f"[LIN-CHK] ready={fd_tracker.linear_slope_ready}, "
+              f"resid_ok={resid_ok}, "
+              f"r_cent={float(r_cent) if r_cent is not None else None}, "
+              f"bound={float(bound) if bound is not None else None}")
 
         # Update PR slope each iteration (no reset), then report readiness.
         fd_tracker.run_linear_estimation(stats, enabled=True, window=None, reset=False)
