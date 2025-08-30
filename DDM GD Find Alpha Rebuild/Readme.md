@@ -45,8 +45,9 @@ sample_v_func_NU()  →  MacroStats.macro_observations()  →  FiniteDifferenceT
 * **`macro_stats.py`** ingests a batch of samples at a given α and stores a record with:
   $\mu$, $s^2$, $s$, `stderr`, `stderr_ci`, $n$. It also proposes a **small, safe probe step** \$h\$ when needed (e.g., to escape a false plateau).
 
-* **`finite_difference_tracker.py`** computes forward differences for \$\mu\$ and \$s^2\$, and (optionally) a **centered Polyak–Ruppert (PR) slope** \$m\_k\$ of \$\mu\$ vs. α over a window $\[α\_{\min},α\_{\max}]\$. It keeps a “linear-slope-ready” flag once \$m\_k\$ stabilizes and exposes a **centered-residual gate** to sanity-check local linearity:
-  \$ r\_{\text{cent}}(α)={\mu(α)-\bar\mu}-m\_k{\alpha-\bar\alpha}\$ should be no larger than a stderr-based bound.
+* **`finite_difference_tracker.py` computes forward differences for $\,\mu\,$ and $\,s^2\,$, and (optionally) a centered Polyak–Ruppert (PR) slope $m_k$ of $\mu$ vs. $\alpha$ over a window $[\alpha_{\min},\,\alpha_{\max}]$. It keeps a “linear-slope-ready” flag once $m_k$ stabilizes and exposes a centered-residual gate to sanity-check local linearity: 
+$r_{\text{cent}}(\alpha) = \bigl(\mu(\alpha) - \bar{\mu}\bigr) - m_k\,\bigl(\alpha - \bar{\alpha}\bigr)$ 
+should be no larger than a stderr-based bound.
 
 * **`landscape_analysis.py`** scans the recorded \${\alpha,\mu(α)}\$ to detect **sign transitions** of \$\mu(α)-v\_d\$; these give a bracket $\[α\_\ell, α\_r]\$ around a root of \$\mu(α)-v\_d=0\$, which initializes the optimizer near a valid solution.
 
