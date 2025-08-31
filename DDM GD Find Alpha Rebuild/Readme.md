@@ -134,12 +134,20 @@ We then monitor \$|r\_{\text{cent}}(α)|=\big|(\mu(α)-\bar\mu)-m\_k(\alpha-\bar
 
 ---
 
-## Why this may be new (and useful)
+## Potential Novelty
 
 * **Macro first, micro never:** It explicitly leans on CLT so we can **throw away** raw samples each iteration while still controlling noise and taking principled steps on \$L(α)\$.
 * **Slope-normalized stepping + γ-cap:** Normalizing by \$|\mu'(α)|\$ keeps step magnitudes sane on both steep and flat regions; the PR-slope γ-cap yields the same linear-systems stability guarantees practitioners expect, but **from data** rather than model gradients.
 * **Variance-aware objective:** Penalizing \$s^2(α)\$ directly trades off accuracy vs. robustness, which is natural when the black-box’s variability itself depends on α.
 * **Bracketed search on learned landscapes:** Sign-change detection on \$\mu(α)-v\_d\$ gives practical, data-driven initialization near a feasible root, even when \$v(α)\$ is non-monotone.
+
+---
+## Key Differences
+
+* **Explicit vs. implicit function optimization:** Traditional ML optimizes an explicit loss $f(\mathbf{x};\theta)$. D-DEME optimizes the expectation $\mathbb{E}[v(\alpha)]$ using CLT-stable batch statistics, without requiring an explicit form for $v(\alpha)$.
+* **Gradient computation:** ML uses per-sample backprop $\nabla_\theta f$. D-DEME estimates directions from ensemble aggregates — finite differences of $\mu(\alpha)$ or $\tfrac{d}{d\alpha}\mathbb{E}[v(\alpha)]$ — avoiding per-sample gradients.
+* **Dynamic data vs. mini-batching:** ML mini-batches come from a static dataset (assumed stationary). D-DEME generates fresh, independent samples each iteration from an evolving process; with sufficiently large $n$, CLT yields reliable $\mu(\alpha)$. It stores only $(\mu(\alpha),\, s^2(\alpha),\, n)$, discarding microstates, and adapts to non-stationary landscapes.
+* **Dimensionality & non-differentiability:** D-DEME focuses on system-level statistics to optimize stochastic, potentially non-differentiable objectives, bypassing chain-rule gradients where they fail.
 
 ---
 
