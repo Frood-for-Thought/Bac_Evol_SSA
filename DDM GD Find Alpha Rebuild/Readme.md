@@ -118,7 +118,7 @@ We then monitor \$|r\_{\text{cent}}(α)|=\big|(\mu(α)-\bar\mu)-m\_k(\alpha-\bar
   *Sampling function*, initial α-sweep, FD computation, sign-change bracketing, PR slope windowing, slope-normalized γ, γ-cap, and the training loop.
 
 * `macro_stats.py`
-  Records \$ \alpha\$, \$ \mu\$, \$ s^2\$, \$ s\$, \$ \text{stderr}\$, \$ n\$, confidence bounds; suggests cautious probe sizes to escape plateaus.
+  Records $\alpha$, $\mu$, $s^2$, $s$, $\mathrm{stderr}$, $n$, and confidence bounds; suggests cautious probe sizes to escape plateaus.
 
 * `finite_difference_tracker.py`
   Forward differences for \$\mu\$ and \$s^2\$; centered PR slope \$m\_k\$ with stabilization checks; centered-residual gate and window means \$(\bar\alpha,\bar\mu)\$.
