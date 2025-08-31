@@ -172,7 +172,7 @@ What happens:
 * **Forward finite differences** for both \$\mu\$ and \$s^2\$ are stored as records alongside α; `estimate_derivative_at` looks them up for the loss gradient.
 * The **centered residual bound** scales like \$2,s(α)/\sqrt{n}\$ (stderr-style) so the gate tightens automatically with larger batches.
 * When the gradient step **worsens** the loss but slope hasn’t collapsed, `LossEvaluator` falls back to a **small forward probe** \$h\$ from `MacroStats.suggest_step_size`.
-* The **direction override** keeps updates moving toward/within the bracket $\[α\_\ell,α\_r]\$ to avoid wandering when noise is high.
+* The **direction override** keeps updates moving toward/within the bracket $[\alpha_{\min}\, \alpha_{\max}]$ to avoid wandering when noise is high.
 
 ---
 
