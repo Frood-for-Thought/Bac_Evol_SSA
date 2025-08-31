@@ -60,7 +60,7 @@ should be no larger than a stderr-based bound.
 
     * **slope-normalized step:** use a γ scaled by \$1/|\mu'(α)|\$ so the raw update magnitude doesn’t explode on steep/flat patches;
     * **γ-cap using \$m\_k\$:** if PR slope is ready, enforce \$|1-2γm\_k^2|<1\$ with the best non-oscillatory choice near \$γ≈1/(2m\_k^2)\$;
-    * **bracket direction override:** keep steps moving toward/within $\[α\_\ell,α\_r]\$;
+    * **bracket direction override:** keep steps moving toward/within $[\alpha_{\min}, \alpha_{\max}]$;
     * **probe fallback:** if curvature/slope diagnostics suggest a false plateau, take a small \$h\$ suggested by `MacroStats`.
 
 ---
@@ -71,9 +71,7 @@ should be no larger than a stderr-based bound.
 
 2. **Bracket a solution.** Run `detect_sign_transitions(stats, v_d)` to find the first interval where \$\mu(α)-v\_d\$ changes sign; set $\[α\_\ell,α\_r]\$.
 
-3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. so the tracker maintains a **centered** linear fit \$m\_k\$ of \$\mu\$ vs. α across the bracket. The tracker also stores \$\bar\alpha,\bar\mu\$ for the centered-residual test.
-
-4. `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs.\ $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
+3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs.\ $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
 
 5. **Iterate updates.** At each \$α\_k\$:
 
