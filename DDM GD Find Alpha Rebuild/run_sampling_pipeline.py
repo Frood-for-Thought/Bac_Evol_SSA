@@ -118,8 +118,14 @@ def main():
             stats.macro_observations(alpha=alpha_k, samples=samples)
             fd_tracker.compute_all_differences(stats)
 
-        # Centered-residual gate (LOG ONLY; does not change behavior)
+        # Using residual_gate in finite_difference_tracker.py:
+        # Centered-residual gate (LOG ONLY; does not change behavior) and compare it against a stderr-based bound.
+        #         Returns (resid_ok, r_cent, bound) for the centered-residual gate:
+        #             |r_cent(α)| ≤ stderr_tol * (2 * s(α) / sqrt(n))
+        #         where r_cent(α) = (μ(α) - μ̄) - m_k * (α - ᾱ).
+        # Small centered residuals indicate the local linearity required by the γ-cap analysis.
         # Pull the μ, var at the *current* alpha_k (we just ensured it exists).
+        # declare “linear-agreement OK” if ∣r_cent(α)∣ ≤ stderr_tol⋅( 2s(α)/sqrt(n) )
         rec_k = next(r for r in stats.records if abs(r["alpha"].item() - alpha_k) < 1e-6)
         resid_ok, r_cent, bound = fd_tracker.residual_gate(
             alpha=rec_k["alpha"],    # tensor is fine
