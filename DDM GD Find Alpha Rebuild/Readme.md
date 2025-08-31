@@ -71,9 +71,11 @@ should be no larger than a stderr-based bound.
 
 2. **Bracket a solution.** Run `detect_sign_transitions(stats, v_d)` to find the first interval where \$\mu(α)-v\_d\$ changes sign; set $\[α\_\ell,α\_r]\$.
 
-3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[$\alpha_{\min}, \alpha_{\max}$])` so the tracker maintains a **centered** linear fit \$m\_k\$ of \$\mu\$ vs. α across the bracket. The tracker also stores \$\bar\alpha,\bar\mu\$ for the centered-residual test.
+3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. so the tracker maintains a **centered** linear fit \$m\_k\$ of \$\mu\$ vs. α across the bracket. The tracker also stores \$\bar\alpha,\bar\mu\$ for the centered-residual test.
 
-4. **Iterate updates.** At each \$α\_k\$:
+4. `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs.\ $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
+
+5. **Iterate updates.** At each \$α\_k\$:
 
    * Ensure a fresh macro record exists (and refresh finite differences).
    * Optionally log the **centered-residual gate** status to check local linearity.
