@@ -69,7 +69,7 @@ should be no larger than a stderr-based bound.
 
 1. **Seed the landscape.** Sample on a coarse α-grid; for each α, call `macro_observations()` to log \$\mu(α), s^2(α)\$ (large n to reduce noise). Then compute all forward differences.
 
-2. **Bracket a solution.** Run `detect_sign_transitions(stats, v_d)` to find the first interval where \$\mu(α)-v\_d\$ changes sign; set $\[α\_\ell,α\_r]\$.
+2. **Bracket a solution.** Run `detect_sign_transitions(stats, v_d)` to find the first interval where \$\mu(α)-v\_d\$ changes sign; set $[\alpha_{\min}, \alpha_{\max}]$.
 
 3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs.\ $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
 
