@@ -146,7 +146,7 @@ We then monitor \$|r\_{\text{cent}}(α)|=\big|(\mu(α)-\bar\mu)-m\_k(\alpha-\bar
 
 * **Explicit vs. implicit function optimization:** Traditional ML optimizes an explicit loss $f(\mathbf{x};\theta)$. D-DEME optimizes the expectation $\mathbb{E}[v(\alpha)]$ using CLT-stable batch statistics, without requiring an explicit form for $v(\alpha)$.
 * **Gradient computation:** ML uses per-sample backprop $\nabla_\theta f$. D-DEME estimates directions from ensemble aggregates — finite differences of $\mu(\alpha)$ or $\tfrac{d}{d\alpha}\mathbb{E}[v(\alpha)]$ — avoiding per-sample gradients.
-* **Dynamic data vs. mini-batching:** ML mini-batches come from a static dataset (assumed stationary). D-DEME generates fresh, independent samples each iteration from an evolving process; with sufficiently large $n$, CLT yields reliable $\mu(\alpha)$. It stores only $(\mu(\alpha),\, s^2(\alpha),\, n)$, discarding microstates, and adapts to non-stationary landscapes.
+* **Dynamic data vs. mini-batching:** ML mini-batches come from a static dataset (assumed stationary). D-DEME generates fresh, independent samples each iteration from an evolving process; with sufficiently large $n$, CLT yields reliable $\mu(\alpha)$. It stores only $(\mu(\alpha)\, s^2(\alpha)\, n)$, discarding microstates, and adapts to non-stationary landscapes.
 * **Dimensionality & non-differentiability:** D-DEME focuses on system-level statistics to optimize stochastic, potentially non-differentiable objectives, bypassing chain-rule gradients where they fail.
 
 ---
