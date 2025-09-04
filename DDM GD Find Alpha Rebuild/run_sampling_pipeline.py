@@ -4,6 +4,8 @@ from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from landscape_analysis import detect_sign_transitions
 from loss_evaluator import LossEvaluator
+# uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
+from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
 
 
 def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigma: float = 0.1) -> torch.Tensor:
