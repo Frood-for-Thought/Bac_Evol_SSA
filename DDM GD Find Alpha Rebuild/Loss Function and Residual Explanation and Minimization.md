@@ -78,13 +78,13 @@ So $r_{\text{cent}}$ decomposes into:
 * a **mean-zero noise** part (what the stderr bound is designed to control), and
 * a **leakage term** from slope estimation error: $(m-m_k)(\alpha-\bar\alpha)$.
 
-If $\mu(\alpha) \approx m_k\alpha + b$ on the window, then $r_{\mathrm{cent}}(\alpha)$ is approximately sampling noise only. Hence it is appropriate to compare $\lvert r_{\mathrm{cent}}(\alpha) \rvert$ to a standard-error bound. We declare “linear-agreement OK” when
+**Stderr gate.**: If $\mu(\alpha) \approx m_k\alpha + b$ on the window, then $r_{\mathrm{cent}}(\alpha)$ is approximately sampling noise only. Hence it is appropriate to compare $\lvert r_{\mathrm{cent}}(\alpha) \rvert$ to a standard-error bound. We declare “linear-agreement OK” when:
 
 $$
 \boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}}}
 $$
 
-Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $\text{stderr\ tol}$ is a small multiplier (e.g., $C = 2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
+Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and c = \verb|stderr_tol| is a small multiplier. This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
 **When the PR slope has stabilized**:
 
@@ -93,16 +93,6 @@ $$
 $$
 
 we expect $m_k$ to be close to $m$. (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
-
-**Stderr gate.** We declare “linear-agreement OK” when":
-
-$$
-\lvert r_{\mathrm{cent}}(\alpha)\rvert
-\;\le\;
-c\,\frac{2\,s(\alpha)}{\sqrt{n}}
-$$
-
-where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, c = \verb|stderr_tol|).
 
 **Optional conservative variant** (to account for residual slope-estimation error):
 
