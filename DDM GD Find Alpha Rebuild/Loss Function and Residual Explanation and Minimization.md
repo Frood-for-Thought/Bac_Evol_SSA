@@ -48,7 +48,7 @@ $$
 \mathrm{Var}\bigl(\delta_n(\alpha)\bigr)=\frac{\sigma^2(\alpha)}{n},
 $$
 
-with $\sigma^2(\alpha)=\mathrm{Var}(v_j(\alpha))$. By the CLT, $\delta_n(\alpha)$ is approximately normal with standard deviation $\sigma(\alpha)/\sqrt{n}$. In practice we estimate $\sigma(\alpha)$ by $s(\alpha)$, so a two-sided $\approx95\%$ noise band for the *mean* is $\pm 2\,s(\alpha)/\sqrt{n}$. This is the intrinsic uncertainty that persists even when the optimization is near the target $\bar v(\alpha)\approx v_d$.
+with $\sigma^2(\alpha)=\mathrm{Var}(v_j(\alpha))$. By the CLT, $\delta_n(\alpha)$ is approximately normal with standard deviation $\sigma(\alpha)/\sqrt{n}$. In practice we estimate $\sigma(\alpha)$ by $s(\alpha)$, so a two-sided $\approx95\%$ noise band for the *mean* is $\pm 2\s(\alpha)/\sqrt{n}$. This is the intrinsic uncertainty that persists even when the optimization is near the target $\bar v(\alpha)\approx v_d$.
 
 ---
 
