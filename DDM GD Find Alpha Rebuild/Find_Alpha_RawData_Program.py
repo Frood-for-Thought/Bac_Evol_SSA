@@ -6,9 +6,13 @@ import torch
 from Tumble_Angle import AngleGenerator_cuda
 # Initialize the angle generator class to select from probability distribution.
 angle_generator = AngleGenerator_cuda()
+# uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
 from Calc_Alpha_ML_Function import BaseDataGenerator, Dynamic_Data_Evolving_Mean_Estimator
-
+from macro_stats import MacroStats
+from finite_difference_tracker import FiniteDifferenceTracker
+from loss_evaluator import LossEvaluator
+from landscape_analysis import detect_sign_transitions
 
 # Initialization and Food Concentration Calculation.
 nl = 101
