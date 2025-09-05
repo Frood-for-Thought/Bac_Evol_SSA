@@ -116,7 +116,7 @@ $$
 \approx\
 2\bigl(\mu(\alpha)-v_d\bigr)m_k
 +\
-\lambda\frac{d\s^2}{d\alpha},
+\lambda\frac{ds^2}{d\alpha},
 $$
 
 and when $\lambda=0$ this further reduces to
