@@ -103,17 +103,10 @@ $$
 \+2\delta_n(\alpha)\delta'_n(\alpha)
 $$
 
-The last three terms are intrinsic sampling terms. 
-
-$r_{\text{cent}}$ decomposes into:
-
-* a **mean-zero noise** part (what the stderr bound is designed to control), and
-* a **leakage term** from slope estimation error: $(m-m_k)(\alpha-\bar\alpha)$.
-
-When the linear gate holds and the PR slope has stabilized,
+The last three terms are intrinsic sampling terms. When the linear gate holds and the PR slope has stabilized,
 
 $$
-|m_k - m_{k-1}| < c.
+|m_k - m_{k-1}| < slope_tol.
 $$
 
 we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\alpha+b$. Under these conditions the intrinsic terms behave like mean-zero noise of order $O_p(n^{-1/2})$. Thus, the dominant (deterministic) part of the gradient near the target is
