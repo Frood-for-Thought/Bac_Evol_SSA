@@ -105,13 +105,12 @@ $$
 where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, c = \verb|stderr_tol|).
 
 **Optional conservative variant** (to account for residual slope-estimation error):
-
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
 \;\le\;
-c\,\frac{2\,s(\alpha)}{\sqrt{n}}
+\underbrace{c\,\frac{2\,s(\alpha)}{\sqrt{n}}}_{\verb|sampling noise|}
 \;+\;
-\verb|slope_tol|
+\underbrace{\verb|slope_tol|}_{\verb|slope-error leakage|}
 $$
 
 but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
