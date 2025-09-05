@@ -65,6 +65,19 @@ r_{\mathrm{cent}}(\alpha)
 m_k\bigl(\alpha - \bar{\alpha}\bigr)
 $$
 
+With the **estimated** slope $m_k$,
+
+$$
+\underbrace{(\mu-\bar\mu) - m_k(\alpha-\bar\alpha)}_{r_{\text{cent}}}
+= \underbrace{(\mu-\bar\mu) - m(\alpha-\bar\alpha)}_{\text{noise}}
+\;+\; \underbrace{(m - m_k)}_{\text{slope error}}\cdot(\alpha-\bar\alpha).
+$$
+
+So $r_{\text{cent}}$ decomposes into:
+
+* a **mean-zero noise** part (what the stderr bound is designed to control), and
+* a **leakage term** from slope estimation error: $(m-m_k)(\alpha-\bar\alpha)$.
+
 If $\mu(\alpha) \approx m_k\alpha + b$ on the window, then $r_{\mathrm{cent}}(\alpha)$ is approximately sampling noise only. Hence it is appropriate to compare $\lvert r_{\mathrm{cent}}(\alpha) \rvert$ to a standard-error bound. We declare “linear-agreement OK” when
 
 $$
