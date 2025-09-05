@@ -84,7 +84,7 @@ $$
 \boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}}}
 $$
 
-Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and c = \verb|stderr_tol| is a small multiplier. This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
+Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c = \verb|stderr_tol|$ is a small multiplier. This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
 **When the PR slope has stabilized**:
 
