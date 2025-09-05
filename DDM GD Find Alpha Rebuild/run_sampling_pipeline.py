@@ -4,8 +4,7 @@ from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from landscape_analysis import detect_sign_transitions
 from loss_evaluator import LossEvaluator
-# uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
-from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
+import torch.optim as optim
 
 
 def sample_v_func_NU(alpha: float, n: int, m1: float = 1.0, h: float = 8.0, sigma: float = 0.1) -> torch.Tensor:
@@ -56,9 +55,23 @@ def main():
     alpha_range = torch.arange(α_min, α_max, step=1.0, dtype=torch.float32)
     n = 1000000
     v_d = 7.0
-    lambda_var = 1.0
+    lambda_var = 0  # Penalty coefficient for variance in the loss function in loss_evaluator.py.
     # Safety margin for the gamma cap derived from m_k (keeps |1-2*gamma*m_k^2| < 1)
-    eta_for_gamma_cap = 0.05  # 5% margin
+    eta_for_gamma_cap = 0.05
+
+    # Learning Rate scheduler.
+    # The scheduler will decay lr and will multiply the computed gamma by the current lr each iteration.
+    lr_init = 1.0                       # start with neutral scale
+    lr_decay_gamma = 0.5                # halve the lr every 'step_size' epochs
+    step_size_epochs = 20               # decay cadence (same idea as before)
+    lr_scale_param = torch.nn.Parameter(torch.tensor(0.0))  # dummy; we do not use its value
+
+    optimizer = optim.SGD([lr_scale_param], lr=lr_init)
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer,
+        step_size=step_size_epochs,
+        gamma=lr_decay_gamma
+    )
 
     # Collect macro observations for each α
     for α in alpha_range:
@@ -113,7 +126,7 @@ def main():
     # Loop through two optimization iterations
     alpha_k = α_left  # Start from the left of the first detected transition
 
-    for i in range(300):
+    for i in range(100):
         # Ensure αlpha_k is recorded, observe and update finite differences.
         if not any(abs(r["alpha"].item() - alpha_k) < 1e-6 for r in stats.records):
             samples = sample_v_func_NU(alpha=alpha_k, n=n)
@@ -222,6 +235,9 @@ def main():
         # This avoids huge Δα on steep regions and vanishing Δα on flat regions.
         # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
         gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
+        # Multiply by scheduler-controlled scale (decays every 'step_size_epochs')
+        current_lr_scale = optimizer.param_groups[0]['lr']
+        gamma *= float(current_lr_scale)
 
         # Adaptive stability cap on gamma (ONLY when PR slope is ready).
         # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
@@ -253,6 +269,12 @@ def main():
             alpha_right=α_right,
             use_gradient_override=True  # Or True / False to control override behavior
         )
+
+        # Make scheduler advance once per loop iteration (epoch)
+        # (We don’t actually optimize lr_scale_param; step is a no-op but satisfies PyTorch)
+        lr_scale_param.grad = torch.zeros_like(lr_scale_param)
+        optimizer.step()
+        scheduler.step()
 
         print(f"\nIteration {i+1}")
         print(f"  alpha_k    = {alpha_k}")
