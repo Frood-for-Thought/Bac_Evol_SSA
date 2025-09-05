@@ -89,7 +89,7 @@ Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch 
 **When the PR slope has stabilized**:
 
 $$
-\lvert m_k - m_{k-1}\rvert < \text{slope\_tol}
+\lvert m_k - m_{k-1}\rvert \;<\; \text{slope\_tol}
 $$
 
 we expect $m_k$ to be close to $m$. (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
