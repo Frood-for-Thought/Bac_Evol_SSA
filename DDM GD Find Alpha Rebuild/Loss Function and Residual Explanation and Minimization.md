@@ -108,9 +108,9 @@ where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch
 
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
-\;\le\;
-\underbrace{c\,\frac{2\,s(\alpha)}{\sqrt{n}}}_{\verb|sampling noise|}
-\;+\;
+\le\
+\underbrace{c\frac{2s(\alpha)}{\sqrt{n}}}_{\verb|sampling noise|}
+\+\
 \underbrace{\verb|slope_tol|}_{\verb|slope-error leakage|}
 $$
 
