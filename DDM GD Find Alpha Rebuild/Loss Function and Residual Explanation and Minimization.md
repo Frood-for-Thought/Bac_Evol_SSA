@@ -109,9 +109,9 @@ where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
 \;\le\;
-c \cdot \frac{2\,s(\alpha)}{\sqrt{n}}
+c\,\frac{2\,s(\alpha)}{\sqrt{n}}
 \;+\;
-\verb|slope_tol| \cdot W
+\verb|slope_tol|
 $$
 
 but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
