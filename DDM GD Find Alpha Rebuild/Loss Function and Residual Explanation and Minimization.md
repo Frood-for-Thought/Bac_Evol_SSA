@@ -55,13 +55,13 @@ with $\sigma^2(\alpha)=\mathrm{Var}(v_j(\alpha))$. By the CLT, $\delta_n(\alpha)
 ### 3. Centered residual and its bound
 
 A naive residual $\lvert \mu(\alpha) - m_k\,\alpha \rvert$ is biased when the local line has a nonzero intercept.
-The correct (intercept-free) diagnostic is the centered residual
+The correct (intercept-free) diagnostic is the centered residual:
 
-$$
 r_{\mathrm{cent}}(\alpha)
-= \bigl(\mu(\alpha) - \bar{\mu}\bigr)
-  - m_k\,\bigl(\alpha - \bar{\alpha}\bigr).
-$$
+\;=\;
+\bigl(\mu(\alpha) - \bar{\mu}\bigr)
+\;-\;
+m_k\,\bigl(\alpha - \bar{\alpha}\bigr).
 
 If $\mu(\alpha) \approx m_k\,\alpha + b$ on the window, then $r_{\mathrm{cent}}(\alpha)$ is approximately sampling noise only. Hence it is appropriate to compare $\lvert r_{\mathrm{cent}}(\alpha) \rvert$ to a standard-error bound. We declare “linear-agreement OK” when
 
