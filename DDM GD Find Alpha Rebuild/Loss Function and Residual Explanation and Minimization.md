@@ -102,16 +102,16 @@ $$
 c\,\frac{2\,s(\alpha)}{\sqrt{n}}
 $$
 
-where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, $c = \stderr\_tol$).
+where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, c = \verb|stderr_tol|).
 
 **Optional conservative variant** (to account for residual slope-estimation error):
 
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
 \;\le\;
-c\,\frac{2\,s(\alpha)}{\sqrt{n}}
+c \cdot \frac{2\,s(\alpha)}{\sqrt{n}}
 \;+\;
-\text{slope\_tol}\,W
+\verb|slope_tol| \cdot W
 $$
 
 but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
