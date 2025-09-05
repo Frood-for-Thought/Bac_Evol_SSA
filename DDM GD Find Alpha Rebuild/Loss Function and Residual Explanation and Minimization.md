@@ -86,27 +86,32 @@ $$
 
 Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $\text{stderr\ tol}$ is a small multiplier (e.g., $C = 2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
-**When the PR slope has stabilized**, $$
-r_{\mathrm{cent}}(\alpha)
-= \bigl(\mu(\alpha)-\bar{\mu}\bigr)\;-\;m_k\bigl(\alpha-\bar{\alpha}\bigr)
-$$, we expect $m_k$ to be close to $m$. (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
-
-**Stderr gate.** We declare “linear-agreement OK” when
+**When the PR slope has stabilized**:
 
 $$
-\lvert r_{\mathrm{cent}}(\alpha)\rvert \;\le\; c\,\frac{2\,s(\alpha)}{\sqrt{n}},
+\lvert m_k - m_{k-1}\rvert \;<\; \text{slope\_tol}
 $$
 
-where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, $c = \text{stderr\_tol}$.)
+we expect $m_k$ to be close to $m$. (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
+
+**Stderr gate.** We declare “linear-agreement OK” when":
+
+$$
+\lvert r_{\mathrm{cent}}(\alpha)\rvert
+\;\le\;
+c\,\frac{2\,s(\alpha)}{\sqrt{n}}
+$$
+
+where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, $c = \stderr\_tol$).
 
 **Optional conservative variant** (to account for residual slope-estimation error):
 
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
 \;\le\;
-\underbrace{c\,\frac{2\,s(\alpha)}{\sqrt{n}}}_{\text{sampling noise}}
+c\,\frac{2\,s(\alpha)}{\sqrt{n}}
 \;+\;
-\underbrace{\text{slope\_tol}\cdot W}_{\text{slope-error leakage}},
+\text{slope\_tol}\,W
 $$
 
 but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
