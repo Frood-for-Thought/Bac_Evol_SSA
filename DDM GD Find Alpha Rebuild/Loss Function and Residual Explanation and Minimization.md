@@ -106,7 +106,7 @@ $$
 The last three terms are intrinsic sampling terms. When the linear gate holds and the PR slope has stabilized,
 
 $$
-|m_k-m_{k-1}| \;<\; \text{slope\_tol},
+|m_k - m_{k-1}| < c.
 $$
 
 we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\alpha+b$. Under these conditions the intrinsic terms behave like mean-zero noise of order $O_p(n^{-1/2})$. Thus, the dominant (deterministic) part of the gradient near the target is
@@ -135,7 +135,7 @@ Near the solution, $\bar v(\alpha_\star)=v_d$, the deterministic part of the gra
 
 $$
 \alpha_{k+1}
-= \alpha_k \;-\; \gamma\,\frac{dL}{d\alpha}(\alpha_k)
+= \alpha_k \-\gamma\frac{dL}{d\alpha}(\alpha_k)
 $$
 
 continues to move by a noise-driven amount of size $\gamma\,\mathcal{O}_p(n^{-1/2})$. This is the *irreducible stochastic jitter* around the optimum that causes small oscillations in $\alpha_k$ even after the slope $m_k$ is stable and the linear gate passes comfortably.
