@@ -114,7 +114,7 @@ we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\alpha
 $$
 \frac{dL}{d\alpha}
 \approx\
-2\bigl(\mu(\alpha)-v_d\bigr)\m_k
+2\bigl(\mu(\alpha)-v_d\bigr)m_k
 +\
 \lambda\frac{d\,s^2}{d\alpha},
 $$
@@ -122,7 +122,7 @@ $$
 and when $\lambda=0$ this further reduces to
 
 $$
-\frac{dL}{d\alpha} \approx\ 2\(\mu - v_d)\m_k,
+\frac{dL}{d\alpha} \approx\ 2\(\mu - v_d)m_k,
 $$
 
 up to sampling noise.
