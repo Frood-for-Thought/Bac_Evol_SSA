@@ -86,7 +86,7 @@ $$
 
 Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $\text{stderr\ tol}$ is a small multiplier (e.g., $C = 2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
-When your PR slope has stabilized, $ |m_k - m_{k-1}| < \texttt{slope\_tol}$, we expect $m_k$ to be close to $m$.
+When the PR slope has stabilized, $ |m_k - m_{k-1}| < \slope\_tol$, we expect $m_k$ to be close to $m$.
   (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
 
 In practice, your **stderr gate**
