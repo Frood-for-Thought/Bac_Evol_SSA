@@ -98,9 +98,9 @@ we obtain
 $$
 \frac{dL}{d\alpha}
 =2\bigl(\bar v(\alpha)-v_d\bigr)\bar v'(\alpha)+\lambda\frac{d s^2}{d\alpha}
-\+\2\delta_n(\alpha)\bar v'(\alpha)
-\+\2\bigl(\bar v(\alpha)-v_d\bigr)\delta'_n(\alpha)
-\+\2\delta_n(\alpha)\delta'_n(\alpha)
+\+2\delta_n(\alpha)\bar v'(\alpha)
+\+2\bigl(\bar v(\alpha)-v_d\bigr)\delta'_n(\alpha)
+\+2\delta_n(\alpha)\delta'_n(\alpha)
 $$
 
 The last three terms are intrinsic sampling terms. When the linear gate holds and the PR slope has stabilized,
@@ -109,20 +109,20 @@ $$
 |m_k-m_{k-1}| \;<\; \text{slope\_tol},
 $$
 
-we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\,\alpha+b$. Under these conditions the intrinsic terms behave like mean-zero noise of order $O_p(n^{-1/2})$. Thus, the dominant (deterministic) part of the gradient near the target is
+we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\alpha+b$. Under these conditions the intrinsic terms behave like mean-zero noise of order $O_p(n^{-1/2})$. Thus, the dominant (deterministic) part of the gradient near the target is
 
 $$
 \frac{dL}{d\alpha}
-\;\approx\;
-2\bigl(\mu(\alpha)-v_d\bigr)\,m_k
-\;+\;
-\lambda\,\frac{d\,s^2}{d\alpha},
+\approx\
+2\bigl(\mu(\alpha)-v_d\bigr)\m_k
++\
+\lambda\frac{d\,s^2}{d\alpha},
 $$
 
 and when $\lambda=0$ this further reduces to
 
 $$
-\frac{dL}{d\alpha} \;\approx\; 2\,(\mu - v_d)\,m_k,
+\frac{dL}{d\alpha} \approx\ 2\(\mu - v_d)\m_k,
 $$
 
 up to sampling noise.
