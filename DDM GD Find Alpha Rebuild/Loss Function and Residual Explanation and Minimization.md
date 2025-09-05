@@ -1,110 +1,202 @@
-# Intrinsic Error, Centered Residual, and the Stderr-Based Gate
+Here you go — the exact write-up in plain text so you can paste it into your own `.md` file.
 
-## 1. Intrinsic sampling error
+---
 
-Let \(\{v_j(\alpha)\}_{j=1}^n\) be i.i.d. samples drawn at parameter \(\alpha\) from a distribution with **population mean** \(\bar{v}(\alpha)\) and **population variance** \(\sigma^2(\alpha)\). The **sample mean** is
-\[
-\mu(\alpha) := \frac{1}{n}\sum_{j=1}^n v_j(\alpha).
-\]
+# Intrinsic Error, Centered Residual, and Step-Size/Batch-Size Control
 
-Define the **intrinsic sampling error** (a random variable) by
-\[
-\delta_n(\alpha) := \mu(\alpha) - \bar{v}(\alpha).
-\]
+## 1. Setup and notation
 
-Under standard conditions (finite variance, i.i.d. sampling), the Central Limit Theorem (CLT) implies
-\[
-\delta_n(\alpha) = \mathcal{O}_p\!\left(\frac{1}{\sqrt{n}}\right),
+Let $v_j(\alpha)$ be stochastic observations generated at parameter value $\alpha$, and let
+
+$$
+\mu(\alpha)=\frac{1}{n}\sum_{j=1}^n v_j(\alpha)
+$$
+
+be the sample mean from $n$ draws. The (unknown) population mean is $\bar v(\alpha) = \mathbb{E}[v_j(\alpha)]$, and the sampling error of the mean is
+
+$$
+\delta_n(\alpha)\;:=\;\mu(\alpha)-\bar v(\alpha).
+$$
+
+Under standard regularity, $\delta_n(\alpha)=\mathcal{O}_p(n^{-1/2})$. The sample variance and standard deviation are
+
+$$
+s^2(\alpha)=\frac{1}{n-1}\sum_{j=1}^n\bigl(v_j(\alpha)-\mu(\alpha)\bigr)^2,
 \qquad
-\mathrm{Var}[\delta_n(\alpha)] \approx \frac{\sigma^2(\alpha)}{n}.
-\]
-Thus, even when \(\alpha\) is tuned so that \(\bar{v}(\alpha)\) is exactly on target \(v_d\), the observable \(\mu(\alpha)\) fluctuates around \(v_d\) with standard deviation of order \(\sigma(\alpha)/\sqrt{n}\). This is the **irreducible sampling noise** at a given batch size \(n\).
+s(\alpha)=\sqrt{s^2(\alpha)}.
+$$
 
-## 2. Centered residual \(r_{\mathrm{cent}}\)
+We also maintain a *local linear* approximation of the mean in a bracket $[\alpha_{\min},\alpha_{\max}]$ via a centered least-squares (Polyak–Ruppert style) slope $m_k$ computed on the window:
 
-We estimate a **local linear model** for the expectation,
-\[
-\bar{v}(\alpha) \approx m_k\,\alpha + b
-\]
-over a bracket/window \(\alpha \in [\alpha_{\min},\alpha_{\max}]\). A direct test of \(|\mu(\alpha) - m_k \alpha|\) is biased by the (unknown) intercept \(b\). To remove this bias, we use the **centered residual**
-\[
-r_{\mathrm{cent}}(\alpha) := \big(\mu(\alpha) - \bar{\mu}\big) \;-\; m_k \big(\alpha - \bar{\alpha}\big),
-\]
-where \(\bar{\mu}\) and \(\bar{\alpha}\) are the means of the observed \(\mu\) and \(\alpha\) within the window. If the local model is linear, \(\mu(\alpha) \approx m_k \alpha + b + \delta_n(\alpha)\), then
-\[
-r_{\mathrm{cent}}(\alpha) \;\approx\; \delta_n(\alpha) - \overline{\delta_n},
-\]
-i.e., an intercept-free fluctuation with mean zero. Consequently, \(r_{\mathrm{cent}}\) behaves like **pure sampling noise**, making it the right quantity to compare to a stderr-type threshold.
-
-## 3. Stderr-based bound (“gate”)
-
-Let \(s^2(\alpha)\) be the **sample variance** at \(\alpha\). The standard error of the sample mean is \(s(\alpha)/\sqrt{n}\). A simple two-sided “\(\approx\)95%” width is \(2\,s(\alpha)/\sqrt{n}\). Using a tunable multiplier \(\texttt{stderr\_tol} > 0\), we declare **linear-agreement OK** if
-\[
-\big|\, r_{\mathrm{cent}}(\alpha) \,\big| \;\le\; \texttt{stderr\_tol}\,\frac{2\,s(\alpha)}{\sqrt{n}}.
-\]
-Interpretation: within this probabilistic tolerance band, the observed mean \(\mu(\alpha)\) is consistent with a locally linear model of slope \(m_k\).
-
-## 4. Intrinsic error in the gradient update
-
-Consider the **variance-penalized loss**
-\[
-L(\alpha) \;=\; \big(\mu(\alpha) - v_d\big)^2 \;+\; \lambda\cdot \frac{n}{n-1}\, s^2(\alpha).
-\]
-Its derivative is
-\[
-\frac{dL}{d\alpha} \;=\; 2\big(\mu(\alpha) - v_d\big)\,\mu'(\alpha) \;+\; \lambda\cdot \frac{n}{n-1}\,\frac{d s^2}{d\alpha},
-\]
-where \(\mu'(\alpha) = d\mu/d\alpha\). Decomposing the sample mean into population mean plus sampling error,
-\[
-\mu(\alpha) = \bar{v}(\alpha) + \delta_n(\alpha),
+$$
+m_k \;=\;\frac{\sum_i\bigl(\alpha_i-\bar\alpha\bigr)\bigl(\mu(\alpha_i)-\bar\mu\bigr)}{\sum_i\bigl(\alpha_i-\bar\alpha\bigr)^2+\varepsilon},
 \qquad
-\mu'(\alpha) = \bar{v}'(\alpha) + \delta_n'(\alpha),
-\]
-yields
-\[
-\frac{dL}{d\alpha} \;=\; 2\big(\bar{v}(\alpha) - v_d\big)\,\bar{v}'(\alpha)
-\;+\; \underbrace{2\big(\bar{v}(\alpha) - v_d\big)\,\delta_n'(\alpha) + 2\,\delta_n(\alpha)\,\bar{v}'(\alpha) + 2\,\delta_n(\alpha)\,\delta_n'(\alpha)}_{\text{intrinsic sampling-error terms}}
-\;+\; \lambda\cdot \frac{n}{n-1}\,\frac{d s^2}{d\alpha}.
-\]
-The bracketed terms are **stochastic**, centered around zero with magnitude controlled by \(n\). As \(n\) grows, \(\delta_n = \mathcal{O}_p(n^{-1/2})\) and, under mild smoothness, \(\delta_n' = \mathcal{O}_p(n^{-1/2})\) as well, so these contributions diminish at rate \(n^{-1/2}\).
+\bar\alpha:=\frac{1}{K}\sum_i \alpha_i,\quad \bar\mu:=\frac{1}{K}\sum_i \mu(\alpha_i).
+$$
 
-In a locally linear regime where \(\bar{v}(\alpha) \approx m_k \alpha + b\), we have \(\bar{v}'(\alpha) \approx m_k\). If the **centered residual gate** (Sec. 3) holds, it is also reasonable to approximate \(\mu'(\alpha)\) by a stable finite-difference estimate \(\widehat{\mu'}\) or by \(m_k\) itself in the tight-linear limit.
+This *centered* regression removes intercept bias and makes $m_k$ a consistent estimator of the local slope $d\bar v/d\alpha$ when the window is locally linear.
 
-## 5. Minimizing intrinsic error: learning-rate and batch-size schedules
+---
 
-Even with ideal \(\alpha\), the update is driven by a noisy gradient because of \(\delta_n\). Near the target (where \(\bar{v}(\alpha) - v_d \approx 0\)), the deterministic component shrinks while the stochastic component is still of order \(n^{-1/2}\). To stabilize convergence in this **noise-dominated** regime, we employ two complementary schedules:
+## 2. Intrinsic error of the sample mean
 
-**(a) Learning-rate decay.**  
-Use an **epoch-wise** or **iteration-block** decay, e.g. after every fixed block of iterations \(i\),
-\[
-\gamma_{i+1}' \;=\; \frac{\gamma_i'}{i+1},
-\]
-consistent with classical Robbins–Monro step conditions. This gradually reduces the influence of stochastic perturbations in the update \( \alpha_{k+1} = \alpha_k - \gamma'\, \frac{dL}{d\alpha} \).
+The sampling error $\delta_n(\alpha)=\mu(\alpha)-\bar v(\alpha)$ satisfies
 
-**(b) Increasing batch size.**  
-Within the same blocks, **increase \(n\)** to reduce \(\mathrm{Std}[\delta_n] \sim \sigma(\alpha)/\sqrt{n}\). For example, doubling \(n\) reduces the standard error by a factor \(1/\sqrt{2}\). This directly tightens the gate in Sec. 3 and shrinks the stochastic terms in \(dL/d\alpha\).
+$$
+\mathbb{E}[\delta_n(\alpha)]=0,
+\qquad 
+\mathrm{Var}\bigl(\delta_n(\alpha)\bigr)=\frac{\sigma^2(\alpha)}{n},
+$$
 
-In combination, learning-rate decay and batch-size growth **lower the effective noise floor** while preserving progress toward the optimum.
+with $\sigma^2(\alpha)=\mathrm{Var}(v_j(\alpha))$. By the CLT, $\delta_n(\alpha)$ is approximately normal with standard deviation $\sigma(\alpha)/\sqrt{n}$. In practice we estimate $\sigma(\alpha)$ by $s(\alpha)$, so a two-sided $\approx95\%$ noise band for the *mean* is $\pm 2\,s(\alpha)/\sqrt{n}$. This is the intrinsic uncertainty that persists even when the optimization is near the target $\bar v(\alpha)\approx v_d$.
 
-## 6. Practical computation in our pipeline
+---
 
-1. **Slope tracking (Polyak–Ruppert, centered):** compute \(m_k\) via centered least squares on \((\alpha_i,\mu_i)\) within the working window. Track \(\Delta m = |m_k - m_{k-1}|\) and set `linear_slope_ready = True` when \(\Delta m < \texttt{slope\_tol}\).  
-2. **Centered residual:** at each visited \(\alpha\), compute
-   \[
-   r_{\mathrm{cent}}(\alpha) = \big(\mu(\alpha) - \bar{\mu}\big) - m_k \big(\alpha - \bar{\alpha}\big).
-   \]
-3. **Gate:** compute the bound \( \text{bound} = \texttt{stderr\_tol} \cdot 2\, s(\alpha)/\sqrt{n} \) and check \(|r_{\mathrm{cent}}(\alpha)| \le \text{bound}\). Log `(resid_ok, r_cent, bound)`; this is a diagnostic that the local linear model is statistically plausible at the current \(n\).  
-4. **Gradient step with stability cap:** when `linear_slope_ready` is true, cap the effective step-size using the linear model: require \(|1 - 2\,\gamma\,m_k^2| < 1\), e.g. set \(\gamma \le (1-\eta)/(2 m_k^2)\) with a small safety margin \(\eta>0\).  
-5. **Schedules:** apply a learning-rate scheduler (e.g., PyTorch cosine/step) and a batch-size schedule (e.g., double \(n\) every fixed block). This mirrors the document’s prescription and mitigates \(\mathcal{O}(n^{-1/2})\) fluctuations as we approach the target.
+## 3. Centered residual and its bound
 
-## 7. Interpretation
+A naive residual $|\mu(\alpha)-m_k\alpha|$ is biased when the local line has a nonzero intercept. The correct (intercept-free) diagnostic is the *centered residual*
 
-- \(r_{\mathrm{cent}}\) is an **intercept-free residual** that should look like pure noise when the local linear model is valid.  
-- The **stderr-based gate** quantifies when observed deviations are statistically compatible with that linear model at the current \(n\).  
-- The gradient’s **intrinsic error terms** scale like \(n^{-1/2}\) and do not vanish unless we either increase \(n\) or reduce the learning rate sufficiently.  
-- The **stability cap** on \(\gamma\) based on \(m_k\) prevents oscillations/instability even when \(m_k\) is large in magnitude.
+$$
+r_{\mathrm{cent}}(\alpha)\;:=\;\bigl(\mu(\alpha)-\bar\mu\bigr)\;-\;m_k\,\bigl(\alpha-\bar\alpha\bigr).
+$$
 
-## 8. Limitations and caveats
+If $\mu(\alpha)\approx m_k\,\alpha+b$ on the window, then $r_{\mathrm{cent}}(\alpha)\approx$ (sampling noise only). Hence it is appropriate to compare $|r_{\mathrm{cent}}(\alpha)|$ to a standard-error-type bound. We declare “linear-agreement OK” when
 
-- The gate uses a **heuristic 95%-ish width** \(2\,s/\sqrt{n}\) multiplied by \(\texttt{stderr\_tol}\); it is not a formal hypothesis test.  
-- Nonlinearities within the window, heteroskedasticity, or dependence between samples can weaken the CLT intuition. In such cases, tightening the window, increasing \(n\), or using robust regression for \(m_k\) can help.
+$$
+\boxed{\;\;|r_{\mathrm{cent}}(\alpha)|\;\le\;\texttt{stderr\_tol}\;\cdot\;\frac{2\,s(\alpha)}{\sqrt{n}}\;\;}
+$$
+
+where $\texttt{stderr\_tol}$ is a small multiplier (e.g. $2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
+
+---
+
+## 4. Linearized gradient and the role of $m_k$
+
+For the variance-penalized loss $L(\alpha)=(\mu(\alpha)-v_d)^2+\lambda \, s^2(\alpha)$, the sample gradient is
+
+$$
+\frac{dL}{d\alpha}
+=2\bigl(\mu(\alpha)-v_d\bigr)\,\mu'(\alpha)+\lambda\,\frac{d s^2(\alpha)}{d\alpha}.
+$$
+
+Decomposing the mean and its derivative,
+
+$$
+\mu(\alpha)=\bar v(\alpha)+\delta_n(\alpha),
+\qquad
+\mu'(\alpha)=\bar v'(\alpha)+\delta'_n(\alpha),
+$$
+
+we obtain
+
+$$
+\frac{dL}{d\alpha}
+=2\bigl(\bar v(\alpha)-v_d\bigr)\bar v'(\alpha)+\lambda\,\frac{d s^2}{d\alpha}
+\;+\;2\,\delta_n(\alpha)\,\bar v'(\alpha)
+\;+\;2\bigl(\bar v(\alpha)-v_d\bigr)\delta'_n(\alpha)
+\;+\;2\,\delta_n(\alpha)\,\delta'_n(\alpha).
+$$
+
+The last three terms are *intrinsic sampling terms*. When the *linear gate* holds and the PR slope has stabilized ($|m_k-m_{k-1}|<\texttt{slope\_tol}$), we approximate $\bar v'(\alpha)\approx m_k$ and $\bar v(\alpha)\approx m_k\,\alpha+b$. The intrinsic terms then behave like mean-zero noise with scale $\mathcal{O}_p(n^{-1/2})$, so the dominant (deterministic) part of the gradient near the target is
+
+$$
+\frac{dL}{d\alpha}
+\;\approx\;2\bigl(\mu(\alpha)-v_d\bigr)\,m_k
+\;\;+\;\;\lambda\,\frac{d s^2}{d\alpha},
+$$
+
+and when $\lambda=0$ this further reduces to $2(\mu-v_d)\,m_k$ up to sampling noise.
+
+---
+
+## 5. Why oscillations can persist near the target
+
+Near the solution, $\bar v(\alpha_\star)=v_d$, the deterministic part of the gradient vanishes, but the intrinsic terms remain of order $\mathcal{O}_p(n^{-1/2})$. Consequently a standard gradient step
+
+$$
+\alpha_{k+1}
+= \alpha_k \;-\; \gamma\,\frac{dL}{d\alpha}(\alpha_k)
+$$
+
+continues to move by a noise-driven amount of size $\gamma\,\mathcal{O}_p(n^{-1/2})$. This is the *irreducible stochastic jitter* around the optimum that causes small oscillations in $\alpha_k$ even after the slope $m_k$ is stable and the linear gate passes comfortably.
+
+---
+
+## 6. Minimizing intrinsic error in practice
+
+To reduce this jitter, we control *both* the step size and the sampling noise, in line with classical stochastic approximation:
+
+1. **Learning-rate decay (Robbins–Monro style).**
+   Use a decaying schedule $\gamma_i'=\gamma_0/(i+1)$ (or similar) so that updates shrink over time. In the linearized neighborhood where $\bar v'(\alpha)\approx m_k$, the error recursion is
+
+   $$
+   e_{k+1} \approx \bigl(1-2\,\gamma_k\,m_k^2\bigr)\,e_k \;+\; \underbrace{\gamma_k\cdot \mathcal{O}_p(n^{-1/2})}_{\text{intrinsic noise}},
+   \quad e_k:=\alpha_k-\alpha_\star.
+   $$
+
+   As $\gamma_k\downarrow 0$, the noise term is damped and oscillations diminish.
+
+2. **Batch-size (epoch) growth.**
+   Increase $n$ over training (e.g., double every fixed number of iterations). Since $\mathrm{sd}(\delta_n)=\sigma/\sqrt{n}$, the noise in the gradient estimate contracts as $n^{-1/2}$:
+
+   $$
+   \text{noise scale} \;\sim\; \frac{1}{\sqrt{n}}.
+   $$
+
+   Larger $n$ shrinks the bound $2\,s(\alpha)/\sqrt{n}$ used by the linear gate and reduces the jitter in $\alpha_{k+1}$.
+
+3. **Safety cap from the PR slope.**
+   When the linear gate is satisfied and $m_k$ has stabilized, cap the *effective* step size using the linear error recursion. If the loss is locally dominated by $2(\mu-v_d)m_k$, then
+
+   $$
+   e_{k+1} \approx \bigl(1-2\,\gamma\,m_k^2\bigr)e_k.
+   $$
+
+   Ensuring $|1-2\gamma m_k^2|<1$ (e.g., $\gamma \le (1-\eta)/(2m_k^2)$ with a small margin $\eta>0$) yields contraction without large oscillations. This cap uses $m_k^2$ (magnitude only), so it works regardless of the sign of the slope.
+
+---
+
+## 7. How the diagnostics map to the code
+
+* **Intrinsic error.**
+  The *intrinsic* sampling variability at $\alpha$ is quantified by the empirical bound
+
+  $$
+  \text{bound}(\alpha)\;=\;\texttt{stderr\_tol}\cdot\frac{2\,s(\alpha)}{\sqrt{n}},
+  $$
+
+  where $s(\alpha)=\sqrt{s^2(\alpha)}$ is computed from the current batch at $\alpha$.
+
+* **Centered residual.**
+  We compute
+
+  $$
+  r_{\mathrm{cent}}(\alpha) = \bigl(\mu(\alpha)-\bar\mu\bigr) - m_k\,\bigl(\alpha-\bar\alpha\bigr),
+  $$
+
+  using $\bar\alpha,\bar\mu$ from the current window and the latest $m_k$. Passing the linear gate
+
+  $$
+  |r_{\mathrm{cent}}(\alpha)| \le \text{bound}(\alpha)
+  $$
+
+  indicates that residuals are consistent with *pure sampling noise* around the local line. This is the right condition to (i) trust $m_k$ as a local slope proxy and (ii) apply the $m_k$-based stability cap to $\gamma$.
+
+* **Minimizing the error.**
+  We simultaneously:
+
+  * **decay** the learning rate (e.g., PyTorch schedulers) to suppress noise-driven motion,
+  * **increase** the batch size $n$ to reduce the scale of $\delta_n$ and shrink the bound,
+  * **cap** $\gamma$ when the linear gate is satisfied, to keep the linearized recursion contracting.
+
+Together, these measures reduce oscillations induced by intrinsic error while preserving fast progress when the local mean is well approximated by the stabilized PR slope.
+
+---
+
+## 8. Summary in one line
+
+* The intrinsic error is $\delta_n(\alpha)=\mu(\alpha)-\bar v(\alpha)=\mathcal{O}_p(n^{-1/2})$.
+* We *detect* linear, intercept-free behavior via the centered residual gate $|r_{\mathrm{cent}}|\le 2\,s/\sqrt{n}$ (up to a tolerance multiplier).
+* Once the gate passes and $m_k$ stabilizes, we (i) cap $\gamma$ using $m_k$ for stability, (ii) decay $\gamma$ and (iii) grow $n$ to suppress the $\mathcal{O}_p(n^{-1/2})$ jitter that otherwise causes small oscillations near the optimum.
+
+---
