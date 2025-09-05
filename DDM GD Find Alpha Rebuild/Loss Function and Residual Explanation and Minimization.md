@@ -86,6 +86,28 @@ $$
 
 Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $\text{stderr\ tol}$ is a small multiplier (e.g., $C = 2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
+When your PR slope has stabilized, $ |m_k - m_{k-1}| < \texttt{slope\_tol}$, we expect $m_k$ to be close to $m$.
+  (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
+
+In practice, your **stderr gate**
+
+  $$
+  |r_{\text{cent}}(\alpha)| \;\le\; \texttt{stderr\_tol}\cdot \frac{2\,s(\alpha)}{\sqrt{n}}
+  $$
+
+  is checking whether the residual behaves like *noise*. The leakage term vanishes as $m_k$ stabilizes and/or as slope tolerance shrinks and the noise term shrinks as  **$n$ increases**.
+
+To be extra conservative, include an additive leeway for the slope error,
+
+$$
+|r_{\text{cent}}(\alpha)|
+\;\le\;
+\underbrace{\texttt{stderr\_tol}\cdot \frac{2\,s(\alpha)}{\sqrt{n}}}_{\text{sampling noise}}
+\;+\;
+\underbrace{\texttt{slope\_tol}\cdot W}_{\text{slope-error leakage}},
+$$
+
+but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
 
 ---
 
