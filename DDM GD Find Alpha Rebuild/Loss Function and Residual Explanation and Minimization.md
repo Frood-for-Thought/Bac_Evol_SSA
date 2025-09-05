@@ -105,6 +105,7 @@ $$
 where $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $c$ is a small multiplier (e.g., $2$). (Equivalently, c = \verb|stderr_tol|).
 
 **Optional conservative variant** (to account for residual slope-estimation error):
+
 $$
 \lvert r_{\mathrm{cent}}(\alpha)\rvert
 \;\le\;
