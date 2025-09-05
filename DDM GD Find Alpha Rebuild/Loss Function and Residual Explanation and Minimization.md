@@ -103,7 +103,14 @@ $$
 \+2\delta_n(\alpha)\delta'_n(\alpha)
 $$
 
-The last three terms are intrinsic sampling terms. When the linear gate holds and the PR slope has stabilized,
+The last three terms are intrinsic sampling terms. 
+
+$r_{\text{cent}}$ decomposes into:
+
+* a **mean-zero noise** part (what the stderr bound is designed to control), and
+* a **leakage term** from slope estimation error: $(m-m_k)(\alpha-\bar\alpha)$.
+
+When the linear gate holds and the PR slope has stabilized,
 
 $$
 |m_k - m_{k-1}| < c.
