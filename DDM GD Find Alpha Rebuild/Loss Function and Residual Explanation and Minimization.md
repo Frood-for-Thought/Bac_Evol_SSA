@@ -69,6 +69,7 @@ If $\mu(\alpha) \approx m_k\,\alpha + b$ on the window, then $r_{\mathrm{cent}}(
 
 $$
 \boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\c\frac{2\s(\alpha)}{\sqrt{n}}}
+$$
 
 Here $s(\alpha)$ is the sample standard deviation at $\alpha$, $n$ is the batch size, and $\text{stderr\_tol}$ is a small multiplier (e.g., $2$). This gate is used diagnostically to confirm that the local window behaves linearly and that the PR slope $m_k$ is meaningful for step-size control.
 
