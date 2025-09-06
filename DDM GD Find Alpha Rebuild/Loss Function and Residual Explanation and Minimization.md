@@ -182,9 +182,9 @@ To reduce this jitter, we control *both* the step size and the sampling noise, i
    Use a decaying schedule $\gamma_i'=\gamma_0/(i+1)$ (or similar) so that updates shrink over time. In the linearized neighborhood where $\bar v'(\alpha)\approx m_k$, the error recursion is
 
 $$
-e_{k+1} \;\approx\; \bigl(1 - 2 \gamma_k m_k^2\bigr)\, e_k 
-\;+\; \underbrace{\gamma_k \cdot \mathcal{O}_p\!\left(n^{-1/2}\right)}_{\text{intrinsic noise}},
-\quad e_k := \alpha_k - \alpha_\star.
+e_{k+1} \approx\ \bigl(1 - 2 \gamma_k m_k^2\bigr)\ e_k 
+\+\ \underbrace{\gamma_k \cdot \mathcal{O}_p\!\left(n^{-1/2}\right)}_{\text{intrinsic noise}},
+\quad e_k = \alpha_k - \alpha_\star
 $$
 
    As $\gamma_k\downarrow 0$, the noise term is damped and oscillations diminish.
