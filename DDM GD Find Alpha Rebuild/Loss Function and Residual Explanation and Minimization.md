@@ -218,7 +218,7 @@ $$
   Using the linear model above, the gradient near $\alpha_\star$ is:
 
 $$
-\frac{dL}{d\alpha}\big|_{\alpha_k} \;\approx\; 2 \, m_k^2 \, e_k
+\frac{dL}{d\alpha}\big|_{\alpha_k} \approx\ 2 \ m_k^2 \ e_k
 $$
 
 - One GD step:
