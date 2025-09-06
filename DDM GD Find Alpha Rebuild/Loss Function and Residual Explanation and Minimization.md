@@ -193,7 +193,7 @@ $$
    Increase $n$ over training (e.g., double every fixed number of iterations). Since $\mathrm{sd}(\delta_n)=\sigma/\sqrt{n}$, the noise in the gradient estimate contracts as $n^{-1/2}$:
 
 $$
-\text{noise scale} \;\sim\; \frac{1}{\sqrt{n}}.
+\text{noise scale} \sim\ \frac{1}{\sqrt{n}}
 $$
 
    Larger $n$ shrinks the bound $2\,s(\alpha)/\sqrt{n}$ used by the linear gate and reduces the jitter in $\alpha_{k+1}$.
@@ -202,7 +202,7 @@ $$
    When the linear gate is satisfied and $m_k$ has stabilized, cap the *effective* step size using the linear error recursion. If the loss is locally dominated by $2(\mu-v_d)m_k$, then
 
 $$
-e_{k+1} \approx \bigl(1-2\gamma\m_k^2\bigr)e_k.
+e_{k+1} \approx \bigl(1-2\gamma m_k^2\bigr)e_k
 $$
 
    Ensuring $|1-2\gamma m_k^2|<1$ (e.g., $\gamma \le (1-\eta)/(2m_k^2)$ with a small margin $\eta>0$) yields contraction without large oscillations. This cap uses $m_k^2$ (magnitude only), so it works regardless of the sign of the slope.
@@ -215,7 +215,7 @@ $$
   The *intrinsic* sampling variability at $\alpha$ is quantified by the empirical bound
 
 $$
-\text{bound}(\alpha)\;=\;\texttt{stderr\_tol}\cdot\frac{2\,s(\alpha)}{\sqrt{n}},
+\text{bound}(\alpha) \=\ \verb|stderr_tol|\cdot\frac{2\ s(\alpha)}{\sqrt{n}}
 $$
 
   where $s(\alpha)=\sqrt{s^2(\alpha)}$ is computed from the current batch at $\alpha$.
