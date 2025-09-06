@@ -211,22 +211,26 @@ $$
 
 #### Clarification of the “linear recursion” and the bounds
 
-- Define the tracking error:  
+- Define the tracking error:
+
 $$
 e_k := \alpha_k - \alpha_\star
 $$
 
-  Using the linear model above, the gradient near $\alpha_\star$ is:  
+  Using the linear model above, the gradient near $\alpha_\star$ is:
+
 $$
 \frac{dL}{d\alpha}\big|_{\alpha_k} \;\approx\; 2 \, m_k^2 \, e_k
 $$
 
-- One GD step:  
+- One GD step:
+
 $$
 \alpha_{k+1} = \alpha_k - \gamma \cdot (2 \, m_k^2 \, e_k)
 $$
 
-  Subtract $\alpha_\star$ from both sides:  
+  Subtract $\alpha_\star$ from both sides:
+
 $$
 e_{k+1} = (\alpha_{k+1} - \alpha_\star)
        = (\alpha_k - \alpha_\star) - 2 \, \gamma \, m_k^2 \, e_k
@@ -243,12 +247,14 @@ $$
 
 - What “convergence” means here:  
   We need $|e_{k+1}| < |e_k|$ for errors to shrink.  
-  That requires:  
+  That requires:
+
 $$
 |q| < 1 \quad \Longleftrightarrow \quad |1 - 2 \gamma m_k^2| < 1
 $$
 
-  Solving gives:  
+  Solving gives:
+
 $$
 0 < \gamma < \frac{1}{m_k^2}
 $$
@@ -269,10 +275,11 @@ $$
 
 - Why this matches the intuition:  
   - When $\gamma$ is “too big” relative to the local curvature scale $m_k^2$, the step overshoots, flips the sign, and if $|q| \ge 1$ the amplitude does not decay (oscillates or explodes).  
-  - Setting $\gamma \sim 1$ normalizes by nothing; if $m_k \sim 1$ (common in linear patches), then  
- $$
- q \sim 1 - 2 \cdot 1 \cdot 1 = -1,
- $$
+  - Setting $\gamma \sim 1$ normalizes by nothing; if $m_k \sim 1$ (common in linear patches), then
+
+$$
+q \sim 1 - 2 \cdot 1 \cdot 1 = -1,
+$$
     i.e., the problematic oscillation factor.  
   - The square $m_k^2$ is why the condition depends only on the magnitude of slope, not its sign — negative slopes behave the same.  
 
