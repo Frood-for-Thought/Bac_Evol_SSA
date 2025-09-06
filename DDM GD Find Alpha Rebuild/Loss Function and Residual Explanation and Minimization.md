@@ -279,11 +279,12 @@ $$
 q \sim 1 - 2 \cdot 1 \cdot 1 = -1,
 $$
 
-    i.e., the problematic oscillation factor.  
+    i.e., the problematic oscillation factor.
+    
   - The square $m_k^2$ is why the condition depends only on the magnitude of slope, not its sign — negative slopes behave the same.  
 
 - Effect of the variance term ($\lambda > 0$):  
-  - The gradient gains $+ \lambda \, d(s^2)/d\alpha$.  
+  - The gradient gains $+ \lambda d(s^2)/d\alpha$.  
   - If that term is small near the target or comparatively flat, the $m_k^2$-driven analysis dominates.  
   - If it is not small, it perturbs $q$ slightly; the same form still holds locally with $m_k$ replaced by the effective local slope factor of the full gradient.
 
