@@ -207,9 +207,7 @@ $$
 
    Ensuring $|1-2\gamma m_k^2|<1$ (e.g., $\gamma \le (1-\eta)/(2m_k^2)$ with a small margin $\eta>0$) yields contraction without large oscillations. This cap uses $m_k^2$ (magnitude only), so it works regardless of the sign of the slope.
 
----
-
-#### Clarification of the “linear recursion” and the bounds
+   #### Clarification of the “linear recursion” and the bounds
 
 - Define the tracking error:
 
@@ -280,6 +278,7 @@ $$
 $$
 q \sim 1 - 2 \cdot 1 \cdot 1 = -1,
 $$
+
     i.e., the problematic oscillation factor.  
   - The square $m_k^2$ is why the condition depends only on the magnitude of slope, not its sign — negative slopes behave the same.  
 
@@ -287,9 +286,6 @@ $$
   - The gradient gains $+ \lambda \, d(s^2)/d\alpha$.  
   - If that term is small near the target or comparatively flat, the $m_k^2$-driven analysis dominates.  
   - If it is not small, it perturbs $q$ slightly; the same form still holds locally with $m_k$ replaced by the effective local slope factor of the full gradient.
-
----
-
 
 ---
 
