@@ -323,6 +323,14 @@ def main():
         _show("alpha_k   ", rec_k)
         _show("alpha_k+1 ", rec_kp1)
 
+    print(f"\nIteration {i + 1}")
+    print(f"  alpha_k    = {alpha_k}")
+    print(f"  gamma      = {gamma}")
+    print(f"  alpha_next = {alpha_next}")
+    print(f"[LIN-CHK] ready={fd_tracker.linear_slope_ready}, "
+          f"resid_ok={resid_ok}, "
+          f"r_cent={float(r_cent) if r_cent is not None else None}, "
+          f"bound={float(bound) if bound is not None else None}")
     # After showing all finite differences + macro observations,
     # this displays latest Polyak–Ruppert status from the tracker.
     print("\n[PR] m_k={}, |Δm|={}, ready={}".format(
