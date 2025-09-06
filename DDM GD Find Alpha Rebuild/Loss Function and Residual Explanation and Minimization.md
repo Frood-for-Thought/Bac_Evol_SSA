@@ -202,7 +202,7 @@ $$
    When the linear gate is satisfied and $m_k$ has stabilized, cap the *effective* step size using the linear error recursion. If the loss is locally dominated by $2(\mu-v_d)m_k$, then
 
 $$
-e_{k+1} \approx \bigl(1-2\,\gamma\,m_k^2\bigr)e_k.
+e_{k+1} \approx \bigl(1-2\gamma\m_k^2\bigr)e_k.
 $$
 
    Ensuring $|1-2\gamma m_k^2|<1$ (e.g., $\gamma \le (1-\eta)/(2m_k^2)$ with a small margin $\eta>0$) yields contraction without large oscillations. This cap uses $m_k^2$ (magnitude only), so it works regardless of the sign of the slope.
