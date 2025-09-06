@@ -231,8 +231,8 @@ $$
 
 $$
 e_{k+1} = (\alpha_{k+1} - \alpha_\star)
-       = (\alpha_k - \alpha_\star) - 2 \, \gamma \, m_k^2 \, e_k
-       = (1 - 2 \, \gamma \, m_k^2)\, e_k
+       = (\alpha_k - \alpha_\star) - 2 \gamma \ m_k^2 \ e_k
+       = (1 - 2 \ \gamma \ m_k^2)\ e_k
 $$
 
   This is the linear recursion with multiplier $q := (1 - 2 \gamma m_k^2)$.
