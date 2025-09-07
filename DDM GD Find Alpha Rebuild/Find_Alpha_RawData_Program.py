@@ -30,7 +30,7 @@ xbias = Ini_Food_Const * Food_Function
 #     Grad = 0.000405  µm^-1
 #     Max_Food_Conc = 60000  µM
 #     DL = 310  µm
-input_parameters = '../input_parameters.xlsx'
+input_parameters = 'input_parameters.xlsx'
 parameter_df = pd.read_excel(input_parameters)
 vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
 c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
@@ -39,7 +39,7 @@ Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
 # Values used for Norm_Vd_Mean_Data_Generator.
-alpha = 500
+alpha = 100
 Start_Angle = 90  # degrees
 Angle = Start_Angle
 diff = 1.16
@@ -50,7 +50,8 @@ deme_start = 30
 num_epochs = 100
 learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
-max_iter = 1000
+# Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
+max_iter_start = 1000
 
 # Plotting
 fig, ax1 = plt.subplots()
@@ -93,16 +94,90 @@ class NormMeanDataGenerator(BaseDataGenerator):
         return self.generator.simulate_bacterial_movement_cuda(alpha, max_iter)
 
 
+def test_sign_transitions(samples_per_alpha: float = 100):
+    """
+    Probe μ(α) on a coarse grid and report where μ(α) − v_d changes sign.
+    :param samples_per_alpha: float - How many samples to draw at each α for estimating μ(α) and s²(α).
+        Larger values reduce the standard error of μ(α) and make sign changes more reliable.
+        (Kept as float to match existing call sites; it’s used as a count when passed to the generator.)
+
+    :return: None
+    """
+    # When running a script on CUDA, 'spawn' avoids CUDA multiprocessing issues.
+    # Tells Python to start new processes with the 'spawn' method instead of the default (which can be 'fork' on Linux).
+    # 'fork' clones the current process, which can cause CUDA context corruption, deadlocks, or crashes,
+    # 'spawn' is safer for CUDA because it creates a fresh Python interpreter in each subprocess.
+    try:
+        torch.multiprocessing.set_start_method('spawn', force=True)
+    except RuntimeError:
+        pass  # start_method may already be set
+
+    # Build the generator reusing already-defined parameters at the start of the module.
+    data_gen = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+
+    # Collect macro stats on the requested α grid 'from macro_stats import MacroStats'.
+    # MacroStats.macro_observations will record μ(α), s²(α), n, etc., for later use.
+    stats = MacroStats()
+    # The variables of alpha used for inspection.
+    alphas = list(range(100, 1000, 100))
+
+    #  Helper function to get python scalars from tensors/numbers.
+    _get = lambda x: x.item() if hasattr(x, "item") else float(x)
+
+    for a in alphas:
+        # Generate `samples_per_alpha` draws from the stochastic data generator at current α.
+        # The generator may return a CUDA tensor, it needs to move to CPU before handing to
+        # MacroStats to keep everything uniform.
+        v = data_gen.generate_data(alpha=a, max_iter=samples_per_alpha)
+        # Ensure samples live on CPU for MacroStats; no changes to MacroStats needed.
+        samples = v.detach().cpu() if hasattr(v, "detach") else v
+        # Update macro stats to append a record into stats.records.
+        stats.macro_observations(alpha=float(a), samples=samples)
+
+        # Find the newly added record (match α with a small tolerance).
+        rec = next(r for r in stats.records if abs(_get(r["alpha"]) - float(a)) < 1e-6)
+
+        # Print out an update for each alpha value's record. Only print fields that exist.
+        print(f"Macro records from macro_observations for: alpha = {int(a)}")
+        msg = [f"[α={int(a)}]"]
+        if "mu" in rec:        msg.append(f"μ={_get(rec['mu']):.6f}")
+        if "var" in rec:       msg.append(f"var={_get(rec['var']):.6f}")
+        if "n" in rec:         msg.append(f"n={int(rec['n'])}")
+        if "std" in rec:       msg.append(f"std={_get(rec['std']):.6f}")
+        if "stderr_ci" in rec: msg.append(f"stderr_ci={_get(rec['stderr_ci']):.6f}")
+        print("  " + ", ".join(msg))
+
+
+    # Print all recorded macro observations directly.
+    print("\nMacro records from macro_observations:")
+    for rec in stats.records:
+        print(rec)
+
+    # Run the sign-transition detector.
+    v_d = float(vd_chemotaxis[deme_start])
+    transitions = detect_sign_transitions(stats, v_d=v_d)
+
+    print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
+    if not transitions:
+        print("  <none found on the 100…900 grid>")
+    else:
+        for (aL, aR) in transitions:
+            print(f"  Between α = {aL} and α = {aR}")
+
+
 if __name__ == "__main__":
-    torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
+    test_sign_transitions(samples_per_alpha=max_iter_start)
 
-    # Initialize the data generator.
-    data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
-
-    optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
-                                                                   theoretical_val, alpha, max_iter).train()
-
-    print(optim_alpha, loss_value)
+# if __name__ == "__main__":
+#     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
+#
+#     # Initialize the data generator.
+#     data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+#
+#     optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
+#                                                                    theoretical_val, alpha, max_iter).train()
+#
+#     print(optim_alpha, loss_value)
 
 # Pos_Alpha_Array = []
 # Ni = 2
