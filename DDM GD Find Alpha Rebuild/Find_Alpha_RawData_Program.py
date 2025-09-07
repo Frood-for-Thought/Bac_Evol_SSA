@@ -8,7 +8,6 @@ from Tumble_Angle import AngleGenerator_cuda
 angle_generator = AngleGenerator_cuda()
 # uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
-from Calc_Alpha_ML_Function import BaseDataGenerator, Dynamic_Data_Evolving_Mean_Estimator
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from loss_evaluator import LossEvaluator
@@ -46,7 +45,7 @@ diff = 1.16
 dt = 0.1
 deme_start = 30
 
-# Values used for Dynamic_Data_Evolving_Mean_Estimator.
+# Values used for training.
 num_epochs = 100
 learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
@@ -77,7 +76,7 @@ plt.show()
 
 
 # Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
-class NormMeanDataGenerator(BaseDataGenerator):
+class NormMeanDataGenerator():
     """
     This class inherits the format of BaseDataGenerator and is used
     for the data generator 'Norm_Vd_Mean_Data_Generator'.
@@ -113,7 +112,7 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         pass  # start_method may already be set
 
     # Build the generator reusing already-defined parameters at the start of the module.
-    data_gen = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+    data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
     # Collect macro stats on the requested α grid 'from macro_stats import MacroStats'.
     # MacroStats.macro_observations will record μ(α), s²(α), n, etc., for later use.
@@ -128,7 +127,7 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         # Generate `samples_per_alpha` draws from the stochastic data generator at current α.
         # The generator may return a CUDA tensor, it needs to move to CPU before handing to
         # MacroStats to keep everything uniform.
-        v = data_gen.generate_data(alpha=a, max_iter=samples_per_alpha)
+        v = data_generator.generate_data(alpha=a, max_iter=samples_per_alpha)
         # Ensure samples live on CPU for MacroStats; no changes to MacroStats needed.
         samples = v.detach().cpu() if hasattr(v, "detach") else v
         # Update macro stats to append a record into stats.records.
@@ -173,14 +172,14 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         # Check if α_min is already in records.
         if not any(abs(float(r["alpha"]) - α_min) < 1e-6 for r in stats.records):
             # If missing, generate new data at α_min
-            v_left = data_gen.generate_data(alpha=α_min, max_iter=samples_per_alpha)
+            v_left = data_generator.generate_data(alpha=α_min, max_iter=samples_per_alpha)
             # Ensure samples are on CPU.
             samples_left = v_left.detach().cpu() if hasattr(v_left, "detach") else v_left
             # Store sample into records using macro_observations.
             stats.macro_observations(alpha=float(α_min), samples=samples_left)
         # Do the same for α_max.
         if not any(abs(float(r["alpha"]) - α_max) < 1e-6 for r in stats.records):
-            v_right = data_gen.generate_data(alpha=α_max, max_iter=samples_per_alpha)
+            v_right = data_generator.generate_data(alpha=α_max, max_iter=samples_per_alpha)
             samples_right = v_right.detach().cpu() if hasattr(v_right, "detach") else v_right
             stats.macro_observations(alpha=float(α_max), samples=samples_right)
         return α_min, α_max, stats
@@ -199,24 +198,3 @@ if __name__ == "__main__":
     print("\nFinite differences touching the detected bracket:")
     for fd in fd_tracker.fd_records:
         print(fd)
-
-# if __name__ == "__main__":
-#     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
-#
-#     # Initialize the data generator.
-#     data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
-#
-#     optim_alpha, loss_value = Dynamic_Data_Evolving_Mean_Estimator(data_generator, num_epochs, learning_rate,
-#                                                                    theoretical_val, alpha, max_iter).train()
-#
-#     print(optim_alpha, loss_value)
-
-# Pos_Alpha_Array = []
-# Ni = 2
-# Nj = 100
-# for deme_start in range(Ni, Nj + 1):
-#     alpha_start = 500
-#
-#     # Call the ML function to find the most optimum alpha value.
-#     Pos_Alpha_Array = Calc_Alpha_ML_Function(
-#         Rtroc, F, vd_chemotaxis, alpha_start, deme_start, nl, Angle, Vo_max, xbias, DL, Pos_Alpha_Array)
