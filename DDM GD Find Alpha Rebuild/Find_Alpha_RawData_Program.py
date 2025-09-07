@@ -51,7 +51,7 @@ num_epochs = 100
 learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
 # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-max_iter_start = 1000
+max_iter_start = 5000
 
 # Plotting
 fig, ax1 = plt.subplots()
@@ -101,7 +101,7 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         Larger values reduce the standard error of μ(α) and make sign changes more reliable.
         (Kept as float to match existing call sites; it’s used as a count when passed to the generator.)
 
-    :return: None
+    :return: α_min, α_max
     """
     # When running a script on CUDA, 'spawn' avoids CUDA multiprocessing issues.
     # Tells Python to start new processes with the 'spawn' method instead of the default (which can be 'fork' on Linux).
@@ -153,20 +153,52 @@ def test_sign_transitions(samples_per_alpha: float = 100):
     for rec in stats.records:
         print(rec)
 
+    # Quick linearity sanity: Δμ per +100 α (just prints)
+    mus = [float(rec["mu"]) for rec in stats.records]
+    deltas = [mus[i + 1] - mus[i] for i in range(len(mus) - 1)]
+    print("\nΔμ over +100 α steps:", [f"{d:.3f}" for d in deltas])
+
     # Run the sign-transition detector.
     v_d = float(vd_chemotaxis[deme_start])
     transitions = detect_sign_transitions(stats, v_d=v_d)
 
     print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
     if not transitions:
-        print("  <none found on the 100…900 grid>")
+        raise RuntimeError("No sign transitions detected.")
     else:
-        for (aL, aR) in transitions:
-            print(f"  Between α = {aL} and α = {aR}")
+        # Map detector’s names to the program’s local bracket names.
+        # From here on, treat [a_min, a_max] as the *working* window for the ML stage.
+        α_min, α_max = transitions[0]  # Select the first bracket
+        print(f"Between α = {α_min} and α = {α_max}")
+        # Check if α_min is already in records.
+        if not any(abs(float(r["alpha"]) - α_min) < 1e-6 for r in stats.records):
+            # If missing, generate new data at α_min
+            v_left = data_gen.generate_data(alpha=α_min, max_iter=samples_per_alpha)
+            # Ensure samples are on CPU.
+            samples_left = v_left.detach().cpu() if hasattr(v_left, "detach") else v_left
+            # Store sample into records using macro_observations.
+            stats.macro_observations(alpha=float(α_min), samples=samples_left)
+        # Do the same for α_max.
+        if not any(abs(float(r["alpha"]) - α_max) < 1e-6 for r in stats.records):
+            v_right = data_gen.generate_data(alpha=α_max, max_iter=samples_per_alpha)
+            samples_right = v_right.detach().cpu() if hasattr(v_right, "detach") else v_right
+            stats.macro_observations(alpha=float(α_max), samples=samples_right)
+        return α_min, α_max, stats
 
 
 if __name__ == "__main__":
-    test_sign_transitions(samples_per_alpha=max_iter_start)
+    a_min, a_max, stats = test_sign_transitions(samples_per_alpha=max_iter_start)
+    print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
+
+    # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
+    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=2.0)
+
+    # Compute all forward differences between adjacent α’s currently in stats.records.
+    fd_tracker.compute_all_differences(stats)
+
+    print("\nFinite differences touching the detected bracket:")
+    for fd in fd_tracker.fd_records:
+        print(fd)
 
 # if __name__ == "__main__":
 #     torch.multiprocessing.set_start_method('spawn')  # Required for CUDA tensors
