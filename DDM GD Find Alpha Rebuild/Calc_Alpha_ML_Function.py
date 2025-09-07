@@ -1,5 +1,4 @@
 # Import the Tumble Angle Module
-from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
 from abc import ABC, abstractmethod
@@ -49,7 +48,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha,
-                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.7):
+                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.7,
+                 stats=None, fd_tracker=None, bracket=None):
 
         self.data_generator = data_generator
         self.max_iter = max_iter
@@ -59,6 +59,30 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.learning_rate_gamma = learning_rate_gamma
         self.step_size = step_size
         self.num_epochs = num_epochs
+
+        # Enable Polyak–Ruppert slope estimation over the first bracket; start fresh so slope_history is clean.
+        # When you call run_linear_estimation(..., enabled=True, ...), it sets linear_mode_enabled = True and
+        # runs the Polyak–Ruppert (PR) slope update.
+        # Enabled=False turns off linear mode (no PR update runs on that call).
+        # Enabled=None leaves the previous toggle as-is.
+        # Window=[α_left=a_min, α_right=a_max] sets the active interval for PR estimation,
+        # whereby new estimations are only inside that window.
+        # reset=True clears prior PR state, (slope_history, m_k, ᾱ, μ̄, readiness flags), start fresh in the new window
+        self.stats = stats
+        self.fd_tracker = fd_tracker
+        self.bracket = bracket
+        if (self.stats is not None) and (self.fd_tracker is not None) and (self.bracket is not None):
+            a_min, a_max = map(float, self.bracket)
+            # Guarding for two points avoids a zero-denominator slope and premature “readiness” noise.
+            if a_min > a_max: # In case the values are reversed.
+                a_min, a_max = a_max, a_min
+            in_window = [
+                r for r in self.stats.records
+                if (a_min - 1e-6) <= float(r["alpha"].item() if hasattr(r["alpha"], "item") else r["alpha"]) <= (
+                            a_max + 1e-6)
+            ]
+            if len(in_window) >= 2:
+                self.fd_tracker.run_linear_estimation(self.stats, enabled=True, window=[a_min, a_max], reset=True)
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # Precompute a theoretical value tensor to match the shape of 'output' for the 'loss_function'.
@@ -92,7 +116,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         final_loss = None  # Store the final loss to return
         for epoch in range(self.num_epochs):
             # A new epoch of data is generated for every instance of the training loop.
-            # data = 1/n * ∑vj(α) = mα ± ϵ
+            # data = 1/n * ∑vj(α)
             # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
             # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
             data = self.data_generator.generate_data(self.alpha, self.max_iter).unsqueeze(-1)  # This is a tensor on the GPU
