@@ -3,6 +3,7 @@ import torch
 import logging
 from abc import ABC, abstractmethod
 import logging
+from loss_evaluator import LossEvaluator  # L(α), dL/dα, and decide_next_alpha
 
 
 # Abstract Base Class for Data Generators
@@ -10,6 +11,9 @@ class BaseDataGenerator(ABC):
     @abstractmethod
     def generate_data(self, alpha, max_iter):
         pass
+
+    def sample(self, alpha, n):
+        return self.generate_data(alpha, n)
 
 
 class Dynamic_Data_Evolving_Mean_Estimator:
@@ -51,7 +55,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                  max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.7,
                  stats=None, fd_tracker=None, bracket=None):
 
-        self.data_generator = data_generator
+        self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter
         self.max_iter_limit = max_iter_limit
         self.max_iter_factor = max_iter_factor
@@ -84,6 +88,20 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             if len(in_window) >= 2:
                 self.fd_tracker.run_linear_estimation(self.stats, enabled=True, window=[a_min, a_max], reset=True)
 
+        # Importing loss functions.
+        self.loss_eval = None  # Inactive by default.
+        if (self.stats is not None) and (self.fd_tracker is not None):
+            # Initialize class from loss_evaluator.py.
+            self.loss_eval = LossEvaluator(
+                stats=self.stats,
+                fd_tracker=self.fd_tracker,
+                v_d=float(theoretical_val),  # v_d is the theoretical target.
+                lambda_var=0.0,  # Penalty coefficient for variance in the loss function in loss_evaluator.py.
+                # LossEvaluator just stores the callable,
+                # return self.generate_data(alpha, n) are only provided later when LossEvaluator needs samples.
+                sample_func=self.data_generator.sample
+            )
+
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # Precompute a theoretical value tensor to match the shape of 'output' for the 'loss_function'.
         self.theoretical_val = torch.tensor(theoretical_val, dtype=torch.float32,
@@ -110,11 +128,19 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
         self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
         # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=self.step_size, gamma=self.learning_rate_gamma)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.step_size,
+            gamma=self.learning_rate_gamma
+        )
 
     def train(self):
         final_loss = None  # Store the final loss to return
         for epoch in range(self.num_epochs):
+            # ensure MacroStats has a record at current α_k and recompute FDs as needed
+            alpha_k = float(self.alpha.detach().item())
+            if self.loss_eval is None:
+                raise RuntimeError("LossEvaluator not initialized (stats/fd_tracker missing).")
             # A new epoch of data is generated for every instance of the training loop.
             # data = 1/n * ∑vj(α)
             # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
