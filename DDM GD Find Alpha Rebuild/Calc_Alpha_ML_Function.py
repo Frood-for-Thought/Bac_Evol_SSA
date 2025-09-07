@@ -2,7 +2,6 @@
 from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
-from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
 from abc import ABC, abstractmethod
 import logging
 
@@ -12,24 +11,6 @@ class BaseDataGenerator(ABC):
     @abstractmethod
     def generate_data(self, alpha, max_iter):
         pass
-
-
-# Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
-class NormMeanDataGenerator(BaseDataGenerator):
-    """
-    This class inherits the format of BaseDataGenerator and is used
-    for the data generator 'Norm_Vd_Mean_Data_Generator'.
-    """
-    def __init__(self, *args, **kwargs):
-        # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
-        self.generator = Norm_Vd_Mean_Data_Generator(*args, **kwargs)
-
-    def generate_data(self, alpha, max_iter):
-        """
-        :param: max_iter: The total number of iterations to run in parallel, (the number of data points generated).
-        :return: The datapoints generator specific to this system's generator method.
-        """
-        return self.generator.simulate_bacterial_movement_cuda(alpha, max_iter)
 
 
 class Dynamic_Data_Evolving_Mean_Estimator:
@@ -89,7 +70,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
 
         # Remove the bias term from the linear layer to avoid interference with the intrinsic
-        # standard error of the dynamic mean.  y = W * x, (no 'b').
+        # standard error of the dynamic mean.  y = W * x + b.
         # self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
 
         # Fix the weight to 1 and prevent it from being updated to limit resources.
