@@ -76,7 +76,7 @@ plt.show()
 
 
 # Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
-class NormMeanDataGenerator():
+class NormMeanDataGenerator:
     """
     This class inherits the format of BaseDataGenerator and is used
     for the data generator 'Norm_Vd_Mean_Data_Generator'.
@@ -198,3 +198,13 @@ if __name__ == "__main__":
     print("\nFinite differences touching the detected bracket:")
     for fd in fd_tracker.fd_records:
         print(fd)
+
+    # Enable Polyak–Ruppert slope estimation over the first bracket; start fresh so slope_history is clean.
+    # When you call run_linear_estimation(..., enabled=True, ...), it sets linear_mode_enabled = True and
+    # runs the Polyak–Ruppert (PR) slope update.
+    # Enabled=False turns off linear mode (no PR update runs on that call).
+    # #nabled=None leaves the previous toggle as-is.
+    # Window=[α_left=a_min, α_right=a_max] sets the active interval for PR estimation,
+    # whereby new estimations are only inside that window.
+    # reset=True clears prior PR state, (slope_history, m_k, ᾱ, μ̄, readiness flags), to start fresh in the new window.
+    fd_tracker.run_linear_estimation(stats, enabled=True, window=[a_min, a_max], reset=True)
