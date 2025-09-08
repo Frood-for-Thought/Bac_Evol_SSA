@@ -80,7 +80,7 @@ class LossEvaluator:
         grad = 2 * (mu - torch.tensor(self.v_d, dtype=torch.float32)) * dmu_dα + torch.tensor(self.lambda_var, dtype=torch.float32) * dvar_dα
         return grad
 
-    def _ensure_record(self, alpha: float, n: int, decimals: int = 6):
+    def ensure_record(self, alpha: float, n: int, decimals: int = 6):
         """
         Ensure that a MacroStats record exists at the given α (rounded to `decimals`).
 
@@ -147,7 +147,7 @@ class LossEvaluator:
         # Round α to avoid floating-point issues
         alpha_k = round(float(alpha_k), decimals)
         # Ensure data is at α_k
-        rec_k = self._ensure_record(alpha_k, n=n, decimals=decimals)
+        rec_k = self.ensure_record(alpha_k, n=n, decimals=decimals)
 
         # Try normal loss/grad
         loss_k = self.loss(alpha=alpha_k)
