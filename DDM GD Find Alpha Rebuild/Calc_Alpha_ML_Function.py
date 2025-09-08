@@ -269,6 +269,22 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         if gamma > gamma_cap:
                             gamma = gamma_cap
 
+            if self.bracket is None:
+                raise RuntimeError("Bracket (α_min, α_max) not set.")
+            a_min, a_max = map(float, self.bracket)
+
+            alpha_next = self.loss_eval.decide_next_alpha(
+                alpha_k=alpha_k,
+                n=self.max_iter,
+                gamma=gamma,
+                min_step_size=0.1,
+                fitness_thresh=0.1,
+                slope_thresh=1e-3,
+                alpha_left=a_min,
+                alpha_right=a_max,
+                use_gradient_override=True,
+            )
+
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
 
@@ -276,15 +292,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # in this case the alpha value.  The function the model hopes to optimize, vj(α), is quite complex
             # and non-differentiable by PyTorch, so loss.backward() cannot be used because
             # within ∂L(α)/∂α = (2/n)∑(vj(α)−vd) * ∂vj(α)/∂α, ∂vj(α)/∂α is unknown.
-            # A simplified linear equation for the mean of the gaussian distribution was used,
-            # data = (1/n)∑vj(α) = m*α +/- standard_error,
-            # with m being the slope of the mean for the distribution of vj(α) w.r.t. alpha.
-            # Since the gradient is not manually computed using (1/n)∑dvj(α)/dα ≈ m,
-            # loss.backward() uses scaled_data to pretend like a derivative function proportional to alpha is present.
-            # Instead, the derivative w.r.t. alpha is intrinsic to the learning rate, γ′= [(2/n)∑dvj(α)/dα]∗γ ≈ 2∗m∗γ,
-            # and so no direct computation of the gradient is necessary.
-            # loss.backward()
-
             # Since the function is not differentiable w.r.t. alpha, loss.backward() cannot compute the true gradient.
             # Apply the update (without optimizer.step)
             with torch.no_grad():
