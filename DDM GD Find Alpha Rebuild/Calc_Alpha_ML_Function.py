@@ -137,14 +137,27 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def train(self):
         final_loss = None  # Store the final loss to return
         for epoch in range(self.num_epochs):
-            # ensure MacroStats has a record at current α_k and recompute FDs as needed
+            # Ensure MacroStats has a record at current α_k and recompute FDs as needed.
             alpha_k = float(self.alpha.detach().item())
             if self.loss_eval is None:
                 raise RuntimeError("LossEvaluator not initialized (stats/fd_tracker missing).")
-            # A new epoch of data is generated for every instance of the training loop.
-            # data = 1/n * ∑vj(α)
+            # Ensure αlpha_k is recorded, observe and update finite differences.
+            # Draw n=self.max_iter samples using data_generator, logs MacroStats,
+            # and recomputes finite differences internally.
+            # Within ensure_record "samples = self.sample_func(alpha=alpha, n=n)"
+            #   --> sample_func=self.data_generator.sample --> data_generator: MacroStats.
+            # MacroStats generates new epoch of data for every instance of the training loop, sample = 1/n * ∑vj(α)
             # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
             # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
+            rec_k = self.loss_eval.ensure_record(alpha=alpha_k, n=self.max_iter)
+            # Call path:
+            # self.loss_eval.ensure_record(...)
+            # → self.loss_eval.sample_func(alpha, n)
+            # → self.data_generator.sample(alpha, n) (from BaseDataGenerator)
+            # → self.data_generator.generate_data(alpha, n)
+            if rec_k is None:
+                raise RuntimeError(f"Failed to record macro stats at α={alpha_k}.")
+
             data = self.data_generator.generate_data(self.alpha, self.max_iter).unsqueeze(-1)  # This is a tensor on the GPU
 
             # Dynamically update theoretical_val match the size of scaled_data.
