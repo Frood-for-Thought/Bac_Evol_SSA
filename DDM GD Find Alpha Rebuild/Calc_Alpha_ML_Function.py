@@ -311,17 +311,43 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 self.alpha.fill_(float(alpha_next))  # update α directly
 
             # Print out the gradient of alpha after backpropagation.
-            print(f"\nEpoch {epoch}:")
-            print(f"Alpha = {self.alpha.item()}")
-            print(f"Effective Learning Rate, γ' = 2mγ = {self.learning_rate.item()}")
-            print(f"Gradient of loss w.r.t. alpha, γ'dL/da = {self.learning_rate * self.alpha.grad.item()}")
-            print(f"The value of vd = {self.theoretical_val[0].item()}")
-            print(f"Mean, (1/n)∑vj(α) = {torch.mean(scaled_data)}")
-            print(f"Loss = {loss.clone().detach()}")
-            print(f"Residual = {residual.item()}")
+            logging.info(f"\nEpoch: {epoch}")
+            logging.info(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
+            logging.info(f"Effective Learning Rate, γ' = {gamma}")
 
-            # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
-            self.scheduler.step()
+            logging.info(
+                f"gamma = {float(gamma):.6f}  "
+                f"(lr_scale={float(current_lr_scale):.6f})"
+            )
+            logging.info(f"dmu/dalpha={float(dmu_dalpha):.6f}")
+
+            # Safe formatting for possibly-None values
+            r_str = f"{float(r_cent):.6f}" if r_cent is not None else "None"
+            b_str = f"{float(bound):.6f}" if bound is not None else "None"
+            mk_str = (
+                f"{float(m_k.item() if hasattr(m_k, 'item') else m_k):.6f}"
+                if (m_k is not None) else "None"
+            )
+            logging.info(
+                f"[LIN-CHK] ready={self.fd_tracker.linear_slope_ready} "
+                f"resid_ok={bool(resid_ok)} r_cent={r_str} bound={b_str} m_k={mk_str}"
+            )
+            logging.info(f"loss = {float(loss_val):.6f}")
+
+            # From the MacroStats record:
+            mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")
+            n_k = int(rec_k["n"].item()) if "n" in rec_k else int(self.max_iter)
+            # std is either provided or computed from var
+            if "std" in rec_k:
+                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
+            elif "var" in rec_k:
+                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
+                std_k = (max(_var, 0.0)) ** 0.5
+            else:
+                std_k = float("nan")
+            logging.info(f"mu(α_k)={mu_k:.6f}")
+            logging.info(f"n={n_k}")
+            logging.info(f"std={std_k:.6f}")
 
             # Logging every step_size epochs.
             if (epoch % self.step_size == 0) and (epoch > 0):
@@ -329,8 +355,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 new_max_iter = self.max_iter * self.max_iter_factor
                 # Prevent max_iter from going over the max_iter_limit.
                 self.max_iter = min(new_max_iter, self.max_iter_limit)
-
-                logging.info(f"Epoch {epoch}, Loss: {loss.item()}, Alpha: {self.alpha.item()}")
+                # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
+                self.scheduler.step()
 
         # Return the final optimized alpha and the final loss value
         return self.alpha.item(), final_loss.item()
