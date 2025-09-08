@@ -1,5 +1,6 @@
 # Import the Tumble Angle Module
 import torch
+import math
 import logging
 from abc import ABC, abstractmethod
 import logging
@@ -51,15 +52,20 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     generate_data().
     :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
-    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val, alpha,
-                 max_iter, step_size=20, max_iter_limit=20000, max_iter_factor=2, learning_rate_gamma=0.7,
-                 stats=None, fd_tracker=None, bracket=None):
+    def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
+                 alpha, max_iter, eta_for_gamma_cap=0.05, step_size=20, max_iter_limit=20000, max_iter_factor=2,
+                 learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter
         self.max_iter_limit = max_iter_limit
         self.max_iter_factor = max_iter_factor
+        # learning_rate = a global scale set once (and decay with the scheduler).
+        # Not to be confused with gamma = the actual per-epoch step size, computed from the current data and then
+        # scaled by the current learning_rate, and possibly capped for stability.
         self.learning_rate = learning_rate
+        # Safety margin for the gamma cap derived from m_k (keeps |1-2*gamma*m_k^2| < 1)
+        self.eta_for_gamma_cap = eta_for_gamma_cap
         self.learning_rate_gamma = learning_rate_gamma
         self.step_size = step_size
         self.num_epochs = num_epochs
@@ -103,30 +109,14 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             )
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        # Precompute a theoretical value tensor to match the shape of 'output' for the 'loss_function'.
-        self.theoretical_val = torch.tensor(theoretical_val, dtype=torch.float32,
-                                            device=self.device).unsqueeze(0).expand(max_iter, 1)
-
         # Convert the alpha integer to a tensor to be optimized.
         alpha_value = float(alpha)  # Convert to float first.
         self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
-
-        # Remove the bias term from the linear layer to avoid interference with the intrinsic
-        # standard error of the dynamic mean.  y = W * x + b.
-        # self.model = torch.nn.Linear(1, 1, bias=False).to(self.device)
-
-        # Fix the weight to 1 and prevent it from being updated to limit resources.
-        # The weights of the linear layer won't interfere with optimizing alpha,
-        # but it will keep the data in the GPU to perform calculations with the loss function.
-        # with torch.no_grad():
-        #     self.model.weight.fill_(1.0)  # Set weight to 1.
-        #     self.model.weight.requires_grad = False  # Disable gradient updates.
 
         # Initialize the optimizer with the model parameters and learning rate.
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
 
-        self.loss_function = torch.nn.MSELoss()  # Mean Squared Error Loss function.
         # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer,
@@ -173,12 +163,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 n=self.max_iter,
             )
 
-            # Update PR slope each iteration (no reset), then report readiness.
-            self.fd_tracker.run_linear_estimation(self.stats, enabled=True, window=None, reset=False)
-
-            m_k = self.fd_tracker.m_k
-            delta_m = self.fd_tracker.last_delta_m
-
             # Loss and gradient now come from LossEvaluator (μ, var, finite-difference dL/dα),
             # no linear layer or proxy scaling needed.
             # Computing the loss of the dynamic data point mean compared to the theoretical_val (now via LossEvaluator).
@@ -188,6 +172,102 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 raise RuntimeError(f"Loss unavailable/non-finite at α={alpha_k}.")
             # Keep track of the latest loss for the return value
             final_loss = torch.tensor(float(loss_val), dtype=self.alpha.dtype, device=self.alpha.device)
+
+            # Update PR slope each iteration (no reset), then report readiness.
+            self.fd_tracker.run_linear_estimation(self.stats, enabled=True, window=None, reset=False)
+            # -----------------------------------------------------------------------------
+            # Clarification of the “linear recursion” and the bounds:
+            #
+            # 1) Define the tracking error:
+            #      e_k := alpha_k - alpha_star
+            #    Using the linear model above, the gradient near alpha_star is:
+            #      dL/dalpha |_alpha_k  ~=  2 * m_k^2 * e_k
+            #
+            # 2) One GD step:
+            #      alpha_{k+1} = alpha_k - gamma * (2 * m_k^2 * e_k)
+            #    Subtract alpha_star from both sides:
+            #      e_{k+1} = (alpha_{k+1} - alpha_star)
+            #              = (alpha_k - alpha_star) - 2 * gamma * m_k^2 * e_k
+            #              = (1 - 2 * gamma * m_k^2) * e_k
+            #    This is the linear recursion with multiplier q := (1 - 2 * gamma * m_k^2).
+            #
+            #    Intuition: the recursion says each new error e_{k+1} is just the old
+            #    error e_k multiplied by a constant factor q. So the whole behavior
+            #    depends on |q|:
+            #       - if |q| < 1 → errors shrink
+            #       - if |q| = 1 → errors persist
+            #       - if |q| > 1 → errors grow
+            #
+            # 3) What “convergence” means here:
+            #      We need |e_{k+1}| < |e_k| for errors to shrink.
+            #      That requires |q| < 1  <=>  |1 - 2 * gamma * m_k^2| < 1.
+            #      Solving gives:  0 < gamma < 1 / m_k^2.
+            #
+            #    Detailed steps:
+            #      - Start:  |1 - 2 * gamma * m_k^2| < 1
+            #      - Equivalent to: -1 < 1 - 2 * gamma * m_k^2 < 1
+            #      - Left inequality:  -1 < 1 - 2γm_k^2  ⇒  -2 < -2γm_k^2  ⇒  γ < 1/m_k^2
+            #      - Right inequality: 1 - 2γm_k^2 < 1   ⇒  -2γm_k^2 < 0   ⇒  γ > 0
+            #      - Combined: 0 < γ < 1/m_k^2
+            #
+            # 4) Behavior by gamma range (assume m_k^2 > 0; the square handles m_k < 0 too):
+            #      - 0 < gamma < 1/(2 m_k^2):       q in (0, 1)  → monotone convergence (no sign flips)
+            #      - gamma = 1/(2 m_k^2):           q = 0        → one-step to alpha_star in ideal linear/noiseless case
+            #      - 1/(2 m_k^2) < gamma < 1/m_k^2: q in (-1, 0) → convergent but oscillatory (e_k flips sign each step)
+            #      - gamma = 1/m_k^2:               q = -1       → no contraction; persistent large oscillation
+            #      - gamma > 1/m_k^2:               |q| > 1      → divergence (errors grow)
+            #
+            # 5) Why this matches the intuition:
+            #      - When gamma is “too big” relative to the local curvature scale m_k^2,
+            #        the step overshoots, flips the sign, and if |q| >= 1 the amplitude does not decay
+            #        (oscillates or explodes).
+            #      - Setting gamma ~ 1 normalizes by nothing; if m_k ~ 1 (common in linear patches),
+            #        then q ~ 1 - 2*1*1 = -1, i.e., the problematic oscillation factor.
+            #      - The square m_k^2 is why the condition depends only on the *magnitude* of slope,
+            #        not its sign — negative slopes behave the same.
+            #
+            # 6) Effect of the variance term (lambda > 0):
+            #      - The gradient gains + lambda * d(s^2)/dalpha. If that term is small near the target
+            #        or comparatively flat, the m_k^2-driven analysis dominates. If it is not small,
+            #        it perturbs q slightly; the same form still holds locally with m_k replaced by the
+            #        effective local slope factor of the full gradient.
+            # -----------------------------------------------------------------------------
+            m_k = self.fd_tracker.m_k
+            # self.fd_tracker.last_delta_m = Abs diff between last two m_k’s within slope_history,|Δm|,(None initially)
+
+            # Estimate dμ/dα externally
+            dmu_dalpha = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
+            # Prevent blow-ups from dμ/dα
+            if (dmu_dalpha is None) or (not math.isfinite(dmu_dalpha)) or (abs(dmu_dalpha) < 1e-8):
+                dmu_dalpha = 1.0  # safe default scale
+            # Slope-normalized step scaling:
+            # dmu_dalpha ≈ local sensitivity μ'(α_k). We set γ = 1 / |μ'| so that the raw GD step.
+            #   Δα = −γ · dL/dα  ≈  −(1/|μ'|) · 2(μ − v_d) · μ'  =  −2 · (μ − v_d) · sign(μ').
+            # The step size depends on the error (μ − v_d) but is ≈ invariant to the local slope magnitude.
+            # This avoids huge Δα on steep regions and vanishing Δα on flat regions.
+            # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
+            gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
+            # Multiply by scheduler-controlled scale (decays every 'step_size_epochs')
+            current_lr_scale = self.optimizer.param_groups[0]['lr']
+            gamma *= float(current_lr_scale)
+
+            # Adaptive stability cap on gamma (ONLY when PR slope is ready).
+            # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
+            # Best non-oscillatory contraction at gamma = 1/(2*m_k^2).
+            if self.fd_tracker.linear_slope_ready and (m_k is not None):
+                mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
+                if math.isfinite(mk_val):
+                    mk2 = mk_val * mk_val
+                    if mk2 > 0.0:
+                        gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+                        # Fail fast if cap is nonsensical
+                        if not math.isfinite(gamma_cap) or gamma_cap <= 0.0:
+                            raise RuntimeError(
+                                f"[GD-ERROR] Bad gamma_cap from m_k: m_k={mk_val}, gamma_cap={gamma_cap}"
+                            )
+                        # Cap gamma (keep original scaling but make it safe).
+                        if gamma > gamma_cap:
+                            gamma = gamma_cap
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
@@ -206,14 +286,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # loss.backward()
 
             # Since the function is not differentiable w.r.t. alpha, loss.backward() cannot compute the true gradient.
-            # This is why alpha.grad needs to be manually adjusted to 1, instead of relying on complex derivatives,
-            # as the chain rule derivative is now an intrinsic factor for γ′= [(2/n)∑dvj(α)/dα]∗γ.
+            # Apply the update (without optimizer.step)
             with torch.no_grad():
-                # Set the gradient of alpha to be equal to 1 in magnitude, and compute the residual in order to
-                # maintain the direction of the gradient.
-                # In this case (mean(∑vj(α)) - vd) * dL/dα = - (mean(∑vj(α)) - vd) * 1, (dL/dα in γ').
-                residual = torch.mean(scaled_data) - self.theoretical_val[0]  # Residual of (mean(∑vj(α)) - vd).
-                self.alpha.grad = torch.tensor(residual.item(), dtype=self.alpha.dtype, device=self.alpha.device)
+                self.alpha.fill_(float(alpha_next))  # update α directly
 
             # Print out the gradient of alpha after backpropagation.
             print(f"\nEpoch {epoch}:")
@@ -226,7 +301,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"Residual = {residual.item()}")
 
             # Update the model's parameters (alpha) using gradient descent.
-            # α_k_+_1 = α_k - γ*∂L(α)/∂α = α_k - γ'[m * α ± ϵ - v_d]
+            # α_k_+_1 = α_k - γ*∂L(α)/∂α
             self.optimizer.step()  # This internally updates alpha based on the gradients and learning rate.
 
             # Scheduler step: Adjust the learning rate according to the schedule.
