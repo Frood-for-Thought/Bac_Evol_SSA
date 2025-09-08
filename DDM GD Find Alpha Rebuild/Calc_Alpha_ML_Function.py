@@ -310,6 +310,16 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
 
+            # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
+            self.scheduler.step()
+
+            # Logging every step_size epochs.
+            if (epoch % self.step_size == 0) and (epoch > 0):
+                # Update max_iter.
+                new_max_iter = self.max_iter * self.max_iter_factor
+                # Prevent max_iter from going over the max_iter_limit.
+                self.max_iter = min(new_max_iter, self.max_iter_limit)
+
             # Print out the gradient of alpha after backpropagation.
             logging.info(f"\nEpoch: {epoch}")
             logging.info(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
@@ -348,15 +358,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             logging.info(f"mu(α_k)={mu_k:.6f}")
             logging.info(f"n={n_k}")
             logging.info(f"std={std_k:.6f}")
-
-            # Logging every step_size epochs.
-            if (epoch % self.step_size == 0) and (epoch > 0):
-                # Update max_iter.
-                new_max_iter = self.max_iter * self.max_iter_factor
-                # Prevent max_iter from going over the max_iter_limit.
-                self.max_iter = min(new_max_iter, self.max_iter_limit)
-                # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
-                self.scheduler.step()
 
         # Return the final optimized alpha and the final loss value
         return self.alpha.item(), final_loss.item()
