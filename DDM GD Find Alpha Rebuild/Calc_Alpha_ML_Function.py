@@ -54,7 +54,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
                  alpha, max_iter, eta_for_gamma_cap=0.05, step_size=20, max_iter_limit=20000, max_iter_factor=2,
-                 learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None):
+                 learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter
@@ -64,6 +64,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Not to be confused with gamma = the actual per-epoch step size, computed from the current data and then
         # scaled by the current learning_rate, and possibly capped for stability.
         self.learning_rate = learning_rate
+        self.theoretical_val = theoretical_val  # theoretical_val is also incorporated into LossEvaluator.
         # Safety margin for the gamma cap derived from m_k (keeps |1-2*gamma*m_k^2| < 1)
         self.eta_for_gamma_cap = eta_for_gamma_cap
         self.learning_rate_gamma = learning_rate_gamma
@@ -109,11 +110,19 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             )
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
         # Convert the alpha integer to a tensor to be optimized.
         alpha_value = float(alpha)  # Convert to float first.
         self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
+        # use_gradient_override a class switch in alpha_next = self.loss_eval.decide_next_alpha() in training.
+        self.use_gradient_override = bool(use_gradient_override)
 
         # Initialize the optimizer with the model parameters and learning rate.
+        # This module DOES NOT optimize α with autograd.
+        # α is updated by LossEvaluator.decide_next_alpha(...) (the evaluator-driven step).
+        # It still keeps a tiny optimizer + scheduler to reuse PyTorch’s LR decay logic as a scalar multiplier
+        # for gamma (γ). It only reads its LR each epoch:
+        #     current_lr_scale = optimizer.param_groups[0]['lr']
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
 
@@ -247,7 +256,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # This avoids huge Δα on steep regions and vanishing Δα on flat regions.
             # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
             gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
-            # Multiply by scheduler-controlled scale (decays every 'step_size_epochs')
+            # Multiply by scheduler-controlled scale (decays every 'step_size_epochs').
+            # Scale gamma by the decayed LR from the dummy optimizer.
             current_lr_scale = self.optimizer.param_groups[0]['lr']
             gamma *= float(current_lr_scale)
 
@@ -282,18 +292,21 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 slope_thresh=1e-3,
                 alpha_left=a_min,
                 alpha_right=a_max,
-                use_gradient_override=True,
+                use_gradient_override=self.use_gradient_override
             )
 
-            # Backward pass: Compute gradients
-            self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
+            # This does NOT optimize `alpha` via autograd/optimizer in this module.
+            # # Alpha is updated explicitly by LossEvaluator.decide_next_alpha(...).
+            # (self.optimizer.zero_grad()) Reset previous gradient to prevent incorrect update.
 
             # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
             # in this case the alpha value.  The function the model hopes to optimize, vj(α), is quite complex
             # and non-differentiable by PyTorch, so loss.backward() cannot be used because
             # within ∂L(α)/∂α = (2/n)∑(vj(α)−vd) * ∂vj(α)/∂α, ∂vj(α)/∂α is unknown.
             # Since the function is not differentiable w.r.t. alpha, loss.backward() cannot compute the true gradient.
-            # Apply the update (without optimizer.step)
+            # Apply the update (without optimizer.step) because α is updated externally by
+            # LossEvaluator.decide_next_alpha(...). The optimizer tracks a dummy parameter
+            # to reuse PyTorch’s LR scheduler as a scalar decay for γ --> # α_k_+_1 = α_k - γ*∂L(α)/∂α.
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
 
@@ -307,11 +320,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"Loss = {loss.clone().detach()}")
             print(f"Residual = {residual.item()}")
 
-            # Update the model's parameters (alpha) using gradient descent.
-            # α_k_+_1 = α_k - γ*∂L(α)/∂α
-            self.optimizer.step()  # This internally updates alpha based on the gradients and learning rate.
-
-            # Scheduler step: Adjust the learning rate according to the schedule.
+            # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
             self.scheduler.step()
 
             # Logging every step_size epochs.
