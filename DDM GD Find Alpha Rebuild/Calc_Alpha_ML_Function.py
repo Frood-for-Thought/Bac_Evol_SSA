@@ -158,29 +158,36 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             if rec_k is None:
                 raise RuntimeError(f"Failed to record macro stats at α={alpha_k}.")
 
-            data = self.data_generator.generate_data(self.alpha, self.max_iter).unsqueeze(-1)  # This is a tensor on the GPU
+            # Using residual_gate in finite_difference_tracker.py:
+            # Centered-residual gate (LOG ONLY; does not change behavior) and compare it against a stderr-based bound.
+            #         Returns (resid_ok, r_cent, bound) for the centered-residual gate:
+            #             |r_cent(α)| ≤ stderr_tol * (2 * s(α) / sqrt(n))
+            #         where r_cent(α) = (μ(α) - μ̄) - m_k * (α - ᾱ).
+            # Small centered residuals indicate the local linearity required by the γ-cap analysis.
+            # Pull the μ, var at the *current* alpha_k (we just ensured it exists).
+            # declare “linear-agreement OK” if ∣r_cent(α)∣ ≤ stderr_tol⋅( 2s(α)/sqrt(n) )
+            resid_ok, r_cent, bound = self.fd_tracker.residual_gate(
+                alpha=rec_k["alpha"],  # use the recorded α directly
+                mu_val=rec_k["mu"],
+                var_val=rec_k["var"],
+                n=self.max_iter,
+            )
 
-            # Dynamically update theoretical_val match the size of scaled_data.
-            self.theoretical_val = self.theoretical_val[0].unsqueeze(0).expand(self.max_iter, 1)
+            # Update PR slope each iteration (no reset), then report readiness.
+            self.fd_tracker.run_linear_estimation(self.stats, enabled=True, window=None, reset=False)
 
-            # The tensor is passed through the model to compute the output using the linear layer utilizing CUDA.
-            # This is to help extend the ML model to other applications, however, in this case alpha is
-            # computed using the physics equation within 'generate_data'.  Alpha, (α), is the key parameter that
-            # influences all vj(α) function data points, and it does not fit the typical weights used in a
-            # neural network.
-            # output = self.model(data.unsqueeze(-1))  # Add dimension if needed for linear layer.
+            m_k = self.fd_tracker.m_k
+            delta_m = self.fd_tracker.last_delta_m
 
-            # **Modified loss function scaling**: Incorporate alpha into data to pretend like alpha is still in
-            # the computational graph.  This is because data is a tensor output from the generate_data function
-            # with a derivative that was too complex to manually compute.
-            # The gradient calculation was bypassed, (see notes below at "loss.backward()" for more details).
-            # "α.detach()" is used so the denominator doesn't create unnecessary gradients.
-            scaled_data = data * (self.alpha / self.alpha.detach())  # Keep alpha in the graph by scaling data by 1.
-
-            # Computing the MSE of the dynamic data point mean compared to the theoretical_val.
-            # L(α)=MSE(∑vj(α),vd)
-            loss = self.loss_function(scaled_data, self.theoretical_val)
-            final_loss = loss  # Keep track of the latest loss for the return value
+            # Loss and gradient now come from LossEvaluator (μ, var, finite-difference dL/dα),
+            # no linear layer or proxy scaling needed.
+            # Computing the loss of the dynamic data point mean compared to the theoretical_val (now via LossEvaluator).
+            # L(α) = (μ(α) − v_d)^2 + λ·var(α)
+            loss_val = self.loss_eval.loss(alpha=alpha_k)
+            if (loss_val is None) or (not torch.isfinite(torch.tensor(loss_val))):
+                raise RuntimeError(f"Loss unavailable/non-finite at α={alpha_k}.")
+            # Keep track of the latest loss for the return value
+            final_loss = torch.tensor(float(loss_val), dtype=self.alpha.dtype, device=self.alpha.device)
 
             # Backward pass: Compute gradients
             self.optimizer.zero_grad()  # Reset previous gradient to prevent incorrect update.
