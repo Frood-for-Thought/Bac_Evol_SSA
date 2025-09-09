@@ -228,3 +228,6 @@ if __name__ == "__main__":
     print("\n[Init] Estimator constructed.")
     print(f"  bracket = {bracket}")
     print(f"  PR ready? {fd_tracker.linear_slope_ready}")
+
+    alpha_opt, final_loss = deme.train()
+    print(f"\n[Result] alpha* ≈ {alpha_opt:.6f}, final_loss = {final_loss:.6f}")
