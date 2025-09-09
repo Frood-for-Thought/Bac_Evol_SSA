@@ -325,15 +325,15 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 self.max_iter = min(new_max_iter, self.max_iter_limit)
 
             # Print out the gradient of alpha after backpropagation.
-            logging.info(f"\nEpoch: {epoch}")
-            logging.info(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
-            logging.info(f"Effective Learning Rate, γ' = {gamma}")
+            print(f"\nEpoch: {epoch}")
+            print(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
+            print(f"Effective Learning Rate, γ' = {gamma}")
 
-            logging.info(
+            print(
                 f"gamma = {float(gamma):.6f}  "
                 f"(lr_scale={float(current_lr_scale):.6f})"
             )
-            logging.info(f"dmu/dalpha={float(dmu_dalpha):.6f}")
+            print(f"dmu/dalpha={float(dmu_dalpha):.6f}")
 
             # Safe formatting for possibly-None values
             r_str = f"{float(r_cent):.6f}" if r_cent is not None else "None"
@@ -342,11 +342,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 f"{float(m_k.item() if hasattr(m_k, 'item') else m_k):.6f}"
                 if (m_k is not None) else "None"
             )
-            logging.info(
+            print(
                 f"[LIN-CHK] ready={self.fd_tracker.linear_slope_ready} "
                 f"resid_ok={bool(resid_ok)} r_cent={r_str} bound={b_str} m_k={mk_str}"
             )
-            logging.info(f"loss = {float(loss_val):.6f}")
+            print(f"loss = {float(loss_val):.6f}")
 
             # From the MacroStats record:
             mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")
@@ -360,9 +360,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 std_k = (max(_var, 0.0)) ** 0.5
             else:
                 std_k = float("nan")
-            logging.info(f"mu(α_k)={mu_k:.6f}")
-            logging.info(f"n={n_k}")
-            logging.info(f"std={std_k:.6f}")
+            print(f"mu(α_k)={mu_k:.6f}")
+            print(f"n={n_k}")
+            print(f"std={std_k:.6f}")
 
         # Return the final optimized alpha and the final loss value
         return self.alpha.item(), final_loss.item()

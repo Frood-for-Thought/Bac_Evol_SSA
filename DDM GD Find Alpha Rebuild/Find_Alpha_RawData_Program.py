@@ -46,11 +46,11 @@ dt = 0.1
 deme_start = 30
 
 # Values used for training.
-num_epochs = 100
+num_epochs = 50
 learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
 # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-max_iter_start = 5000
+max_iter_start = 2000
 
 # Plotting
 fig, ax1 = plt.subplots()
@@ -215,7 +215,7 @@ if __name__ == "__main__":
         theoretical_val=float(theoretical_val),
         alpha=float(a_min),  # start on the left side of the bracket
         max_iter=max_iter_start,
-        step_size=20,
+        step_size=10,
         max_iter_limit=20000,
         max_iter_factor=2,
         learning_rate_gamma=0.7,
