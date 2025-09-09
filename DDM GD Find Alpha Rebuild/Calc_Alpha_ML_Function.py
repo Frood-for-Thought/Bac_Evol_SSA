@@ -124,6 +124,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # for gamma (γ). It only reads its LR each epoch:
         #     current_lr_scale = optimizer.param_groups[0]['lr']
         # The optimizer will handle the update of alpha based on the computed gradients.
+        self.lr_scale_param = torch.nn.Parameter(torch.tensor(0.0, device=self.device))
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
 
         # The learning rate scheduler will reduce the learning rate by learning_rate_reduction every step_size epochs.
@@ -310,6 +311,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
 
+            # Advance the dummy optimizer once so StepLR stays in sync (avoids the warning)
+            self.optimizer.zero_grad()
+            self.optimizer.step()
             # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
             self.scheduler.step()
 
@@ -346,7 +350,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # From the MacroStats record:
             mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")
-            n_k = int(rec_k["n"].item()) if "n" in rec_k else int(self.max_iter)
+            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
+            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
             # std is either provided or computed from var
             if "std" in rec_k:
                 std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
