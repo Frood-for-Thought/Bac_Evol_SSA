@@ -7,10 +7,10 @@ from Tumble_Angle import AngleGenerator_cuda
 # Initialize the angle generator class to select from probability distribution.
 angle_generator = AngleGenerator_cuda()
 # uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
+from Calc_Alpha_ML_Function import Dynamic_Data_Evolving_Mean_Estimator, BaseDataGenerator
 from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
-from loss_evaluator import LossEvaluator
 from landscape_analysis import detect_sign_transitions
 
 # Initialization and Food Concentration Calculation.
@@ -76,10 +76,11 @@ plt.show()
 
 
 # Specific Data Generator Implementation for Norm_Vd_Mean_Data_Generator
-class NormMeanDataGenerator:
+class NormMeanDataGenerator(BaseDataGenerator):
     """
     This class inherits the format of BaseDataGenerator and is used
     for the data generator 'Norm_Vd_Mean_Data_Generator'.
+    Adapter around Norm_Vd_Mean_Data_Generator that matches the BaseDataGenerator ABC.
     """
     def __init__(self, *args, **kwargs):
         # Initialize with parameters specific to Norm_Vd_Mean_Data_Generator
@@ -91,6 +92,12 @@ class NormMeanDataGenerator:
         :return: The datapoints generator specific to this system's generator method.
         """
         return self.generator.simulate_bacterial_movement_cuda(alpha, max_iter)
+
+    def sample(self, alpha, n):
+        # BaseDataGenerator contract: sample(alpha, n) -> 1-D CPU tensor
+        v = self.generate_data(alpha=alpha, max_iter=n)
+        return (v.detach().cpu().reshape(-1)
+                if hasattr(v, "detach") else torch.as_tensor(v).cpu().reshape(-1))
 
 
 def test_sign_transitions(samples_per_alpha: float = 100):
@@ -112,7 +119,7 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         pass  # start_method may already be set
 
     # Build the generator reusing already-defined parameters at the start of the module.
-    data_generator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+    data_generator: BaseDataGenerator = NormMeanDataGenerator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
     # Collect macro stats on the requested α grid 'from macro_stats import MacroStats'.
     # MacroStats.macro_observations will record μ(α), s²(α), n, etc., for later use.
@@ -137,12 +144,12 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         rec = next(r for r in stats.records if abs(_get(r["alpha"]) - float(a)) < 1e-6)
 
         # Print out an update for each alpha value's record. Only print fields that exist.
-        print(f"Macro records from macro_observations for: alpha = {int(a)}")
+        print(f"Macro records from macro_observations for alpha = {int(a)}")
         msg = [f"[α={int(a)}]"]
-        if "mu" in rec:        msg.append(f"μ={_get(rec['mu']):.6f}")
-        if "var" in rec:       msg.append(f"var={_get(rec['var']):.6f}")
         if "n" in rec:         msg.append(f"n={int(rec['n'])}")
+        if "mu" in rec:        msg.append(f"μ={_get(rec['mu']):.6f}")
         if "std" in rec:       msg.append(f"std={_get(rec['std']):.6f}")
+        if "var" in rec:       msg.append(f"var={_get(rec['var']):.6f}")
         if "stderr_ci" in rec: msg.append(f"stderr_ci={_get(rec['stderr_ci']):.6f}")
         print("  " + ", ".join(msg))
 
@@ -182,11 +189,11 @@ def test_sign_transitions(samples_per_alpha: float = 100):
             v_right = data_generator.generate_data(alpha=α_max, max_iter=samples_per_alpha)
             samples_right = v_right.detach().cpu() if hasattr(v_right, "detach") else v_right
             stats.macro_observations(alpha=float(α_max), samples=samples_right)
-        return α_min, α_max, stats
+        return α_min, α_max, stats, data_generator
 
 
 if __name__ == "__main__":
-    a_min, a_max, stats = test_sign_transitions(samples_per_alpha=max_iter_start)
+    a_min, a_max, stats, data_generator = test_sign_transitions(samples_per_alpha=max_iter_start)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
     # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
@@ -199,12 +206,25 @@ if __name__ == "__main__":
     for fd in fd_tracker.fd_records:
         print(fd)
 
-    # Enable Polyak–Ruppert slope estimation over the first bracket; start fresh so slope_history is clean.
-    # When you call run_linear_estimation(..., enabled=True, ...), it sets linear_mode_enabled = True and
-    # runs the Polyak–Ruppert (PR) slope update.
-    # Enabled=False turns off linear mode (no PR update runs on that call).
-    # #nabled=None leaves the previous toggle as-is.
-    # Window=[α_left=a_min, α_right=a_max] sets the active interval for PR estimation,
-    # whereby new estimations are only inside that window.
-    # reset=True clears prior PR state, (slope_history, m_k, ᾱ, μ̄, readiness flags), to start fresh in the new window.
-    fd_tracker.run_linear_estimation(stats, enabled=True, window=[a_min, a_max], reset=True)
+    # Prepare the ML estimator before training.
+    bracket = (a_min, a_max)
+    deme = Dynamic_Data_Evolving_Mean_Estimator(
+        data_generator=data_generator,
+        num_epochs=num_epochs,
+        learning_rate=learning_rate,
+        theoretical_val=float(theoretical_val),
+        alpha=float(a_min),  # start on the left side of the bracket
+        max_iter=max_iter_start,
+        step_size=20,
+        max_iter_limit=20000,
+        max_iter_factor=2,
+        learning_rate_gamma=0.7,
+        stats=stats,
+        fd_tracker=fd_tracker,
+        bracket=bracket,
+        use_gradient_override=True
+    )
+
+    print("\n[Init] Estimator constructed.")
+    print(f"  bracket = {bracket}")
+    print(f"  PR ready? {fd_tracker.linear_slope_ready}")
