@@ -56,9 +56,7 @@ $$
 \gamma_k \=\ \frac{\verb|LR_scheduler_scale|}{\left|\widehat{\mu'}(\alpha_k)\right|}
 $$
 
-   The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
-
-The step size is “slope-normalized”: first estimate the local sensitivity $\widehat{\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\hat\mu - v_d)\,\widehat{\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu\_hat - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained in 3.), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope collapses or the loss would worsen, the code falls back to a cautious Robbins–Monro–style probe step instead of a full gradient move.
+   The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions. The step size is “slope-normalized”: first estimate the local sensitivity $\widehat{\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\hat\mu - v_d)\widehat{\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu\_hat - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained in 3.), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope collapses or the loss would worsen, the code falls back to a cautious Robbins–Monro–like probe step instead of a full gradient move.
 
 3. **Polyak–Ruppert readiness**
    PR slope updates run continuously, but a **readiness flag** requires $|\Delta m|$ to be below a tolerance before trusting the linear model.
