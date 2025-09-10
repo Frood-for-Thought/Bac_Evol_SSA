@@ -73,7 +73,7 @@ should be no larger than a stderr-based bound.
 
 3. **During Training** `MacroStats` logs \$\mu,s^2\$ per α. `FiniteDifferenceTracker` builds finite differences and (optionally) a PR slope over a bracket.`LossEvaluator` steps α using the data-driven gradient with γ-normalization, γ-cap, and bracket safeguards.
 
-4. **Before PR is ready:** you never use $r_{\text{cent}}$. You normalize the step by $1/|\mu'|$ (from `estimate_derivative_at(kind="mu")`, which is available from forward FDs), and you damp $\gamma$ **only** when $|\mu-v_d|$ is inside the measured $\text{CI} \approx 2s/\sqrt{n}$. That gives you near-target stability without assuming linearity.
+4. **Before PR is ready:** the algorithm never uses $r_{\text{cent}}$. Normalize the step by $1/|\mu'|$ (from `estimate_derivative_at(kind="mu")`, which is available from forward FDs), and damp $\gamma$ **only** when $|\mu-v_d|$ is inside the measured $\text{CI} \approx 2s/\sqrt{n}$. That gives near-target stability without assuming linearity.
 
 5. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs. $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
 
