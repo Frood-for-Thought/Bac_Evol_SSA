@@ -67,13 +67,17 @@ should be no larger than a stderr-based bound.
 
 ## The training loop, step-by-step
 
-1. **Seed the landscape.** Sample on a coarse α-grid; for each α, call `macro_observations()` to log \$\mu(α), s^2(α)\$ (large n to reduce noise). Then compute all forward differences.
+1. **Seed the landscape.** Sample on a coarse α-grid; for each α, call `macro_observations()` to log \$\mu(α), s^2(α)\$ (large n batches are drawn from the function $v_j(\alpha)$ to reduce noise). Then compute all forward differences. 
 
 2. **Bracket a solution.** Run `detect_sign_transitions(stats, v_d)` to find the first interval where \$\mu(α)-v\_d\$ changes sign; set $[\alpha_{\min}, \alpha_{\max}]$.
 
-3. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs. $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
+3. **During Training** `MacroStats` logs \$\mu,s^2\$ per α. `FiniteDifferenceTracker` builds finite differences and (optionally) a PR slope over a bracket.`LossEvaluator` steps α using the data-driven gradient with γ-normalization, γ-cap, and bracket safeguards.
 
-5. **Iterate updates.** At each \$α\_k\$:
+4. **Before PR is ready:** you never use $r_{\text{cent}}$. You normalize the step by $1/|\mu'|$ (from `estimate_derivative_at(kind="mu")`, which is available from forward FDs), and you damp $\gamma$ **only** when $|\mu-v_d|$ is inside the measured $\text{CI} \approx 2s/\sqrt{n}$. That gives you near-target stability without assuming linearity.
+
+5. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs. $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
+
+6. **Iterate updates.** At each \$α\_k\$:
 
    * Ensure a fresh macro record exists (and refresh finite differences).
    * Optionally log the **centered-residual gate** status to check local linearity.
@@ -148,22 +152,6 @@ We then monitor \$|r\_{\text{cent}}(α)|=\big|(\mu(α)-\bar\mu)-m\_k(\alpha-\bar
 * **Gradient computation:** ML uses per-sample backprop $\nabla_\theta f$. D-DEME estimates directions from ensemble aggregates — finite differences of $\mu(\alpha)$ or $\tfrac{d}{d\alpha}\mathbb{E}[v(\alpha)]$ — avoiding per-sample gradients.
 * **Dynamic data vs. mini-batching:** ML mini-batches come from a static dataset (assumed stationary). D-DEME generates fresh, independent samples each iteration from an evolving process; with sufficiently large $n$, CLT yields reliable $\mu(\alpha)$. It stores only $(\mu(\alpha)\, s^2(\alpha)\, n)$, discarding microstates, and adapts to non-stationary landscapes.
 * **Dimensionality & non-differentiability:** D-DEME focuses on system-level statistics to optimize stochastic, potentially non-differentiable objectives, bypassing chain-rule gradients where they fail.
-
----
-
-## Minimal usage sketch
-
-```bash
-# inside this repo
-python run_sampling_pipeline.py
-```
-
-What happens:
-
-1. batches are drawn from `sample_v_func_NU`;
-2. `MacroStats` logs \$\mu,s^2\$ per α;
-3. `FiniteDifferenceTracker` builds finite differences and (optionally) a PR slope over a bracket;
-4. `LossEvaluator` steps α using the data-driven gradient with γ-normalization, γ-cap, and bracket safeguards.
 
 ---
 
