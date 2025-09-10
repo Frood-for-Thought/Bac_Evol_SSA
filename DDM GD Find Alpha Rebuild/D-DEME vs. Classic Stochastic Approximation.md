@@ -47,6 +47,10 @@ $$
 g_k \approx\ 2\big(\hat\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
 $$
 
+$$
+\gamma_k \;=\; \frac{\verb|LR_scheduler_scale|}{\left|\widehat{\mu'}(\alpha_k)\right|}
+$$
+
    The slope $\widehat{\mu'}(\alpha)$ is produced by **MacroStats** + **Polyak–Ruppert (PR)** smoothing across previously sampled $\alpha$’s.
    **Benefit:** KW-like directional information without paying a two-sided resampling cost at every step.
 
@@ -93,7 +97,7 @@ $$
 
 * **RM:** requires a globally tuned decaying $a_k$. With heteroskedastic noise and unknown or varying slopes, early steps may overshoot; late steps may be too small. It lacks data-driven normalization and curvature safety.
 * **KW:** provides gradient direction but **doubles per-iteration sampling cost** (or worse in higher dimensions). With strict sampling caps, that cost is prohibitive.
-* **D-DEME:** reuses cross-$\alpha$ information (MacroStats), **verifies** linearity (PR readiness + residual gates), **normalizes** steps by the estimated slope, **caps** steps via curvature, optionally **penalizes variance**, and **brackets** the search. The result is **faster progress early** and **stable convergence near the target** under a fixed sampling budget.
+* **D-DEME:** reuses cross- $\alpha$ information (MacroStats), **verifies** linearity (PR readiness + residual gates), **normalizes** steps by the estimated slope, **caps** steps via curvature, optionally **penalizes variance**, and **brackets** the search. The result is **faster progress early** and **stable convergence near the target** under a fixed sampling budget.
 
 ---
 
