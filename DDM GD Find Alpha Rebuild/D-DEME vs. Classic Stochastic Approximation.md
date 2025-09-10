@@ -53,7 +53,7 @@ $$
 2. **Slope-normalized step size**
 
 $$
-\gamma_k \;=\; \frac{\verb|LR_scheduler_scale|}{\left|\widehat{\mu'}(\alpha_k)\right|}
+\gamma_k \=\ \frac{\verb|LR_scheduler_scale|}{\left|\widehat{\mu'}(\alpha_k)\right|}
 $$
 
    The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\,\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
