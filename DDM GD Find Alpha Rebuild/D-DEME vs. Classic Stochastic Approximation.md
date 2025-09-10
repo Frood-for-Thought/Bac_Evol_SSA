@@ -66,7 +66,7 @@ $$
    Using the linearized error recursion:
 
 $$
-e_{k+1} \=\ (1 - 2\gamma m_k^2)\e_k, e_k \=\ \alpha_k - \alpha_k*
+e_{k+1} \=\ (1 - 2\gamma m_k^2)\e_k, \e_k \=\ \alpha_k - \alpha*
 $$
 
    the algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
