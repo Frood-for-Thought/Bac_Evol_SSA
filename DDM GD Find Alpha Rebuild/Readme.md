@@ -8,13 +8,13 @@ D-DEME tunes a scalar control parameter, α, so that the **ensemble mean** of a 
 
 ## The loss and the (data-driven) gradient
 
-D-DEME optimizes the CLT-friendly loss
+D-DEME optimizes the CLT ensemble loss:
 
 $$
-L(\alpha) = \big(\mu(\alpha) - v_d\big)^2 + \lambda\, s^2(\alpha),
+L(\alpha) = \big(\mu(\alpha) - v_d\big)^2 + \lambda\ s^2(\alpha)
 $$
 
-where \$\mu(α)\$ and \$s^2(α)\$ are the **batch** mean and variance at α. The optional variance penalty \$λ≥0\$ trades off accuracy vs. stability. The code computes
+where \$\mu(α)\$ and \$s^2(α)\$ are the **batch** mean and variance at α. The optional variance penalty \$λ≥0\$ trades off accuracy vs. stability. The code computes:
 
 $$
 \frac{dL}{d\alpha}
