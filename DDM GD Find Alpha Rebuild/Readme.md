@@ -87,6 +87,13 @@ $$
 
 Purpose: “Is μ(α) behaving locally linear in α so that the PR slope $m_k$ is trustworthy?” residual_gate checks linearity, and declares “OK” when the **estimated** slope $m_k$:
 
+
+$$
+\lvert m_k - m_{k-1}\rvert \< \verb|slope_tol|
+$$
+
+and
+
 $$
 \boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ \frac{2s(\alpha)}{\sqrt{n}}}
 $$
