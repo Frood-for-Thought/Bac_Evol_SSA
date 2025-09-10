@@ -1,8 +1,6 @@
 # D-DEME: Dynamic Data Evolving Mean Estimator
 
-*A readme for the codebase and algorithmic logic*
-
-## What D-DEME does
+## What D-DEME Does
 
 D-DEME tunes a scalar control parameter, α, so that the **ensemble mean** of a noisy black-box output \$v\_j(α)\$ matches a desired target \$v\_d\$. It never needs the explicit form of \$v(α)\$. Instead, at each α it draws a large batch of samples, treats that batch as a **macroscopic** object (by the CLT), logs the **mean** and **variance**, estimates local **slopes** of the mean from data, and takes guarded gradient-like steps on a simple loss.
 
