@@ -85,7 +85,7 @@ $$
    **Benefit:** keeps the search well-posed and contained.
 
 7. **Near-target damping from residual gates**
-   A centered residual $r_{\text{cent}}$ is compared against a **measured** noise band $\propto 2s/\sqrt{n}$. When inside the band, $\gamma$ is **tapered**, improving final-stage convergence **without** slowing early progress.
+   A centered residual $r_{\text{cent}}$ is compared against a **measured** confidence interval (CI) $\propto 2s(\alpha)/\sqrt{n}$. When inside the CI, $\gamma$ is **tapered**, improving final-stage convergence **without** slowing early progress.
 
 ---
 
