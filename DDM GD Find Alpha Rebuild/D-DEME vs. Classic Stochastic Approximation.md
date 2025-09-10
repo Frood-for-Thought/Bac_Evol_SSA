@@ -93,8 +93,7 @@ $$
 
 * **RM:** requires a globally tuned decaying $a_k$. With heteroskedastic noise and unknown or varying slopes, early steps may overshoot; late steps may be too small. It lacks data-driven normalization and curvature safety.
 * **KW:** provides gradient direction but **doubles per-iteration sampling cost** (or worse in higher dimensions). With strict sampling caps, that cost is prohibitive.
-* **D-DEME:** reuses cross- $\alpha$ information (MacroStats), **verifies** linearity (PR readiness + residual gates), **normalizes** steps by the estimated slope, **caps** steps via curvature, optionally **penalizes variance**, and **brackets** the search. The result is **faster progress early** and **stable convergence near the target** under a fixed sampling budget.
-
+* **D-DEME:** reuses cross- $\alpha$ information (MacroStats), **verifies** linearity (PR readiness + residual gates) instead of paying fresh two-sided probes for each $\alpha$. **Normalizes** steps by the estimated slope and **caps** steps via curvature, while optionally **penalizing variance**, and **brackets** the search. The result is **faster progress early** and **stable convergence near the target** with reusability of macro data including the calculated local secant $\m_k$ within the region $[\alpha_{\min}, \alpha_{\max}]$.
 ---
 
 ## Practical Implications
