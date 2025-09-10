@@ -15,7 +15,7 @@ This note positions **Dynamic Data Evolving Mean Estimator (D-DEME)** relative t
 
 ## Robbins–Monro (RM)
 
-RM solves $\mathbb{E}[N(\alpha)] = \alpha_0$ via
+RM solves $\mathbb{E}[N(\alpha)] = \alpha_0$ via:
 
 $$
 \alpha_{k+1} \=\ \alpha_k \-\ a_k\big(\hat\mu(\alpha_k) - v_d\big)
@@ -30,7 +30,7 @@ with a decaying stepsize $a_k$ (e.g., $a/k$). RM is simple but **sensitive to st
 KW approximates the gradient stochastically at every step:
 
 $$
-\alpha_{k+1} \;=\; \alpha_k \;-\; a_k \cdot \frac{\hat L(\alpha_k + c_k) - \hat L(\alpha_k - c_k)}{2c_k}.
+\alpha_{k+1} \=\ \alpha_k \-\ a_k \cdot \frac{\hat L(\alpha_k + c_k) - \hat L(\alpha_k - c_k)}{2c_k}
 $$
 
 This requires **two fresh simulations per iteration** (per dimension), which is costly when each simulation already draws many samples.
@@ -44,7 +44,7 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 1. **Gradient proxy with amortized slope**
 
    $$
-   g_k \;\approx\; 2\big(\hat\mu(\alpha_k) - v_d\big)\,\widehat{\mu'}(\alpha_k)\;+\;\lambda\,\widehat{\partial \mathrm{var}}/{\partial \alpha}.
+   g_k \approx\ 2\big(\hat\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
    $$
 
    The slope $\widehat{\mu'}(\alpha)$ is produced by **MacroStats** + **Polyak–Ruppert (PR)** smoothing across previously sampled $\alpha$’s.
@@ -53,7 +53,7 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 2. **Slope-normalized step size**
 
    $$
-   \gamma_k \;=\; \frac{\text{LR\_scheduler\_scale}}{\big|\widehat{\mu'}(\alpha_k)\big|}.
+   \gamma_k \=\ \frac{\text{LR\_scheduler\_scale}}{\big|\widehat{\mu'}(\alpha_k)\big|}
    $$
 
    The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\,\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
@@ -63,10 +63,10 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
    **Benefit:** avoids premature reliance on noisy slopes.
 
 4. **Curvature-based stability cap**
-   Using the linearized error recursion
+   Using the linearized error recursion:
 
    $$
-   e_{k+1} \;=\; (1 - 2\gamma m_k^2)\,e_k,
+   e_{k+1} \=\ (1 - 2\gamma m_k^2)\e_k, e_k \=\ \alpha_k - \alpha_k*
    $$
 
    the algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
