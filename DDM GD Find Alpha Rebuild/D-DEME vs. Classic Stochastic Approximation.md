@@ -56,7 +56,7 @@ $$
 \gamma_k \=\ \frac{\verb|LR_scheduler_scale|}{\left|\widehat{\mu'}(\alpha_k)\right|}
 $$
 
-   The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\,\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
+   The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
 
 3. **Polyak–Ruppert readiness**
    PR slope updates run continuously, but a **readiness flag** requires $|\Delta m|$ to be below a tolerance before trusting the linear model.
