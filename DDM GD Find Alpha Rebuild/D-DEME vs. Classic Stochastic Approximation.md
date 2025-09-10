@@ -75,10 +75,10 @@ $$
 5. **Variance-aware objective (optional)**
 
 $$
-L(\alpha) \;=\; \big(\mu(\alpha) - v_d\big)^2 \;+\; \lambda \,\mathrm{var}(\alpha).
+L(\alpha) \=\ \big(\mu(\alpha) - v_d\big)^2 \+\ \lambda \mathrm{var}(\alpha)
 $$
 
-   Penalizing variance helps when $n$ cannot be increased further.
+   Penalizing variance by setting $\lambda = 0$ helps when $n$ cannot be increased further.
 
 6. **Bracketed search**
    A sign-transition detector finds an initial $[\alpha_{\min}, \alpha_{\max}]$ such that $\mu(\alpha)-v_d$ changes sign.
