@@ -141,7 +141,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             alpha_k = float(self.alpha.detach().item())
             if self.loss_eval is None:
                 raise RuntimeError("LossEvaluator not initialized (stats/fd_tracker missing).")
-            # Ensure αlpha_k is recorded, observe and update finite differences.
+            # Ensure alpha_k is recorded, observe and update finite differences.
             # Draw n=self.max_iter samples using data_generator, logs MacroStats,
             # and recomputes finite differences internally.
             # Within ensure_record "samples = self.sample_func(alpha=alpha, n=n)"
