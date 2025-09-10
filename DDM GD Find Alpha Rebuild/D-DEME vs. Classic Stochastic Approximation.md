@@ -43,18 +43,18 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 
 1. **Gradient proxy with amortized slope**
 
-   $$
-   g_k \approx\ 2\big(\hat\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
-   $$
+$$
+g_k \approx\ 2\big(\hat\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
+$$
 
    The slope $\widehat{\mu'}(\alpha)$ is produced by **MacroStats** + **Polyak–Ruppert (PR)** smoothing across previously sampled $\alpha$’s.
    **Benefit:** KW-like directional information without paying a two-sided resampling cost at every step.
 
 2. **Slope-normalized step size**
 
-   $$
-   \gamma_k \=\ \frac{\text{LR\_scheduler\_scale}}{\big|\widehat{\mu'}(\alpha_k)\big|}
-   $$
+$$
+\gamma_k \=\ \frac{\text{LR\_scheduler\_scale}}{\big|\widehat{\mu'}(\alpha_k)\big|}
+$$
 
    The raw step becomes $\Delta\alpha \approx -2(\hat\mu-v_d)\,\mathrm{sign}(\widehat{\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions.
 
@@ -65,18 +65,18 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 4. **Curvature-based stability cap**
    Using the linearized error recursion:
 
-   $$
-   e_{k+1} \=\ (1 - 2\gamma m_k^2)\e_k, e_k \=\ \alpha_k - \alpha_k*
-   $$
+$$
+e_{k+1} \=\ (1 - 2\gamma m_k^2)\e_k, e_k \=\ \alpha_k - \alpha_k*
+$$
 
    the algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
    **Benefit:** principled guard against overshoot and oscillation.
 
 5. **Variance-aware objective (optional)**
 
-   $$
-   L(\alpha) \;=\; \big(\mu(\alpha) - v_d\big)^2 \;+\; \lambda \,\mathrm{var}(\alpha).
-   $$
+$$
+L(\alpha) \;=\; \big(\mu(\alpha) - v_d\big)^2 \;+\; \lambda \,\mathrm{var}(\alpha).
+$$
 
    Penalizing variance helps when $n$ cannot be increased further.
 
