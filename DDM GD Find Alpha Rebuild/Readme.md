@@ -35,7 +35,7 @@ Why this loss? With large i.i.d. batches, \$\hat\mu(α)\$ concentrates around th
 ```
 sample_v_func_NU()  →  MacroStats.macro_observations()  →  FiniteDifferenceTracker
          │                       │                                   │
-         └─────────────── run_sampling_pipeline.main() orchestrates ──┴──→ LossEvaluator
+         └─────────────── pipeline.main() orchestrates ──┴──→ LossEvaluator
 ```
 
 * **`run_sampling_pipeline.py`** orchestrates everything:
@@ -85,7 +85,7 @@ r_{\mathrm{cent}}(\alpha)
 m_k\bigl(\alpha - \bar{\alpha}\bigr)
 $$
 
-With the **estimated** slope $m_k$:
+Purpose: “Is μ(α) behaving locally linear in α so that the PR slope $m_k$ is trustworthy?” residual_gate checks linearity, and declares “OK” when the **estimated** slope $m_k$:
 
 $$
 \boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ \frac{2s(\alpha)}{\sqrt{n}}}
