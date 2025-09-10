@@ -75,7 +75,21 @@ should be no larger than a stderr-based bound.
 
 4. **Before PR is ready:** the algorithm never uses $r_{\text{cent}}$. Normalize the step by $1/|\mu'|$ (from `estimate_derivative_at(kind="mu")`, which is available from forward FDs), and damp $\gamma$ **only** when $|\mu-v_d|$ is inside the measured $\text{CI} \approx 2s/\sqrt{n}$. That gives near-target stability without assuming linearity.
 
-5. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs. $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test.
+5. **Start PR slope estimation.** Enable `run_linear_estimation(stats, window=[alpha_min, alpha_max])`. Over the window $[\alpha_{\min}, \alpha_{\max}]$ the tracker maintains a centered linear fit $m_k$ of $\mu$ vs. $\alpha$, and stores $\bar{\alpha}$ and $\bar{\mu}$ for the centered-residual test. A naive residual $\lvert \mu(\alpha) - m_k\alpha \rvert$ is biased when the local line has a nonzero intercept. The correct (intercept-free) diagnostic is the centered residual:
+
+$$
+r_{\mathrm{cent}}(\alpha)
+\=\
+\bigl(\mu(\alpha) - \bar{\mu}\bigr)
+\-\
+m_k\bigl(\alpha - \bar{\alpha}\bigr)
+$$
+
+With the **estimated** slope $m_k$:
+
+$$
+\boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ \frac{2s(\alpha)}{\sqrt{n}}}
+$$
 
 6. **Iterate updates.** At each \$α\_k\$:
 
