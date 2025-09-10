@@ -31,7 +31,8 @@ class MacroStats:
             - Sample variance (unbiased estimator):
                 s²(α) ≈ (1 / (n - 1)) ∑_{j=1}^n (v_j(α) - μ(α))²
             - Approximate standard error bound (95% confidence):
-                This is a confidence bound, based on the approximation that ~95% of sample means (if resampled many times) fall within this range under the Central Limit Theorem as:
+                This is a confidence bound, based on the approximation that ~95% of sample means
+                (if resampled many times) fall within this range under the Central Limit Theorem as:
                 μ ± 2⋅SE(α)
                 δ(α) ≈ (2s(α)) / √n
         Stores:

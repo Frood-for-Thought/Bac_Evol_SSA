@@ -175,6 +175,7 @@ def test_sign_transitions(samples_per_alpha: float = 100):
         # Map detector’s names to the program’s local bracket names.
         # From here on, treat [a_min, a_max] as the *working* window for the ML stage.
         α_min, α_max = transitions[0]  # Select the first bracket
+        alpha_vals = sorted(float(r["alpha"]) for r in stats.records)  # Get alpha from records to find min/max domain.
         print(f"Between α = {α_min} and α = {α_max}")
         # Check if α_min is already in records.
         if not any(abs(float(r["alpha"]) - α_min) < 1e-6 for r in stats.records):
@@ -189,7 +190,12 @@ def test_sign_transitions(samples_per_alpha: float = 100):
             v_right = data_generator.generate_data(alpha=α_max, max_iter=samples_per_alpha)
             samples_right = v_right.detach().cpu() if hasattr(v_right, "detach") else v_right
             stats.macro_observations(alpha=float(α_max), samples=samples_right)
-        return α_min, α_max, stats, data_generator
+        return (
+            max(alpha_vals[0], α_min - (α_max - α_min)/4),
+            min(alpha_vals[-1], α_max + (α_max - α_min)/4),
+            stats,
+            data_generator
+        )
 
 
 if __name__ == "__main__":

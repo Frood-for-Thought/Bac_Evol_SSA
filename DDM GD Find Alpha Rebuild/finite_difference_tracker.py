@@ -292,10 +292,24 @@ class FiniteDifferenceTracker:
             # Accumulate in-range α’s and μ’s.
             alphas_in_range = []
             mus_in_range = []
+            # In addition to alpha & mu, collect n and var for WLS.
+            ns_in_range, vars_in_range = [], []
 
             for rec in stats.records:
+                # Get alpha from macro_observations() and stored in stats.records.
                 a_val = rec["alpha"].item() if hasattr(rec["alpha"], "item") else float(rec["alpha"])
                 if alpha_min <= a_val <= alpha_max:
+                    # Get n from macro_observations().
+                    ns_in_range.append(int(rec.get("n", 1)))
+                    # Unbiased variance from macro_observations() and stored in stats.records.
+                    v_val = rec.get("var", None)
+                    if v_val is None:
+                        # Fallback if missing: treat as 1.0 to avoid zero-division
+                        v_val = 1.0
+                    else:
+                        v_val = v_val.item() if hasattr(v_val, "item") else float(v_val)
+                    vars_in_range.append(v_val)
+                    # Alpha from stats.records.
                     alphas_in_range.append(a_val)
                     # mu is already a tensor — convert to float for regression calculation.
                     mu_val = rec["mu"].item() if hasattr(rec["mu"], "item") else float(rec["mu"])
@@ -306,6 +320,8 @@ class FiniteDifferenceTracker:
                 with torch.no_grad():
                     a = torch.as_tensor(alphas_in_range, dtype=torch.float32)
                     mu = torch.as_tensor(mus_in_range, dtype=torch.float32)
+                    n_t = torch.as_tensor(ns_in_range, dtype=torch.float32)
+                    s2 = torch.as_tensor(vars_in_range, dtype=torch.float32)  # s_i^2 (unbiased OK)
                     # ------------------------------------------------------------------
                     # Centered Residual
                     # Testing |μ(α) − m_k α| against a stderr bound is biased if the local line has an intercept b ≠ 0.
@@ -326,23 +342,34 @@ class FiniteDifferenceTracker:
                     self.alpha_bar = float(a.mean().item())
                     self.mu_bar = float(mu.mean().item())
 
-                    # Centered least-squares slope to remove intercept bias.
-                    # m_k = Σ( (α_i − ᾱ)(μ_i − μ̄) ) / [ Σ( (α_i − ᾱ)^2 ) + ε ]
-                    a_c = a - a.mean()  # α_i − ᾱ
-                    mu_c = mu - mu.mean()  # μ_i − μ̄
+                    # Batches at different α have different dispersions. In the PR fit, WLS weights wi∝ni/si2 prevents
+                    # the slope from being dominated by high-variance points.
+                    # This tightens “linear_slope_ready” test and the γ-cap.
+                    # Weighted centered slope: m_k = [ ∑iwi(αi−αˉw)(μi−μˉw) ]/ [ ∑iwi(αi−αˉw)2+ε ]
 
-                    # Denominator with ε guard for stability.
-                    # Σ (α_i − ᾱ)^2 + ε   (denominator).
-                    denom = torch.dot(a_c, a_c) + torch.as_tensor(self.epsilon, dtype=a.dtype, device=a.device)
+                    # WLS scaling: w_i ∝ n_i / s_i^2 ; guard tiny s2 to avoid inf weights; no normalization needed
+                    w = n_t / torch.clamp_min(s2, 1e-12)
 
-                    # Numerator: covariance-like term between centered α and centered μ.
-                    # Σ (α_i − ᾱ)(μ_i − μ̄)   (numerator).
-                    num = torch.dot(a_c, mu_c)
+                    if w.sum().item() > 0:  # tiny guard against degenerate all-zero weights
+                        # Centered least-squares slope to remove intercept bias.
+                        # m_k = Σ( (α_i − ᾱ)(μ_i − μ̄) ) / [ Σ( (α_i − ᾱ)^2 ) + ε ]
+                        # Numerator
+                        # Σ( (α_i − ᾱ)(μ_i − μ̄) )
+                        a_c = a - ( (w * a).sum() / (w.sum() + 1e-12) )  # α_i − ᾱ
+                        mu_c = mu - ( (w * mu).sum() / (w.sum() + 1e-12) )  # μ_i − μ̄
 
-                    # If denominator is finite/nonzero, accept the new slope estimate.
-                    if torch.isfinite(denom) and denom.item() != 0.0:
-                        m_k = num / denom
-                        self.m_k = m_k
+                        # Numerator: covariance-like term between centered α and centered μ.
+                        # Σ w_i (α_i − ᾱ_w)(μ_i − μ̄_w)
+                        num = torch.dot(w * a_c, mu_c)
+
+                        # Denominator with ε guard for stability.
+                        # Σ w_i (α_i − ᾱ_w)^2 + ε
+                        denom = torch.dot(w * a_c, a_c) + torch.as_tensor(self.epsilon, dtype=a.dtype, device=a.device)
+
+                        # If denominator is finite/nonzero, accept the new slope estimate.
+                        if torch.isfinite(denom) and denom.item() != 0.0:
+                            m_k = num / denom
+                            self.m_k = m_k
 
             # after computing self.m_k, update stabilization metrics only when *new* points have entered the window.
             current_count = len(alphas_in_range)
