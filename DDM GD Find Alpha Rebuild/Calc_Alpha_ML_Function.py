@@ -245,6 +245,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             m_k = self.fd_tracker.m_k
             # self.fd_tracker.last_delta_m = Abs diff between last two m_k’s within slope_history,|Δm|,(None initially)
 
+            # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
+            stderr_ci = rec_k.get("stderr_ci", None)
+            mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
+            err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
+
             # Estimate dμ/dα externally
             dmu_dalpha = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
             # Prevent blow-ups from dμ/dα
@@ -349,7 +354,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"loss = {float(loss_val):.6f}")
 
             # From the MacroStats record:
-            mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")
             n_val = rec_k["n"] if "n" in rec_k else self.max_iter
             n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
             # std is either provided or computed from var
