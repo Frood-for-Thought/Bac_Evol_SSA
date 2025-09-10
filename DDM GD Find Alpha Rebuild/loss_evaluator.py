@@ -75,8 +75,22 @@ class LossEvaluator:
         mu = match["mu"].item()
         dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha, kind="mu", decimals=decimals)
         dvar_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha, kind="var", decimals=decimals)
-        if dmu_dα is None or dvar_dα is None:
+        if dmu_dα is None or not math.isfinite(float(dmu_dα)):
             return None  # Not enough data to compute gradient
+        if (dvar_dα is None) or (not math.isfinite(float(dvar_dα))):
+            dvar_dα = 0.0
+
+        # Prefer PR slope m_k once the linear gate AND PR has stabilized
+        mk = self.fd_tracker.m_k
+        if (mk is not None) and self.fd_tracker.linear_slope_ready and math.isfinite(float(mk)):
+            # Residual gate
+            n_k = int(match.get("n", 0))
+            resid_ok, _, _ = self.fd_tracker.residual_gate(
+                alpha=match["alpha"], mu_val=match["mu"], var_val=match["var"], n=n_k
+            )
+            if bool(resid_ok):
+                dmu_dα = float(mk)  # <-- USE m_k AS THE SLOPE
+
         grad = 2 * (mu - torch.tensor(self.v_d, dtype=torch.float32)) * dmu_dα + torch.tensor(self.lambda_var, dtype=torch.float32) * dvar_dα
         return grad
 
