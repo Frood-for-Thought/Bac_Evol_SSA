@@ -69,7 +69,7 @@ $$
 e_{k+1} \=\ (1 - 2\gamma m_k^2) e_k
 $$
 
-   where $e_k \=\ \alpha_k - \alpha*$. The algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
+   where $e_k \=\ \alpha_k - \alpha*$. (See Local linear recursion and the γ-cap in the ReadMe file for more explanation). The algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
    **Benefit:** principled guard against overshoot and oscillation.
 
 5. **Variance-aware objective (optional)**
