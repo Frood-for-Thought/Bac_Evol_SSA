@@ -192,23 +192,24 @@ class LossEvaluator:
         # Gradient step: α_next = α_k - γ * grad.
         alpha_k_tensor = torch.tensor(alpha_k, dtype=torch.float32)
         # -----------------------------------------------------------------------------
+        # THIS IS NOW CALCULATED IN Calc_Alpha_ML_Function
         # Adaptive gamma cap from linear analysis:
         # (alpha_{k+1} - alpha_star) = (1 - 2 * gamma * m_k^2) * (alpha_k - alpha_star).
         # Convergence requires 0 < gamma < 1 / m_k^2. To avoid oscillations and blow-ups,
         # cap gamma at (1 - eta) / (2 * m_k^2), with a tiny margin eta in (0, 0.1].
         # This keeps |1 - 2 * gamma * m_k^2| < 1 and avoids the huge jumps away from convergence.
-        mk = self.fd_tracker.m_k
+        # mk = self.fd_tracker.m_k
         # So the only ways that scaling would be “not used” in practice are:
         # The guard set dmu_dalpha = 1.0 (e.g., slope missing/tiny/non-finite), which makes gamma = 1.0.
         # The gamma cap is enabled and use_gradient_override=False, so LossEvaluator reduces gamma.
-        if (mk is not None) and self.fd_tracker.linear_slope_ready:
-            mk_val = float(mk.item() if hasattr(mk, "item") else mk)
-            mk2 = mk_val * mk_val
-            if mk2 > 0.0 and math.isfinite(mk2):
-                eta = 0.05  # small safety margin
-                gamma_cap = (1.0 - eta) / (2.0 * mk2)
-                if gamma > gamma_cap:
-                    gamma = gamma_cap
+        # if (mk is not None) and self.fd_tracker.linear_slope_ready:
+        #     mk_val = float(mk.item() if hasattr(mk, "item") else mk)
+        #     mk2 = mk_val * mk_val
+        #     if mk2 > 0.0 and math.isfinite(mk2):
+        #         eta = 0.05  # small safety margin
+        #         gamma_cap = (1.0 - eta) / (2.0 * mk2)
+        #         if gamma > gamma_cap:
+        #             gamma = gamma_cap
 
         step = -gamma * grad_k
         alpha_kp1 = alpha_k_tensor + step

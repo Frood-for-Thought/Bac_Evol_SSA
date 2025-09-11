@@ -46,7 +46,7 @@ dt = 0.1
 deme_start = 30
 
 # Values used for training.
-num_epochs = 50
+num_epochs = 70
 learning_rate = 2 / (100 * Rtroc[deme_start])
 theoretical_val = vd_chemotaxis[deme_start]
 # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.

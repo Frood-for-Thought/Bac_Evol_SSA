@@ -322,6 +322,15 @@ class FiniteDifferenceTracker:
                     mu = torch.as_tensor(mus_in_range, dtype=torch.float32)
                     n_t = torch.as_tensor(ns_in_range, dtype=torch.float32)
                     s2 = torch.as_tensor(vars_in_range, dtype=torch.float32)  # s_i^2 (unbiased OK)
+
+                    # Batches at different α have different dispersions. In the PR fit, WLS weights wi∝ni/si2 prevents
+                    # the slope from being dominated by high-variance points.
+                    # This tightens “linear_slope_ready” test and the γ-cap.
+                    # Weighted centered slope: m_k = [ ∑iwi(αi−αˉw)(μi−μˉw) ]/ [ ∑iwi(αi−αˉw)2+ε ]
+
+                    # WLS scaling: w_i ∝ n_i / s_i^2 ; guard tiny s2 to avoid inf weights; no normalization needed
+                    w = n_t / torch.clamp_min(s2, 1e-12)
+
                     # ------------------------------------------------------------------
                     # Centered Residual
                     # Testing |μ(α) − m_k α| against a stderr bound is biased if the local line has an intercept b ≠ 0.
@@ -339,16 +348,10 @@ class FiniteDifferenceTracker:
                     # touching the slope math below. (No behavior change to the slope calculation.)
                     # ------------------------------------------------------------------
                     # Store window means so centered residual can be computed elsewhere (e.g., residual_gate).
-                    self.alpha_bar = float(a.mean().item())
-                    self.mu_bar = float(mu.mean().item())
-
-                    # Batches at different α have different dispersions. In the PR fit, WLS weights wi∝ni/si2 prevents
-                    # the slope from being dominated by high-variance points.
-                    # This tightens “linear_slope_ready” test and the γ-cap.
-                    # Weighted centered slope: m_k = [ ∑iwi(αi−αˉw)(μi−μˉw) ]/ [ ∑iwi(αi−αˉw)2+ε ]
-
-                    # WLS scaling: w_i ∝ n_i / s_i^2 ; guard tiny s2 to avoid inf weights; no normalization needed
-                    w = n_t / torch.clamp_min(s2, 1e-12)
+                    alpha_bar_w = (w * a).sum() / (w.sum() + 1e-12)
+                    mu_bar_w = (w * mu).sum() / (w.sum() + 1e-12)
+                    self.alpha_bar = float(alpha_bar_w.item())
+                    self.mu_bar = float(mu_bar_w.item())
 
                     if w.sum().item() > 0:  # tiny guard against degenerate all-zero weights
                         # Centered least-squares slope to remove intercept bias.
