@@ -80,7 +80,7 @@ Each iteration generates $\(n\)$ samples, producing $\(\mu(\alpha)\)$, the varia
 
 Instead of assuming global monotonicity, the method tracks a bracket $\([\alpha_{\min}, \alpha_{\max}]\)$ where the solution $\(\alpha^\star\)$ lies. This localization avoids the fragility of RM’s monotonicity assumption, which can fail in practice. Within the bracket, both $\(\mu(\alpha)\)$ and $\(s^2(\alpha)\)$ are recorded to build a picture of the local domain.
 
-1. **Gradient proxy with amortized slope**
+3. **Gradient proxy with amortized slope**
 
 $$
 g_k \approx\ 2\big(\mu(\alpha_k) - v_d\big){\mu'}(\alpha_k)\+\lambda {\partial \mathrm{var}}/{\partial \alpha}
@@ -89,17 +89,25 @@ $$
    The slope ${\mu'}(\alpha)$ is produced by previously sampled $\alpha$’s.
    **Benefit:** KW-like directional information without paying a two-sided resampling cost at every step.
 
-2. **Slope-normalized step size**
+4. **Slope-normalized step size**
 
 $$
 \gamma_k \=\ \frac{\verb|LR_scheduler_scale|}{\left|{\mu'}(\alpha_k)\right|}
 $$
 
-   The raw step becomes $\Delta\alpha \approx -2(\mu-v_d)\mathrm{sign}({\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions. The step size is “slope-normalized”: first estimate the local sensitivity ${\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\mu - v_d){\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained in 3), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope collapses or the loss would worsen, the code falls back to a cautious Robbins–Monro–like probe step instead of a full gradient move.
+   The raw step becomes $\Delta\alpha \approx -2(\mu-v_d)\mathrm{sign}({\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions. The step size is “slope-normalized”: first estimate the local sensitivity ${\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\mu - v_d){\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained below), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope fails or the loss would worsen convergence, the code falls back to a cautious Robbins–Monro–like probe step instead of a full gradient move.
 
-3. **Polyak–Ruppert readiness**
-   PR slope updates run continuously, but a **readiness flag** requires $|\Delta m|$ to be below a tolerance before trusting the linear model.
-   **Benefit:** avoids premature reliance on noisy slopes.
+5. **Polyak–Ruppert (PR) readiness**
+
+A PR centered regression gives the slope:
+
+$$
+\[
+m_k = \frac{\sum_i (\alpha_i - \bar\alpha)(\mu(\alpha_i) - \bar\mu)}{\sum_i (\alpha_i - \bar\alpha)^2 + \varepsilon}.
+\]
+$$
+
+When the relationship between $\(\mu(\alpha)\)$ and $\(\alpha\)$ is close to linear in $\([\alpha_{\min}, \alpha_{\max}]\)$, $\(m_k\)$ acts as a **secant slope** across this interval. Once stabilized, $\(m_k\)$ provides a usable local equation rather than requiring asymptotic convergence as in RM. PR slope updates run continuously through the iteration, but a **readiness flag** requires $|\Delta m|$ to be below a tolerance before trusting the linear model. **Benefit:** avoids premature reliance on noisy slopes.
 
 4. **Curvature-based stability cap**
    Using the linearized error recursion:
