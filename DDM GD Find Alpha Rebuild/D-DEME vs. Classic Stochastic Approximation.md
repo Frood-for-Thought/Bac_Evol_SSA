@@ -74,7 +74,7 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 1. **Gradient proxy with amortized slope**
 
 $$
-g_k \approx\ 2\big(\hat\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
+g_k \approx\ 2\big(\mu(\alpha_k) - v_d\big)\widehat{\mu'}(\alpha_k)\+\lambda\widehat{\partial \mathrm{var}}/{\partial \alpha}
 $$
 
    The slope $\widehat{\mu'}(\alpha)$ is produced by **MacroStats** + **Polyak–Ruppert (PR)** smoothing across previously sampled $\alpha$’s.
