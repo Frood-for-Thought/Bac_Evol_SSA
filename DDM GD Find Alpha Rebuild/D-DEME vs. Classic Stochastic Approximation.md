@@ -86,7 +86,7 @@ $$
 g_k \approx\ 2\big(\mu(\alpha_k) - v_d\big){\mu'}(\alpha_k)\+\lambda {\partial \mathrm{var}}/{\partial \alpha}
 $$
 
-   The slope ${\mu'}(\alpha)$ is produced by previously sampled $\alpha$’s.
+   The slope ${\mu'}(\alpha)$ is produced by previously sampled $\alpha$ means $({\mu})$.
    **Benefit:** KW-like directional information without paying a two-sided resampling cost at every step.
 
 4. **Slope-normalized step size**
@@ -95,7 +95,7 @@ $$
 \gamma_k \=\ \frac{\verb|LR_scheduler_scale|}{\left|{\mu'}(\alpha_k)\right|}
 $$
 
-   The raw step becomes $\Delta\alpha \approx -2(\mu-v_d)\mathrm{sign}({\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions. The step size is “slope-normalized”: first estimate the local sensitivity ${\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\mu - v_d){\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained below), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope fails or the loss would worsen convergence, the code falls back to a cautious Robbins–Monro–like probe step instead of a full gradient move.
+   The raw step becomes $\Delta\alpha \approx -2(\mu-v_d)\mathrm{sign}({\mu'})$, which **stabilizes** steps on steep regions and avoids stagnation on flat regions. The step size is “slope-normalized”: first estimate the local sensitivity ${\mu'}(\alpha_k)$ from finite differences, then set $\verb|gamma\_k = LR\_scheduler\_scale / abs(mu\_prime(alpha\_k))|$ so the gradient step cancels out the slope’s magnitude. With $dL/d\alpha \approx 2(\mu - v_d){\mu'}$, the raw update becomes $\verb|Delta\_alpha ≈ -2\*(mu - v\_d)\*sign(mu\_prime)|$ and large slopes don’t cause oversize jumps, and flat regions don’t stall progress. A Polyak–Ruppert–based cap, (explained below), keeps $\gamma_k$ within a stability range when the linear model is reliable, and if the slope fails or the loss would worsen convergence, the code falls back to a cautious Robbins–Monro–like probe step instead of a full gradient move. A sign-transition detector finds an initial $[\alpha_{\min}, \alpha_{\max}]$ such that $\mu(\alpha)-v_d$ changes sign. **Benefit:** keeps the search well-posed and contained.
 
 5. **Polyak–Ruppert (PR) readiness**
 
@@ -144,48 +144,61 @@ $$
    where $e_k \=\ \alpha_k - \alpha*$. (See Local linear recursion and the γ-cap in the ReadMe file for more explanation). The algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
    **Benefit:** principled guard against overshoot to guarantee contraction and preventing oscillations. This explicit cap addresses RM’s sensitivity to poorly tuned step sizes, which can otherwise cause divergence or unbearably slow progress.
 
-5. **Variance-aware objective (optional)**
+7. **Variance-aware objective (optional)**
 
 $$
 L(\alpha) \=\ \big(\mu(\alpha) - v_d\big)^2 \+\ \lambda \mathrm{var}(\alpha)
 $$
 
-   Penalizing variance by setting $\lambda = 0$ helps when $n$ cannot be increased further.
+Penalizing variance by setting $\lambda = 0$ helps when $n$ cannot be increased further.
 
-6. **Bracketed search**
-   A sign-transition detector finds an initial $[\alpha_{\min}, \alpha_{\max}]$ such that $\mu(\alpha)-v_d$ changes sign.
-   **Benefit:** keeps the search well-posed and contained.
+7. **Near-target damping and Coordinated Control of Noise**
 
-7. **Near-target damping from residual gates**
-   The absolute target error $|\mu(\alpha)-v_d|$ is compared against a **measured confidence interval** (CI) $\propto 2s(\alpha)/\sqrt{n}$. When $|\mu - v_d|$ is **inside** this CI, $\gamma$ is **tapered**, improving final-stage convergence **without** slowing early progress.
+The absolute target error $|\mu(\alpha)-v_d|$ is compared against a **measured confidence interval** (CI) $\propto 2s(\alpha)/\sqrt{n}$. When $|\mu - v_d|$ is **inside** this CI, $\gamma$ is **tapered**, improving final-stage convergence **without** slowing early progress. The method reduces intrinsic noise both by decaying the learning rate $\(\gamma\)$ and by increasing the batch size $\(n\)$. Larger $\(n\)$ shrinks $\(\pm 2s(\alpha)/\sqrt{n}\)$, while smaller $\(\gamma\)$ suppresses noise-driven updates. Unlike RM, which washes out noise only in the limit, this provides a finite-sample mechanism to tame noise from the start.
 
 ---
 
 ## Why Not Just RM or KW?
 
-* **RM:** requires a globally tuned decaying $a_k$. With heteroskedastic noise and unknown or varying slopes, early steps may overshoot; late steps may be too small. It lacks data-driven normalization and curvature safety.
+* **RM:** requires a globally tuned decaying $\gamma$. With heteroskedastic noise and unknown or varying slopes, early steps may overshoot; late steps may be too small. It lacks data-driven normalization and curvature safety.
 * **KW:** provides gradient direction but **doubles per-iteration sampling cost** (or worse in higher dimensions). With strict sampling caps, that cost is prohibitive.
 * **D-DEME:** reuses cross- $\alpha$ information (MacroStats), **verifies** linearity (PR readiness + residual gates) instead of paying fresh two-sided probes for each $\alpha$. **Normalizes** steps by the estimated slope and **caps** steps via curvature, while optionally **penalizing variance**, and **brackets** the search. The result is **faster progress early** and **stable convergence near the target** with reusability of macro data including the calculated local secant $m_k$ within the region $[\alpha_{\min}, \alpha_{\max}]$.
 ---
 
-## Practical Implications
-
-* **Sampling budget:** amortizes slope information across $\alpha$ rather than recomputing finite differences every iteration.
-* **Robust steps:** slope normalization and curvature caps reduce oscillations without globally shrinking learning rates.
-* **Convergence diagnostics:** PR readiness and residual gates provide observable signals to modulate step size near the solution.
-* **No backprop required:** operates entirely from simulator outputs and summary statistics.
-
----
-
 ## Summary
 
-D-DEME can be viewed as **Robbins–Monro enhanced** with:
+D-DEME can be viewed sharing some of the recursion structure as **Robbins–Monro** with:
 
-* amortized finite-difference slopes (PR),
+$$
+e_{k+1} \approx (1 - c\gamma_k)\, e_k + \gamma_k \cdot \text{noise}
+$$
+
+But with additional:
+* finite-difference slopes (PR),
 * slope-normalized steps with a scheduler scale,
 * curvature-based step caps,
 * variance awareness,
 * residual-band damping,
 * and bracketed initialization.
 
-These additions make stochastic approximation **practical and stable** for simulator-driven mean matching when gradients are unavailable, noise is heteroskedastic, and sample counts are capped.
+to addresses some of RM’s main limitations:
+
+1. **Reliance on asymptotics.**  
+   RM converges only as $\(k \to \infty\)$, leaving iterates unstable or slow at finite times. The variance-aware method instead validates slope behavior and noise levels directly using $\(\mu(\alpha)\)$, $\(s^2(\alpha)\)$, and residual checks, so updates remain reliable without waiting for asymptotics.
+
+2. **No diagnostics.**  
+   RM cannot test its own assumptions. The variance-aware method uses the centered residual test to confirm local linearity and verify that the slope $\(m_k\)$ is meaningful, preventing wasted updates in noisy or nonlinear regions.
+
+3. **Weak handling of noise.**  
+   RM relies only on $\(\gamma_k \to 0\)$ to control noise. The variance-aware method actively reduces noise at each iteration by growing $\(n\)$ and bounding residuals against empirical standard errors.
+
+4. **Dependence on step-size tuning.**  
+   RM is highly sensitive to the choice of $\(\gamma_k\)$. The variance-aware method caps $\(\gamma\)$ using the secant slope $\(m_k\)$, ensuring contraction and preventing instability.
+
+5. **No explicit local model.**  
+   RM treats updates as blind stochastic corrections. The variance-aware method builds a local model of the domain by recording $\(\mu(\alpha)\)$, $\(s^2(\alpha)\)$, and a stable secant slope $\(m_k\)$, making the optimization interpretable and landscape-aware.
+
+6. **Practical robustness.**  
+   RM provides only minimal guidance until large iteration counts. The variance-aware method offers diagnostics, slope stabilization, and variance control, making it robust and effective in finite-sample regimes.  
+
+These additions make stochastic approximation **practical and stable** for simulator-driven mean matching when gradients are unavailable, noise is heteroskedastic.
