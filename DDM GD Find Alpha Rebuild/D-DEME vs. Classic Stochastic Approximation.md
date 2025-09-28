@@ -18,9 +18,7 @@ This note positions **Dynamic Data Evolving Mean Estimator (D-DEME)** relative t
 The Robbins–Monro procedure seeks the solution $\(\alpha^\star\)$ such that  
 
 $$
-\[
-\bar v(\alpha^\star) = v_d,
-\]
+\bar v(\alpha^\star) = v_d
 $$
 
 where $\(\bar v(\alpha) = \mathbb{E}[v_j(\alpha)]\)$. Observations are noisy draws $\(v_j(\alpha)\)$, and their sample mean is $\(\mu(\alpha)\)$.  
