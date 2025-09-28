@@ -75,6 +75,11 @@ D-DEME is a **problem-aware** stochastic approximation that exploits structure a
 
 Each iteration generates $\(n\)$ samples, producing $\(\mu(\alpha)\)$, the variance estimate $\(s^2(\alpha)\)$, and standard deviation $\(s(\alpha)\)$. This provides an empirical description of the landscape at $\(\alpha\)$ and reduces sampling noise immediately, instead of waiting for asymptotics to control it.
 
+
+2. **Identifying a solution domain**
+
+Instead of assuming global monotonicity, the method tracks a bracket $\([\alpha_{\min}, \alpha_{\max}]\)$ where the solution $\(\alpha^\star\)$ lies. This localization avoids the fragility of RM’s monotonicity assumption, which can fail in practice. Within the bracket, both $\(\mu(\alpha)\)$ and $\(s^2(\alpha)\)$ are recorded to build a picture of the local domain.
+
 1. **Gradient proxy with amortized slope**
 
 $$
