@@ -187,7 +187,7 @@ to addresses some of RM’s main limitations:
    RM converges only as $\(k \to \infty\)$, leaving iterates unstable or slow at finite times. The variance-aware method instead validates slope behavior and noise levels directly using $\(\mu(\alpha)\)$, $\(s^2(\alpha)\)$, and residual checks, so updates remain reliable without waiting for asymptotics.
 
 2. **No diagnostics.**  
-   RM cannot test its own assumptions. The variance-aware method uses the centered residual test to confirm local linearity and verify that the slope $\(m_k\)$ is meaningful, preventing wasted updates in noisy or nonlinear regions.
+   RM assumes monotonicity, bounded variance, and step-size conditions, but has no internal mechanism to verify them. The variance-aware method uses the centered residual test to confirm local linearity and verify that the slope $\(m_k\)$ is meaningful, preventing wasted updates in noisy or nonlinear regions.
 
 3. **Weak handling of noise.**  
    RM relies only on $\(\gamma_k \to 0\)$ to control noise. The variance-aware method actively reduces noise at each iteration by growing $\(n\)$ and bounding residuals against empirical standard errors.
@@ -196,7 +196,7 @@ to addresses some of RM’s main limitations:
    RM is highly sensitive to the choice of $\(\gamma_k\)$. The variance-aware method caps $\(\gamma\)$ using the secant slope $\(m_k\)$, ensuring contraction and preventing instability.
 
 5. **No explicit local model.**  
-   RM treats updates as blind stochastic corrections. The variance-aware method builds a local model of the domain by recording $\(\mu(\alpha)\)$, $\(s^2(\alpha)\)$, and a stable secant slope $\(m_k\)$, making the optimization interpretable and landscape-aware.
+   RM corrects its estimate based only on the latest noisy sample, without modeling the local landscape. The variance-aware method builds a local model of the domain by recording $\(\mu(\alpha)\)$, $\(s^2(\alpha)\)$, and a stable secant slope $\(m_k\)$, making the optimization interpretable and landscape-aware.
 
 6. **Practical robustness.**  
    RM provides only minimal guidance until large iteration counts. The variance-aware method offers diagnostics, slope stabilization, and variance control, making it robust and effective in finite-sample regimes.  
