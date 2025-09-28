@@ -102,12 +102,24 @@ $$
 A PR centered regression gives the slope:
 
 $$
-\[
-m_k = \frac{\sum_i (\alpha_i - \bar\alpha)(\mu(\alpha_i) - \bar\mu)}{\sum_i (\alpha_i - \bar\alpha)^2 + \varepsilon}.
-\]
+m_k = \frac{\sum_i (\alpha_i - \bar\alpha)(\mu(\alpha_i) - \bar\mu)}{\sum_i (\alpha_i - \bar\alpha)^2 + \varepsilon}
 $$
 
 When the relationship between $\(\mu(\alpha)\)$ and $\(\alpha\)$ is close to linear in $\([\alpha_{\min}, \alpha_{\max}]\)$, $\(m_k\)$ acts as a **secant slope** across this interval. Once stabilized, $\(m_k\)$ provides a usable local equation rather than requiring asymptotic convergence as in RM. PR slope updates run continuously through the iteration, but a **readiness flag** requires $|\Delta m|$ to be below a tolerance before trusting the linear model. **Benefit:** avoids premature reliance on noisy slopes.
+
+A centered residual is computed:
+
+$$
+r_{\text{cent}}(\alpha) = \bigl(\mu(\alpha) - \bar\mu\bigr) - m_k(\alpha - \bar\alpha)
+$$
+
+which removes intercept bias. Linearity in the bracket is confirmed if:
+
+$$
+|r_{\text{cent}}(\alpha)| \le\ \cdot \frac{2s(\alpha)}{\sqrt{n}}
+$$
+
+This diagnostic closes a gap in RM, which offers no way to verify whether its assumptions about monotonicity or slope are valid locally.
 
 4. **Curvature-based stability cap**
    Using the linearized error recursion:
