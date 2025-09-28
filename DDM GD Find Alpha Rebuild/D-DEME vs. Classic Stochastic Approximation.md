@@ -69,7 +69,11 @@ This requires **two fresh simulations per iteration** (per dimension), which is 
 
 ## What D-DEME Adds
 
-D-DEME is a **problem-aware** stochastic approximation that exploits structure already available in the sampling pipeline:
+D-DEME is a **problem-aware** stochastic approximation that exploits structure already available in how data is sampled:
+
+1. **Multiple samples per iteration**
+
+Each iteration generates $\(n\)$ samples, producing $\(\mu(\alpha)\)$, the variance estimate $\(s^2(\alpha)\)$, and standard deviation $\(s(\alpha)\)$. This provides an empirical description of the landscape at $\(\alpha\)$ and reduces sampling noise immediately, instead of waiting for asymptotics to control it.
 
 1. **Gradient proxy with amortized slope**
 
@@ -77,7 +81,7 @@ $$
 g_k \approx\ 2\big(\mu(\alpha_k) - v_d\big){\mu'}(\alpha_k)\+\lambda {\partial \mathrm{var}}/{\partial \alpha}
 $$
 
-   The slope $\widehat{\mu'}(\alpha)$ is produced by **MacroStats** + **Polyak–Ruppert (PR)** smoothing across previously sampled $\alpha$’s.
+   The slope ${\mu'}(\alpha)$ is produced by previously sampled $\alpha$’s.
    **Benefit:** KW-like directional information without paying a two-sided resampling cost at every step.
 
 2. **Slope-normalized step size**
