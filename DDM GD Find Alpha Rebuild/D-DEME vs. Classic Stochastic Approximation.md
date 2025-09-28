@@ -116,20 +116,33 @@ $$
 which removes intercept bias. Linearity in the bracket is confirmed if:
 
 $$
-|r_{\text{cent}}(\alpha)| \le\ \cdot \frac{2s(\alpha)}{\sqrt{n}}
+|r_{\text{cent}}(\alpha)| \le\ \frac{2s(\alpha)}{\sqrt{n}}
 $$
 
 This diagnostic closes a gap in RM, which offers no way to verify whether its assumptions about monotonicity or slope are valid locally.
 
-4. **Curvature-based stability cap**
-   Using the linearized error recursion:
+6. **Curvature-based stability cap**
+
+Near the target, the gradient is approximated by:
 
 $$
-e_{k+1} \=\ (1 - 2\gamma m_k^2) e_k
+\frac{dL}{d\alpha} \approx 2 m_k^2 e_k
+$$
+
+so the error recursion becomes:
+
+$$
+e_{k+1} = (1 - 2\gamma m_k^2) e_k + \gamma \cdot \text{noise}
+$$
+
+Using the linearized error recursion a stability cap enforces:
+
+$$
+0 < \gamma < \frac{1}{m_k^2}
 $$
 
    where $e_k \=\ \alpha_k - \alpha*$. (See Local linear recursion and the γ-cap in the ReadMe file for more explanation). The algorithm caps $\gamma$ by $\gamma_{\max}\approx (1-\eta)/(2m_k^2)$ once PR is ready.
-   **Benefit:** principled guard against overshoot and oscillation.
+   **Benefit:** principled guard against overshoot to guarantee contraction and preventing oscillations. This explicit cap addresses RM’s sensitivity to poorly tuned step sizes, which can otherwise cause divergence or unbearably slow progress.
 
 5. **Variance-aware objective (optional)**
 
