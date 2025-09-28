@@ -15,7 +15,7 @@ This note positions **Dynamic Data Evolving Mean Estimator (D-DEME)** relative t
 
 ## Robbins–Monro (RM)
 
-The Robbins–Monro procedure seeks the solution $\(\alpha^\star\)$ such that  
+The Robbins–Monro procedure seeks the solution $\(\alpha^\star\)$ such that:
 
 $$
 \bar v(\alpha^\star) = v_d
@@ -23,38 +23,30 @@ $$
 
 where $\(\bar v(\alpha) = \mathbb{E}[v_j(\alpha)]\)$. Observations are noisy draws $\(v_j(\alpha)\)$, and their sample mean is $\(\mu(\alpha)\)$.  
 
-The update rule is
+The update rule is:
 
 $$
-\[
 \alpha_{k+1} = \alpha_k - \gamma_k \bigl(\mu(\alpha_k) - v_d\bigr),
-\]
 $$
 
 with a step size $\(\gamma_k\)$ that decays, often like $\(1/k\)$.  
 
-Defining the error
+Defining the error:
 
 $$
-\[
 e_k := \alpha_k - \alpha^\star,
-\]
 $$
 
-and expanding
+and expanding:
 
 $$
-\[
 \bar v(\alpha_k) - v_d \;\approx\; \bar v'(\alpha^\star)\, e_k,
-\]
 $$
 
-the error recursion is
+the error recursion is:
 
 $$
-\[
 e_{k+1} \approx \bigl(1 - \gamma_k \bar v'(\alpha^\star)\bigr)\, e_k \;+\; \gamma_k \cdot \text{noise}.
-\]
 $$
 
 Convergence follows if $\(\gamma_k \to 0\)$, $\(\sum_k \gamma_k = \infty\)$, and $\(\sum_k \gamma_k^2 < \infty\)$. The analysis is asymptotic, relying on monotonicity of \(\bar v\) and variance shrinking only in the limit.
