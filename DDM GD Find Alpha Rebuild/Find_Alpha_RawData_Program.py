@@ -43,14 +43,6 @@ Start_Angle = 90  # degrees
 Angle = Start_Angle
 diff = 1.16
 dt = 0.1
-deme_start = 30
-
-# Values used for training.
-num_epochs = 150
-learning_rate = 2 / (100 * Rtroc[deme_start])
-theoretical_val = vd_chemotaxis[deme_start]
-# Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-max_iter_start = 2000
 
 # Plotting
 fig, ax1 = plt.subplots()
@@ -199,6 +191,14 @@ def test_sign_transitions(samples_per_alpha: float = 100):
 
 
 if __name__ == "__main__":
+    # Values used for training.
+    deme_start = 30
+    num_epochs = 150
+    learning_rate = 2 / (100 * Rtroc[deme_start])
+    theoretical_val = vd_chemotaxis[deme_start]
+    # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
+    max_iter_start = 2000
+
     a_min, a_max, stats, data_generator = test_sign_transitions(samples_per_alpha=max_iter_start)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
@@ -238,3 +238,40 @@ if __name__ == "__main__":
 
     alpha_opt, final_loss = deme.train()
     print(f"\n[Result] alpha* ≈ {alpha_opt:.6f}, final_loss = {final_loss:.6f}")
+
+    # -------------------------------------------------------
+    # Export results for each drift-velocity calculation
+    # -------------------------------------------------------
+
+    # Create (or append to) a DataFrame summarizing run statistics
+    output_record = {
+        "deme_index": int(deme_start),
+        "v_d_target": float(theoretical_val),
+        "alpha_star": float(alpha_opt),
+        "final_loss": float(final_loss),
+        "learning_rate": float(learning_rate),
+        "num_epochs": int(num_epochs),
+        "max_iter_final": int(deme.max_iter),
+        "slope_final": float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
+        "alpha_min": float(bracket[0]),
+        "alpha_max": float(bracket[1]),
+        "std_final": float(stats.records[-1]["std"]),
+        "mu_final": float(stats.records[-1]["mu"]),
+        "var_final": float(stats.records[-1]["var"]),
+        "stderr_ci_final": float(stats.records[-1]["stderr_ci"]),
+    }
+
+    # Append new results to file (or create one)
+    output_filename = "alpha_results_summary.xlsx"
+
+    try:
+        existing_df = pd.read_excel(output_filename)
+        updated_df = pd.concat([existing_df, pd.DataFrame([output_record])], ignore_index=True)
+    except FileNotFoundError:
+        updated_df = pd.DataFrame([output_record])
+
+    # Write back to Excel
+    with pd.ExcelWriter(output_filename, engine="openpyxl", mode="w") as writer:
+        updated_df.to_excel(writer, index=False)
+
+    print(f"\n[Saved] Results written to {output_filename}")
