@@ -15,8 +15,8 @@ class Norm_Vd_Mean_Data_Generator:
         self.deme_start = deme_start  # Deme starting position.
         self.d = diff  # Diffusion constant.
         self.dt = dt  # Time step.
-        self.pos = DL * deme_start  # Position variable [µM].
-        self.pos_ini = DL * deme_start  # Starting position [µM].
+        self.pos = DL * 50  # Position variable [µM].
+        self.pos_ini = DL * 50  # Starting position [µM].
         self.velocities = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -58,6 +58,7 @@ class Norm_Vd_Mean_Data_Generator:
 
         # Calculating the Timed Rate of Change Tensor
         Rtroc_tensor = torch.tensor(self.Rtroc, device=self.device)  # Convert Rtroc to tensor
+        local_Rtroc = Rtroc_tensor[self.deme_start]
 
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
@@ -74,6 +75,9 @@ class Norm_Vd_Mean_Data_Generator:
         # Mask to track active bacteria
         active_mask = torch.ones(self.max_iter, dtype=torch.bool, device=self.device)
 
+        # Track how long each bacterium has been active
+        start_times = torch.zeros(self.max_iter, device=self.device)
+
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
             if t_idx % 100 == 0:
@@ -84,16 +88,19 @@ class Norm_Vd_Mean_Data_Generator:
                 active_positions = position[t_idx, active_mask]
 
                 # Calculate boundary_mask to identify bacteria reaching the end of the deme
-                boundary_mask = active_positions >= (self.pos_ini + self.DL)
+                boundary_mask = active_positions >= (self.pos_ini + self.DL*10)
 
                 # Handle bacteria that have reached the boundary.
                 if boundary_mask.any():
                     # Calculate the distance traveled for these bacteria.
                     distance_travelled = active_positions[boundary_mask] - self.pos_ini
-                    total_time = t
+                    # Use per-bacterium elapsed time
+                    total_time = torch.clamp(t - start_times[active_mask][boundary_mask], min=self.dt)
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
+                    # Clamp for sanity (no negative or unphysical velocities)
+                    Calculated_Ave_Vd = torch.clamp(Calculated_Ave_Vd, -self.Vo_max, self.Vo_max)
 
                     # Append the values in the tensor onto another velocities tensor on 'cuda'.
                     for v in Calculated_Ave_Vd:
@@ -104,7 +111,12 @@ class Norm_Vd_Mean_Data_Generator:
                             break
 
                 # Update the active mask: remove bacteria that have reached the boundary
-                active_mask[active_mask.clone()] = ~boundary_mask
+                new_active_mask = active_mask.clone()
+                new_active_mask[active_mask] = ~boundary_mask
+                active_mask = new_active_mask
+
+                # Reset timers for newly inactive bacteria to avoid reuse
+                start_times[active_mask.logical_not()] = 0.0
 
                 if active_mask.any():
                     # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
@@ -117,8 +129,8 @@ class Norm_Vd_Mean_Data_Generator:
                     # Calculate Ptum using torch.where
                     Ptum[t_idx, active_mask] = torch.where(
                         direction_condition,
-                        self.dt * torch.exp(-self.d + self.alpha * Rtroc_tensor[i]),
-                        self.dt * torch.exp(-self.d - self.alpha * Rtroc_tensor[i])
+                        self.dt * torch.exp(-self.d + self.alpha * local_Rtroc),
+                        self.dt * torch.exp(-self.d - self.alpha * local_Rtroc)
                     ).float()  # Convert to float to match Ptum's dtype.
 
                     # Tumbling condition
@@ -199,7 +211,7 @@ if __name__ == "__main__":
     nl = 101
     Grad = 0.000405  # µm^-1
     DL = 310  # µm
-    input_parameters = '../input_parameters.xlsx'
+    input_parameters = 'input_parameters.xlsx'
     parameter_df = pd.read_excel(input_parameters)
     vd_chemotaxis = parameter_df.loc[:, 'drift_velocity']  # The theoretical drift velocity per deme.
     c_df_over_dc = parameter_df.loc[:, 'c_x_df_l_dc']  # Concentration*df/dc.
@@ -208,17 +220,18 @@ if __name__ == "__main__":
     # This numpy vector is calculated from the above constant and pandas series.
     Rtroc = vd_chemotaxis * Grad * c_df_over_dc
 
-    alpha = 700
+    alpha = 0
     diff = 1.16
     dt = 0.1
-    max_iter = 20000
-    deme_start = 30
+    max_iter = 2000
+    deme_start = 1
 
     # Initialize the data generator
-    data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, alpha, Angle, Vo_max, DL, nl, deme_start, diff, dt)
+    data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
 
     # When calculating vel, the self.velocities attribute is set to the 'data_generator' object.
     # After self.velocities has been set to data_generator, use it to compute 'calculate_average_velocity()'.
-    vel = data_generator.simulate_bacterial_movement_cuda(max_iter)
+    vel = data_generator.simulate_bacterial_movement_cuda(alpha, max_iter)
+
     print(vel)
     print(data_generator.calculate_average_velocity())
