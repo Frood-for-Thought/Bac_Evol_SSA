@@ -92,9 +92,11 @@ class NormMeanDataGenerator(BaseDataGenerator):
                 if hasattr(v, "detach") else torch.as_tensor(v).cpu().reshape(-1))
 
 
-def test_sign_transitions(samples_per_alpha: float = 100):
+def test_sign_transitions(alpha_grid, samples_per_alpha: float = 100):
     """
     Probe μ(α) on a coarse grid and report where μ(α) − v_d changes sign.
+    :param alphas : list[float]
+        Grid of α values to probe for μ(α). The variables of alpha used for inspection.
     :param samples_per_alpha: float - How many samples to draw at each α for estimating μ(α) and s²(α).
         Larger values reduce the standard error of μ(α) and make sign changes more reliable.
         (Kept as float to match existing call sites; it’s used as a count when passed to the generator.)
@@ -116,8 +118,6 @@ def test_sign_transitions(samples_per_alpha: float = 100):
     # Collect macro stats on the requested α grid 'from macro_stats import MacroStats'.
     # MacroStats.macro_observations will record μ(α), s²(α), n, etc., for later use.
     stats = MacroStats()
-    # The variables of alpha used for inspection.
-    alphas = list(range(100, 1000, 100))
 
     #  Helper function to get python scalars from tensors/numbers.
     _get = lambda x: x.item() if hasattr(x, "item") else float(x)
@@ -162,13 +162,29 @@ def test_sign_transitions(samples_per_alpha: float = 100):
 
     print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
     if not transitions:
-        raise RuntimeError("No sign transitions detected.")
+        print("\n[No sign transition detected] μ(α) does not cross v_d within sampled α-range.")
+        print("→ Proceeding without bracket constraints (free α search).")
+        bracket = None  # No range restriction
+        return None, None, stats, data_generator
     else:
         # Map detector’s names to the program’s local bracket names.
         # From here on, treat [a_min, a_max] as the *working* window for the ML stage.
         α_min, α_max = transitions[0]  # Select the first bracket
         alpha_vals = sorted(float(r["alpha"]) for r in stats.records)  # Get alpha from records to find min/max domain.
         print(f"Between α = {α_min} and α = {α_max}")
+
+        # Resolution check: if bracket μ-span is too small, widen it
+        mu_values = [float(r["mu"]) for r in stats.records]
+        mu_range = max(mu_values) - min(mu_values)
+        bracket_mu_range = abs(float(next(r for r in stats.records if float(r["alpha"]) == α_max)["mu"]) -
+                               float(next(r for r in stats.records if float(r["alpha"]) == α_min)["mu"]))
+        if mu_range > 0 and (bracket_mu_range / mu_range) < 0.15:
+            alpha_span = α_max - α_min
+            α_min = max(0.0, α_min - alpha_span)
+            α_max = α_max + alpha_span
+            print(f"\n[Resolution check] Coarse μ-range detected — "
+                  f"expanded bracket to [{α_min}, {α_max}]")
+
         # Check if α_min is already in records.
         if not any(abs(float(r["alpha"]) - α_min) < 1e-6 for r in stats.records):
             # If missing, generate new data at α_min
@@ -192,14 +208,19 @@ def test_sign_transitions(samples_per_alpha: float = 100):
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 30
+    deme_start = 20
     num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
     # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-    max_iter_start = 2000
+    max_iter_start = 20000
 
-    a_min, a_max, stats, data_generator = test_sign_transitions(samples_per_alpha=max_iter_start)
+    # The variables of alpha used for inspection.
+    alphas = list(range(500, 1900, 200))
+
+    print(f"\nLRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
+
+    a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, samples_per_alpha=max_iter_start)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
     # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
