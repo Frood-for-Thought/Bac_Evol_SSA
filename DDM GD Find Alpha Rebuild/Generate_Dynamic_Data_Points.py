@@ -99,8 +99,6 @@ class Norm_Vd_Mean_Data_Generator:
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
-                    # Clamp for sanity (no negative or unphysical velocities)
-                    Calculated_Ave_Vd = torch.clamp(Calculated_Ave_Vd, -self.Vo_max, self.Vo_max)
 
                     # Append the values in the tensor onto another velocities tensor on 'cuda'.
                     for v in Calculated_Ave_Vd:
@@ -126,12 +124,25 @@ class Norm_Vd_Mean_Data_Generator:
                     # The boolean is true if it is moving down the gradient.
                     direction_condition = (90 <= ang[t_idx, active_mask]) & (ang[t_idx, active_mask] < 270)
 
+#-----------------------------------------------------------------------------------------------------------
+                    # THIS WAS THE NON-POISSON BROWN AND BERG PROCESS
                     # Calculate Ptum using torch.where
                     Ptum[t_idx, active_mask] = torch.where(
                         direction_condition,
                         self.dt * torch.exp(-self.d + self.alpha * local_Rtroc),
                         self.dt * torch.exp(-self.d - self.alpha * local_Rtroc)
                     ).float()  # Convert to float to match Ptum's dtype.
+
+                    # # THIS IS THE POISSON PROCESS HAZARD FORM.
+                    # r_plus  = torch.clamp(self.d + self.alpha * local_Rtroc, min=1e-8)
+                    # r_minus = torch.clamp(self.d - self.alpha * local_Rtroc, min=1e-8)
+                    #
+                    # Ptum[t_idx, active_mask] = torch.where(
+                    #     direction_condition,
+                    #     1 - torch.exp(-r_plus * self.dt),
+                    #     1 - torch.exp(-r_minus * self.dt)
+                    # ).float()
+#----------------------------------------------------------------------------------------------------------
 
                     # Tumbling condition
                     tumble_mask = R_rt[t_idx, active_mask] < Ptum[t_idx, active_mask]

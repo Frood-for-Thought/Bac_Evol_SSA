@@ -208,17 +208,18 @@ def test_sign_transitions(alpha_grid, samples_per_alpha: float = 100):
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 20
+    deme_start = 30
     num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
     # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-    max_iter_start = 20000
+    max_iter_start = 2000
 
     # The variables of alpha used for inspection.
-    alphas = list(range(500, 1900, 200))
+    alphas = list(range(100, 2000, 100))
 
-    print(f"\nLRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
+    print(f"\nRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
+    print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
 
     a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, samples_per_alpha=max_iter_start)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
