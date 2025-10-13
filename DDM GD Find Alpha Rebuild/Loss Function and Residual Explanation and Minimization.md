@@ -305,10 +305,10 @@ It ensures that the effective learning rate $( \gamma )$ behaves differently dep
 Formally, the cap on the step size is defined as:
 
 $$
-\gamma_{\text{cap}} =
+\gamma_{cap} =
 \begin{cases}
-\dfrac{1 - \eta}{2 m_k^2}, & \text{if } |μ(α_k) - v_d| > \dfrac{2,s(α_k)}{\sqrt{n}}, [1.5em]
-\dfrac{(1 - \eta), \text{lr_scale}}{2 m_k^2}, & \text{if } |μ(α_k) - v_d| \le \dfrac{2,s(α_k)}{\sqrt{n}}.
+\dfrac{1 - \eta}{2 m_k^2}, & \verb|if| \; |μ(α_k) - v_d| > \dfrac{2 s(α_k)}{\sqrt{n}}, \\[1.5em]
+\dfrac{(1 - \eta)\, \verb|lr_scale|}{2 m_k^2}, & \verb|if| \; |μ(α_k) - v_d| \le \dfrac{2 s(α_k)}{\sqrt{n}}.
 \end{cases}
 $$
 
