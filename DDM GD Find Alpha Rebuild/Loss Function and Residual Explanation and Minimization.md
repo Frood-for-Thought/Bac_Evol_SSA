@@ -314,7 +314,11 @@ $$
 \frac{lr_{scale}*(1 - \eta) }{2 m_k^2}, \quad |μ(α_k) - v_d| \le \frac{s(α_k)}{\sqrt{n}}
 $$
 
-where $lr_{scale}$ is the scheduler-controlled adaptive learning rate decay factor from the learning-rate scheduler to reduce $gamma_{cap}$ to arrive closer to the local minimum.
+where $lr_{scale}$ is the scheduler-controlled adaptive learning rate decay factor from the learning-rate scheduler to reduce $\gamma_{cap}$ to arrive closer to the local minimum for:
+
+$$
+e_{k+1} \approx \bigl(1 - \gamma_{cap} \bar v'(\alpha^\star)\bigr)\, e_k \+\ \gamma_{cap} \cdot \text{noise}
+$$
 
 - Effect of the variance term ($\lambda > 0$):  
   - The gradient gains $+ \lambda d(s^2)/d\alpha$.  
