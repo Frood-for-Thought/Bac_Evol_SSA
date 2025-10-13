@@ -210,8 +210,8 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 2
-    num_epochs = 150
+    deme_start = 3
+    num_epochs = 300
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
     # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
@@ -249,7 +249,7 @@ if __name__ == "__main__":
         step_size=15,
         max_iter_limit=20000,
         max_iter_factor=2,
-        learning_rate_gamma=0.7,
+        learning_rate_gamma=0.8,
         stats=stats,
         fd_tracker=fd_tracker,
         bracket=bracket,
