@@ -299,7 +299,18 @@ $$
 
     i.e., the problematic oscillation factor.
     
-  - The square $m_k^2$ is why the condition depends only on the magnitude of slope, not its sign — negative slopes behave the same.  
+  - The square $m_k^2$ is why the condition depends only on the magnitude of slope, not its sign — negative slopes behave the same. The **conditional γ-cap rule** is the key addition that transforms the method into a **self-regularizing stochastic process**.
+It ensures that the effective learning rate $( \gamma )$ behaves differently depending on whether the system is still in the *signal-dominant* phase (where μ(α) is far from $v_d$) or in the *noise-limited* phase (where μ(α) is statistically indistinguishable from $v_d$):
+
+Formally, the cap on the step size is defined as:
+
+$$
+\gamma_{\text{cap}} =
+\begin{cases}
+\dfrac{1 - \eta}{2 m_k^2}, & \text{if } |μ(α_k) - v_d| > \dfrac{2,s(α_k)}{\sqrt{n}}, [1.5em]
+\dfrac{(1 - \eta), \text{lr_scale}}{2 m_k^2}, & \text{if } |μ(α_k) - v_d| \le \dfrac{2,s(α_k)}{\sqrt{n}}.
+\end{cases}
+$$
 
 - Effect of the variance term ($\lambda > 0$):  
   - The gradient gains $+ \lambda d(s^2)/d\alpha$.  
