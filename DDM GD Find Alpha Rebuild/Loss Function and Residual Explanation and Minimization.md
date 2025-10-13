@@ -235,7 +235,20 @@ e_{k+1} = (\alpha_{k+1} - \alpha_\star)
        = (1 - 2 \ \gamma \ m_k^2)\ e_k
 $$
 
-  This is the linear recursion with multiplier $q := (1 - 2 \gamma m_k^2)$.
+  This is the linear recursion with multiplier $q := (1 - 2 \gamma m_k^2)$. This holds true even when the mean relation includes a non-zero intercept:
+$$
+\mu(\alpha) = m_k \alpha + b
+$$
+where the stationary point (target solution) shifts to:
+$$
+\alpha_\star = \frac{v_d - b}{m_k}
+$$
+as opposed to the zero-intercept case:
+$$
+\alpha_\star = \frac{v_d}{m_k}.
+$$
+
+The local stability and γ-cap condition remain identical because the gradient term $(\frac{dL}{d\alpha} = 2m_k^2(\alpha - \alpha_\star))$ is still linear in the tracking error $(e_k = \alpha - \alpha_\star)$.
 
   Intuition: the recursion says each new error $e_{k+1}$ is just the old error $e_k$ multiplied by a constant factor $q$.  
   So the whole behavior depends on $|q|$:  
