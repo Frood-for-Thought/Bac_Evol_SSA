@@ -267,6 +267,13 @@ if __name__ == "__main__":
     # Export results for each drift-velocity calculation
     # -------------------------------------------------------
 
+    # Find the record closest to the final alpha_star
+    alpha_opt_rounded = round(float(alpha_opt), 6)
+    closest_rec = min(
+        stats.records,
+        key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_opt_rounded)
+    )
+
     # Create (or append to) a DataFrame summarizing run statistics
     output_record = {
         "deme_index": int(deme_start),
@@ -279,10 +286,10 @@ if __name__ == "__main__":
         "slope_final": float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
         "alpha_min": float(bracket[0]),
         "alpha_max": float(bracket[1]),
-        "std_final": float(stats.records[-1]["std"]),
-        "mu_final": float(stats.records[-1]["mu"]),
-        "var_final": float(stats.records[-1]["var"]),
-        "stderr_ci_final": float(stats.records[-1]["stderr_ci"]),
+        "std_final": float(closest_rec["std"]),
+        "mu_final": float(closest_rec["mu"]),
+        "var_final": float(closest_rec["var"]),
+        "stderr_ci_final": float(closest_rec["stderr_ci"]),
     }
 
     # Append new results to file (or create one)
