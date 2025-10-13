@@ -306,10 +306,10 @@ Formally, the cap on the step size is defined as:
 
 $$
 \gamma_{cap} =
-\begin{cases}
-\dfrac{1 - \eta}{2 m_k^2}, & |μ(α_k) - v_d| > \dfrac{2\,s(α_k)}{\sqrt{n}}, \\[1.5em]
-\dfrac{(1 - \eta)\,lr_{scale}}{2 m_k^2}, & |μ(α_k) - v_d| \le \dfrac{2\,s(α_k)}{\sqrt{n}}.
-\end{cases}
+\left\{
+\frac{1 - \eta}{2 m_k^2},\ |μ(α_k) - v_d| > \frac{2 s(α_k)}{\sqrt{n}};
+\frac{(1 - \eta) lr_{scale}}{2 m_k^2},\ |μ(α_k) - v_d| \le \frac{2 s(α_k)}{\sqrt{n}}
+\right.
 $$
 
 - Effect of the variance term ($\lambda > 0$):  
