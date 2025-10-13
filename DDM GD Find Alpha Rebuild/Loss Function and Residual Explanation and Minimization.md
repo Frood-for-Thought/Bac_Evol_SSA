@@ -317,7 +317,11 @@ $$
 where $lr_{scale}$ is the scheduler-controlled adaptive learning rate decay factor from the learning-rate scheduler to reduce $\gamma_{cap}$ to arrive closer to the local minimum for:
 
 $$
-e_{k+1} \approx \bigl(1 - \gamma_{cap} \bar v'(\alpha^\star)\bigr)\ e_k \+\ \gamma_{cap} \cdot \text{noise}
+\alpha_{k+1} = \alpha_k - \gamma \cdot (2 \, m_k^2 \, e_k)
+$$
+
+$$
+e_{k+1} \approx \bigl(1 - \gamma_{cap} \cdot (2 \, m_k^2 \, e_k))\ e_k \+\ \gamma_{cap} \cdot \text{noise}
 $$
 
 - Effect of the variance term ($\lambda > 0$):  
