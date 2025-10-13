@@ -236,14 +236,19 @@ e_{k+1} = (\alpha_{k+1} - \alpha_\star)
 $$
 
   This is the linear recursion with multiplier $q := (1 - 2 \gamma m_k^2)$. This holds true even when the mean relation includes a non-zero intercept:
+  
 $$
 \mu(\alpha) = m_k \alpha + b
 $$
+
 where the stationary point (target solution) shifts to:
+
 $$
 \alpha_\star = \frac{v_d - b}{m_k}
 $$
+
 as opposed to the zero-intercept case:
+
 $$
 \alpha_\star = \frac{v_d}{m_k}.
 $$
