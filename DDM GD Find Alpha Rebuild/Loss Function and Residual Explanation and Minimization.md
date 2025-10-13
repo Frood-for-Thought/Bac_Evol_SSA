@@ -314,6 +314,8 @@ $$
 \frac{lr_{scale}*(1 - \eta) }{2 m_k^2}, \quad |μ(α_k) - v_d| \le \frac{s(α_k)}{\sqrt{n}}
 $$
 
+where $lr_{scale}$ is the scheduler-controlled adaptive learning rate decay factor from the learning-rate scheduler to reduce $gamma_{cap}$ to arrive closer to the local minimum.
+
 - Effect of the variance term ($\lambda > 0$):  
   - The gradient gains $+ \lambda d(s^2)/d\alpha$.  
   - If that term is small near the target or comparatively flat, the $m_k^2$-driven analysis dominates.  
