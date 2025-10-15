@@ -26,7 +26,9 @@ s^2(\alpha)=\frac{1}{n-1}\sum_{j=1}^n\bigl(v_j(\alpha)-\mu(\alpha)\bigr)^2,
 s(\alpha)=\sqrt{s^2(\alpha)}.
 $$
 
-We also maintain a *local linear* approximation of the mean in a bracket $[\alpha_{\min},\alpha_{\max}]$ via a centered least-squares (Polyak–Ruppert style) slope $m_k$ computed on the window:
+**Polyak–Ruppert Slope Estimation**
+
+A *local linear* approximation of the mean is also maintained in a window $[\alpha_{\min},\alpha_{\max}]$ via a centered least-squares Polyak–Ruppert (PR) style slope $m_k$ computed:
 
 $$
 m_k \;=\;\frac{\sum_i\bigl(\alpha_i-\bar\alpha\bigr)\bigl(\mu(\alpha_i)-\bar\mu\bigr)}{\sum_i\bigl(\alpha_i-\bar\alpha\bigr)^2+\varepsilon},
@@ -34,7 +36,41 @@ m_k \;=\;\frac{\sum_i\bigl(\alpha_i-\bar\alpha\bigr)\bigl(\mu(\alpha_i)-\bar\mu\
 \bar\alpha:=\frac{1}{K}\sum_i \alpha_i,\quad \bar\mu:=\frac{1}{K}\sum_i \mu(\alpha_i).
 $$
 
-This *centered* regression removes intercept bias and makes $m_k$ a consistent estimator of the local slope $d\bar v/d\alpha$ when the window is locally linear.
+This *centered* regression removes intercept bias and makes $m_k$ a consistent estimator of the local slope $d\bar v/d\alpha$ when the window is locally linear. 
+The **PR slope estimator** provides a smoothed, sample-based estimate of the local expectation slope:
+
+$$
+m_k \approx \frac{d\mu(α)}{dα}
+$$
+
+using repeated stochastic observations of ( μ(α) ) over a local window of α-values. When the stochastic field is **heteroskedastic** (variance differs between α points), or when
+the **sample standard deviation exceeds one (std > 1)**, unweighted regression fails because large-variance samples dominate the slope.
+To correct this, the PR slope is computed using a **Weighted Least Squares (WLS)** formulation whereby each point in the local window contributes according to its weight:
+
+$$
+w_i = \frac{n_i}{s_i^2},
+$$
+
+* ( n_i ) — number of samples collected at αᵢ
+* ( s_i^2 ) — unbiased sample variance at αᵢ
+
+Even when heteroskydastic spread is large, weighting by ( 1/s_i^2 ) ensures that high-variance noisy region contributions are supressed and low-variance α-points have a higher influence on the slope.
+This is independent of the variance limit (i.e., λ = 0) in the loss function. The slope is then now calculated as:
+
+$$
+m_k = \frac{\sum_i w_i (α_i - \bar{α}_w)(μ_i - \bar{μ}_w)}{\sum_i w_i (α_i - \bar{α}_w)^2 + ε},
+$$
+
+with:
+
+$$
+\bar{α}_w = \frac{\sum_i w_i α_i}{\sum_i w_i}, \quad
+\bar{μ}_w = \frac{\sum_i w_i μ_i}{\sum_i w_i}.
+$$
+
+
+This **centered regression** removes intercept bias and allows a residual gate to test for true linearity using centered residuals, as discussed in section 3.
+As the number of samples $( n_i )$ grows, the standard error of μ(α) shrinks like $( 1/\sqrt{n_i} )$, stabilizing both the regression and the residual gate.
 
 ---
 
