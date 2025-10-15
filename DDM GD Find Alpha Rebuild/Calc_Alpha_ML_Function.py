@@ -64,6 +64,14 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Not to be confused with gamma = the actual per-epoch step size, computed from the current data and then
         # scaled by the current learning_rate, and possibly capped for stability.
         self.learning_rate = learning_rate
+        # Just a placeholder for now to record the final learning rate at the end of the algorithm.
+        self.gamma_last = learning_rate
+        # The γ-cap should not be re-evaluated every iteration, and only once the pr_slope has stabilized and the
+        # ML algorithm has gone through enough iterations to make that slope trustworthy.
+        self.start_gamma_cap_iteration_marker = round(num_epochs / 3)
+        # Once the pr_slope (m_k) is ready, this will build a cap to prevent the learning rate
+        # from overshooting and preventing convergence.
+        self.built_gamma_cap = None  # Check to see if the pr_slope (m_k) is built to build a cap on max learning_rate.
         self.theoretical_val = theoretical_val  # theoretical_val is also incorporated into LossEvaluator.
         # Safety margin for the gamma cap derived from m_k (keeps |1-2*gamma*m_k^2| < 1)
         self.eta_for_gamma_cap = eta_for_gamma_cap
@@ -131,7 +139,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.step_size,
-            gamma=self.learning_rate_gamma
+            gamma=self.learning_rate_gamma  # This is just the decay factor for gamma, not the learning rate.
         )
 
     def train(self):
@@ -245,16 +253,22 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             m_k = self.fd_tracker.m_k
             # self.fd_tracker.last_delta_m = Abs diff between last two m_k’s within slope_history,|Δm|,(None initially)
 
-            # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
-            stderr_ci = rec_k.get("stderr_ci", None)
-            mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
-            err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
+            # Suspend PR slope influence when residual test fails, but allow recovery.
+            if hasattr(self.fd_tracker, "linear_slope_ready"):
+                if not resid_ok:
+                    # Temporarily disable use of m_k in this iteration
+                    self.fd_tracker.linear_slope_ready = False
+                else:
+                    # If linearity is re-established, re-enable PR slope updates
+                    if not self.fd_tracker.linear_slope_ready:
+                        self.fd_tracker.linear_slope_ready = True
 
             # Estimate dμ/dα externally
             dmu_dalpha = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
             # Prevent blow-ups from dμ/dα
             if (dmu_dalpha is None) or (not math.isfinite(dmu_dalpha)) or (abs(dmu_dalpha) < 1e-8):
                 dmu_dalpha = 1.0  # safe default scale
+
             # Cap the derivative used for gamma by | m_k | when PR is ready.
             if self.fd_tracker.linear_slope_ready and (m_k is not None):
                 mk_abs = abs(float(m_k.item()) if hasattr(m_k, "item") else float(m_k))
@@ -270,20 +284,81 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # This avoids huge Δα on steep regions and vanishing Δα on flat regions.
             # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
             gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
-            # Multiply by scheduler-controlled scale (decays every 'step_size_epochs').
+
+            if (epoch >= self.start_gamma_cap_iteration_marker
+                    and self.fd_tracker.linear_slope_ready
+                    and resid_ok
+                    and self.built_gamma_cap is None):
+                mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
+                mk2 = mk_val * mk_val
+                # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
+                self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+                print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
+
+            # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
             # Scale gamma by the decayed LR from the dummy optimizer.
             current_lr_scale = self.optimizer.param_groups[0]['lr']
             gamma *= float(current_lr_scale)
+            # hard ceiling, prevents astronomic cap values
+            if self.built_gamma_cap is not None:
+                gamma = min(gamma, self.built_gamma_cap)
 
             # Adaptive stability cap on gamma (ONLY when PR slope is ready).
             # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
             # Best non-oscillatory contraction at gamma = 1/(2*m_k^2).
-            if self.fd_tracker.linear_slope_ready and (m_k is not None):
+            # From the MacroStats record:
+            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
+            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
+            # std is either provided or computed from var
+            if "std" in rec_k:
+                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
+            elif "var" in rec_k:
+                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
+                std_k = (max(_var, 0.0)) ** 0.5
+            else:
+                std_k = float("nan")
+
+            #-----------------------------------------------------------------------
+            # Skip m_k-based gamma cap when local linearity fails (resid_ok = False).
+            if resid_ok and self.fd_tracker.linear_slope_ready and (m_k is not None):
                 mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
                 if math.isfinite(mk_val):
                     mk2 = mk_val * mk_val
                     if mk2 > 0.0:
+                        # The algorithm now distinguishes two regimes:
+                        #
+                        #   (1) Signal-dominant region:
+                        #       |μ(α) − v_d| > s(α)/√n
+                        #       → PR slope m_k governs convergence.
+                        #       → γ_cap = (1 - η) / (2 * m_k**2)
+                        #         (curvature-based acceleration)
+                        #
+                        #   (2) Noise-dominant region:
+                        #       |μ(α) − v_d| ≤ s(α)/√n
+                        #       → StepLR scheduler controls annealing.
+                        #       → γ_cap = lr_scale* (1 - η) / (2 * m_k**2)
+                        #         (noise-aware damping)
+
+                        # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
+                        stderr_ci = rec_k.get("stderr_ci", None)
+                        mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
+                        err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
+                        # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
                         gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+
+                        # torch.optim.lr_scheduler.StepLR starts at -1 when the scheduler is created.
+                        # After every .step() call (which you do once per epoch), it increments by 1.
+                        # Every time that number reaches a multiple of step_size, the scheduler triggers a decay.
+                        # StepLR applies a decay every `step_size` epochs by multiplying by `learning_rate_gamma`.
+                        # Example: after 3 scheduler steps with gamma=0.7, decay_factor = 0.7**3 = 0.343.
+                        num_decays = self.scheduler.last_epoch // self.step_size
+                        decay_factor = self.learning_rate_gamma ** num_decays
+
+                        # Apply same learning rate scaler damping to the gamma_cap only inside noise band.
+                        if err_mu <= stderr_ci:
+                            gamma_cap *= decay_factor
+
+                        # Extra safety for small mk2 values.
                         # Fail fast if cap is nonsensical
                         if not math.isfinite(gamma_cap) or gamma_cap <= 0.0:
                             raise RuntimeError(
@@ -297,6 +372,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 raise RuntimeError("Bracket (α_min, α_max) not set.")
             a_min, a_max = map(float, self.bracket)
 
+            # Record the effective gamma used this epoch to record the final learning rate.
+            self.gamma_last = gamma
+
             alpha_next = self.loss_eval.decide_next_alpha(
                 alpha_k=alpha_k,
                 n=self.max_iter,
@@ -306,6 +384,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 slope_thresh=1e-3,
                 alpha_left=a_min,
                 alpha_right=a_max,
+                dmu_dα=dmu_dalpha,
                 use_gradient_override=self.use_gradient_override
             )
 
@@ -323,6 +402,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # to reuse PyTorch’s LR scheduler as a scalar decay for γ --> # α_k_+_1 = α_k - γ*∂L(α)/∂α.
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
+                # Evaluate μ(α_next) after the update for accurate logging
+                rec_next = self.loss_eval.ensure_record(alpha=float(alpha_next), n=self.max_iter)
+                mu_next = float(rec_next["mu"])
 
             # Advance the dummy optimizer once so StepLR stays in sync (avoids the warning)
             self.optimizer.zero_grad()
@@ -360,19 +442,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 f"resid_ok={bool(resid_ok)} r_cent={r_str} bound={b_str} m_k={mk_str}"
             )
             print(f"loss = {float(loss_val):.6f}")
-
-            # From the MacroStats record:
-            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
-            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
-            # std is either provided or computed from var
-            if "std" in rec_k:
-                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
-            elif "var" in rec_k:
-                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
-                std_k = (max(_var, 0.0)) ** 0.5
-            else:
-                std_k = float("nan")
             print(f"mu(α_k)={mu_k:.6f}")
+            print(f"mu(α_next) = {mu_next:.6f}")
             print(f"n={n_k}")
             print(f"std={std_k:.6f}")
 

@@ -58,7 +58,7 @@ class LossEvaluator:
         loss_val = (mu - torch.tensor(self.v_d, dtype=mu.dtype)) ** 2 + torch.tensor(self.lambda_var, dtype=var.dtype) * var
         return loss_val.item()
 
-    def dloss_dalpha(self, alpha: float, decimals: int = 6) -> Optional[float]:
+    def dloss_dalpha(self, alpha: float, dmu_dα: Optional[float] = None, decimals: int = 6) -> Optional[float]:
         """
         Computes the derivative of the loss function at α:
             dL/dα = 2(μ - v_d) ⋅ dμ/dα + λ ⋅ dvar/dα
@@ -73,21 +73,25 @@ class LossEvaluator:
         if match is None:
             return None
         mu = match["mu"].item()
-        dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha, kind="mu", decimals=decimals)
+        if dmu_dα is None:
+            dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha, kind="mu", decimals=decimals)
+        else:
+            dmu_dα = dmu_dα
         dvar_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha, kind="var", decimals=decimals)
         if dmu_dα is None or not math.isfinite(float(dmu_dα)):
             return None  # Not enough data to compute gradient
         if (dvar_dα is None) or (not math.isfinite(float(dvar_dα))):
             dvar_dα = 0.0
 
+        # Residual gate
+        n_k = int(match.get("n", 0))
+        resid_ok, _, _ = self.fd_tracker.residual_gate(
+            alpha=match["alpha"], mu_val=match["mu"], var_val=match["var"], n=n_k
+        )
+
         # Prefer PR slope m_k once the linear gate AND PR has stabilized
         mk = self.fd_tracker.m_k
         if (mk is not None) and self.fd_tracker.linear_slope_ready and math.isfinite(float(mk)):
-            # Residual gate
-            n_k = int(match.get("n", 0))
-            resid_ok, _, _ = self.fd_tracker.residual_gate(
-                alpha=match["alpha"], mu_val=match["mu"], var_val=match["var"], n=n_k
-            )
             if bool(resid_ok):
                 dmu_dα = float(mk)  # <-- USE m_k AS THE SLOPE
 
@@ -130,6 +134,7 @@ class LossEvaluator:
                       slope_thresh: float,
                       alpha_left: float,
                       alpha_right: float,
+                      dmu_dα: Optional[float] = None,
                       use_gradient_override: Optional[bool] = None,  # Manual override (None = automatic mode)
                       decimals: int = 6) -> Optional[float]:
         """
@@ -165,7 +170,7 @@ class LossEvaluator:
 
         # Try normal loss/grad
         loss_k = self.loss(alpha=alpha_k)
-        grad_k = self.dloss_dalpha(alpha=alpha_k)
+        grad_k = self.dloss_dalpha(alpha=alpha_k, dmu_dα=dmu_dα)
         # FAIL FAST on bad gradient/loss.
         if grad_k is None or not math.isfinite(float(grad_k)):
             raise RuntimeError(
@@ -186,7 +191,6 @@ class LossEvaluator:
 
         match = next((r for r in self.stats.records if round(float(r["alpha"]), decimals) == alpha_k), None)
         mu_k = match["mu"]
-        dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu", decimals=decimals)
         fitness_error = torch.abs(mu_k - torch.tensor(self.v_d, dtype=mu_k.dtype))
 
         # Gradient step: α_next = α_k - γ * grad.
@@ -274,6 +278,7 @@ class LossEvaluator:
 
             # If fitness_error > fitness_thresh, likely stuck at a false plateau and forward probe is justified.
             # If fitness_error < fitness_thresh, likely at convergence. Forward probe might push past the solution.
+            dmu_dα = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu", decimals=decimals)
             if abs(dmu_dα) < slope_thresh and fitness_error > fitness_thresh:
                 # Get probing step size.
                 h = self.stats.suggest_step_size(alpha=alpha_k, v_d=self.v_d, min_h=min_step_size)

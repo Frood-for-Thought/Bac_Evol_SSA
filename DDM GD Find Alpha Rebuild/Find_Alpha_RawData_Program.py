@@ -210,24 +210,29 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 3
-    num_epochs = 300
+    deme_start = 1
+    num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
     # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
     max_iter_start = 1000
 
     # The variables of alpha used for inspection.
-    alphas = list(range(1000, 17000, 1000))
+    alphas = list(range(1000, 20000, 1000))
 
     print(f"\nRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
     print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
 
-    a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=True, samples_per_alpha=max_iter_start)
+    a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=True, samples_per_alpha=20000)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
     # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
-    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=2.0)
+    # Inside finite_difference_tracker.residual_gate(), stderr_tol is a multiplier on the statistical confidence band:
+    # bound = stderr_tol * (2 * s(α) / sqrt(n))
+    # resid_ok = (abs(r_cent) <= bound)
+    # The trade off being the Polyak–Ruppert slope “trusted” and prevents the γ-cap from being disabled unnecessarily,
+    # but too large and it might mask real curvature and mis-estimate m_k.
+    fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=1.0)
 
     # Compute all forward differences between adjacent α’s currently in stats.records.
     fd_tracker.compute_all_differences(stats)
@@ -238,7 +243,7 @@ if __name__ == "__main__":
 
     # Prepare the ML estimator before training.
     bracket = (a_min, a_max)
-    deme = Dynamic_Data_Evolving_Mean_Estimator(
+    ddeme = Dynamic_Data_Evolving_Mean_Estimator(
         data_generator=data_generator,
         num_epochs=num_epochs,
         learning_rate=learning_rate,
@@ -260,7 +265,7 @@ if __name__ == "__main__":
     print(f"  bracket = {bracket}")
     print(f"  PR ready? {fd_tracker.linear_slope_ready}")
 
-    alpha_opt, final_loss = deme.train()
+    alpha_opt, final_loss = ddeme.train()
     print(f"\n[Result] alpha* ≈ {alpha_opt:.6f}, final_loss = {final_loss:.6f}")
 
     # -------------------------------------------------------
@@ -273,23 +278,33 @@ if __name__ == "__main__":
         stats.records,
         key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_opt_rounded)
     )
+    mu_final = float(closest_rec["mu"])
+    std_final = float(closest_rec["std"])
+    n_final = int(closest_rec["n"]) if "n" in closest_rec else int(ddeme.max_iter)
+    std_err_final = std_final / np.sqrt(n_final)
+    err_mu_final = abs(mu_final - float(theoretical_val))
+    within_stderr = bool(err_mu_final <= std_err_final)
 
     # Create (or append to) a DataFrame summarizing run statistics
     output_record = {
         "deme_index": int(deme_start),
         "v_d_target": float(theoretical_val),
         "alpha_star": float(alpha_opt),
-        "mu_final": float(closest_rec["mu"]),
+        "mu_final": mu_final,
         "final_loss": float(final_loss),
-        "slope_final": float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
+        "mk_slope_final": float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
+        "pr_slope_ready": bool(fd_tracker.linear_slope_ready),
         "alpha_min": float(bracket[0]),
         "alpha_max": float(bracket[1]),
-        "std_final": float(closest_rec["std"]),
+        "std_final": std_final,
         "var_final": float(closest_rec["var"]),
-        "stderr_ci_final": float(closest_rec["stderr_ci"]),
-        "learning_rate": float(learning_rate),
+        "std_err_final": std_err_final,
+        "std_err_ci_final": float(closest_rec["stderr_ci"]),
+        "abs(mu_minus_vd)": err_mu_final,
+        "learning_rate": float(ddeme.gamma_last),
         "num_epochs": int(num_epochs),
-        "max_iter_final": int(deme.max_iter),
+        "max_iter_final": n_final,
+
     }
 
     # Append new results to file (or create one)
