@@ -51,8 +51,8 @@ $$
 w_i = \frac{n_i}{s_i^2},
 $$
 
-* ( n_i ) — number of samples collected at αᵢ
-* ( s_i^2 ) — unbiased sample variance at αᵢ
+* $( n_i )$ — number of samples collected at αᵢ
+* $( s_i^2 )$ — unbiased sample variance at αᵢ
 
 Even when heteroskydastic spread is large, weighting by $( 1/s_i^2 )$ ensures that high-variance noisy region contributions are supressed and low-variance α-points have a higher influence on the slope.
 This is independent of the variance limit (i.e., λ = 0) in the loss function. The slope is then now calculated as:
