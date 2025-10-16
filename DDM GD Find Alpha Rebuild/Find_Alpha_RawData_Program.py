@@ -210,7 +210,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 1
+    deme_start = 0  # Deme 1 is 0 for python.
     num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
@@ -218,10 +218,10 @@ if __name__ == "__main__":
     max_iter_start = 1000
 
     # The variables of alpha used for inspection.
-    alphas = list(range(1000, 20000, 1000))
+    alphas = list(range(10000, 25000, 1000))
 
-    print(f"\nRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
-    print(f"\nv_d = {float(vd_chemotaxis[deme_start - 1])}")  # -1 because list starts at 0
+    print(f"\nRtroc = {Rtroc[deme_start]}")
+    print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
 
     a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=True, samples_per_alpha=20000)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
     # Create (or append to) a DataFrame summarizing run statistics
     output_record = {
-        "deme_index": int(deme_start),
+        "deme_index": int(deme_start + 1),  # +1 because list starts at 0
         "v_d_target": float(theoretical_val),
         "alpha_star": float(alpha_opt),
         "mu_final": mu_final,
