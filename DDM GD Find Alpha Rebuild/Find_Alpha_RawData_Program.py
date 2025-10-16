@@ -210,7 +210,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 1  # Deme 1 is 0 for python.
+    deme_start = 3  # Deme 1 is 0 for python.
     num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
@@ -218,8 +218,9 @@ if __name__ == "__main__":
     max_iter_start = 1000
 
     # The variables of alpha used for inspection.
-    alphas = list(range(10000, 25000, 1000))
+    alphas = list(range(10000, 16000, 1000))
 
+    print(f"\nDEME NUMBER = {deme_start + 1}")
     print(f"\nRtroc = {Rtroc[deme_start]}")
     print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
 
