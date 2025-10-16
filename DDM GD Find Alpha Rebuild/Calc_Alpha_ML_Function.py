@@ -122,6 +122,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # Convert the alpha integer to a tensor to be optimized.
         alpha_value = float(alpha)  # Convert to float first.
         self.alpha = torch.tensor(alpha_value, requires_grad=True, dtype=torch.float32, device=self.device)
+        # Keep a running record of alphas for final export.
+        self.alpha_history = []
         # use_gradient_override a class switch in alpha_next = self.loss_eval.decide_next_alpha() in training.
         self.use_gradient_override = bool(use_gradient_override)
 
@@ -388,8 +390,12 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 use_gradient_override=self.use_gradient_override
             )
 
+            if not hasattr(self, "alpha_history"):
+                self.alpha_history = []
+            self.alpha_history.append(float(alpha_next))
+
             # This does NOT optimize `alpha` via autograd/optimizer in this module.
-            # # Alpha is updated explicitly by LossEvaluator.decide_next_alpha(...).
+            # Alpha is updated explicitly by LossEvaluator.decide_next_alpha(...).
             # (self.optimizer.zero_grad()) Reset previous gradient to prevent incorrect update.
 
             # Compute the gradient of the loss function with respect to the parameters with requires_grad=True,
@@ -448,4 +454,4 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"std={std_k:.6f}")
 
         # Return the final optimized alpha and the final loss value
-        return self.alpha.item(), final_loss.item()
+        return self.alpha.item(), final_loss.item(), self.alpha_history

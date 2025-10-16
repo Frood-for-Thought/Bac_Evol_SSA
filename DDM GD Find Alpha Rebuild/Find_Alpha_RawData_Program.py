@@ -210,7 +210,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 0  # Deme 1 is 0 for python.
+    deme_start = 1  # Deme 1 is 0 for python.
     num_epochs = 150
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
@@ -264,8 +264,16 @@ if __name__ == "__main__":
     print("\n[Init] Estimator constructed.")
     print(f"  bracket = {bracket}")
     print(f"  PR ready? {fd_tracker.linear_slope_ready}")
-
-    alpha_opt, final_loss = ddeme.train()
+    #--------------------------------------------------------
+    # Run the ML algorithm.
+    alpha_opt, final_loss, alpha_history = ddeme.train()
+    #--------------------------------------------------------
+    # Get the last two alphas.
+    alpha_opt = float(alpha_opt)
+    if len(alpha_history) >= 2:
+        alpha_prev = float(alpha_history[-2])
+    else:
+        alpha_prev = None
     print(f"\n[Result] alpha* ≈ {alpha_opt:.6f}, final_loss = {final_loss:.6f}")
 
     # -------------------------------------------------------
@@ -279,6 +287,17 @@ if __name__ == "__main__":
         key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_opt_rounded)
     )
     mu_final = float(closest_rec["mu"])
+
+    # Find μ for previous α (if available)
+    mu_prev = None
+    if alpha_prev is not None:
+        alpha_prev_rounded = round(alpha_prev, 6)
+        prev_rec = min(
+            stats.records,
+            key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_prev_rounded)
+        )
+        mu_prev = float(prev_rec["mu"])
+
     std_final = float(closest_rec["std"])
     n_final = int(closest_rec["n"]) if "n" in closest_rec else int(ddeme.max_iter)
     std_err_final = std_final / np.sqrt(n_final)
@@ -304,11 +323,11 @@ if __name__ == "__main__":
         "learning_rate": float(ddeme.gamma_last),
         "num_epochs": int(num_epochs),
         "max_iter_final": n_final,
-
+        "mu_prev": mu_prev,
     }
 
     # Append new results to file (or create one)
-    output_filename = f"deme_{deme_start}_alpha_results_summary.xlsx"
+    output_filename = f"deme_{int(deme_start + 1)}_alpha_results_summary.xlsx"
 
     try:
         existing_df = pd.read_excel(output_filename)
