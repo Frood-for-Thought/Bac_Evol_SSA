@@ -210,20 +210,20 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
     # Values used for training.
-    deme_start = 1
-    num_epochs = 150
+    deme_start = 5
+    num_epochs = 100
     learning_rate = 2 / (100 * Rtroc[deme_start])
     theoretical_val = vd_chemotaxis[deme_start]
     # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
     max_iter_start = 1000
 
     # The variables of alpha used for inspection.
-    alphas = list(range(1000, 20000, 1000))
+    alphas = list(range(1000, 10000, 1000))
 
     print(f"\nRtroc = {Rtroc[deme_start - 1]}")  # -1 because list starts at 0
     print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
 
-    a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=True, samples_per_alpha=20000)
+    a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=False, samples_per_alpha=20000)
     print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
     # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
@@ -251,10 +251,10 @@ if __name__ == "__main__":
         alpha=float(a_min),  # start on the left side of the bracket
         max_iter=max_iter_start,
         # The ML algorithm iteratively refines the learning_rate and max_iter every number of step_size iterations.
-        step_size=15,
+        step_size=10,
         max_iter_limit=20000,
         max_iter_factor=2,
-        learning_rate_gamma=0.8,
+        learning_rate_gamma=0.7,
         stats=stats,
         fd_tracker=fd_tracker,
         bracket=bracket,
