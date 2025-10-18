@@ -18,7 +18,7 @@ $$
 $$
 
 where $(r_0)$ is the baseline tumble rate and $(A)$ is a scaling constant.
-The product $( \alpha dP_b/dt )$ modulates this baseline rate: as attractant increases $((dP_b/dt > 0))$, runs lengthen; when attractant decreases, tumbling increases.
+The product $( \alpha  dP_b/dt )$ modulates this baseline rate: as attractant increases $((dP_b/dt > 0))$, runs lengthen; when attractant decreases, tumbling increases.
 Dimensional analysis shows α is a parameter that defines *how frequently* the cell integrates receptor information, rather than by measuring methylation feedback.
 
 ---
@@ -50,26 +50,26 @@ In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid chan
 The data collected shows the relation between mean drift velocity μ and the receptor response is:
 
 $$
-\frac{d\mu}{d\alpha} = k,\frac{dP_b}{dt}
+\frac{d\mu}{d\alpha} = k\frac{dP_b}{dt}
 $$
 
 Here (k) translates molecular receptor changes (s⁻¹) into macroscopic velocity changes (m·s⁻¹).
 Solving the differential equation gives:
 
 $$
-\mu(\alpha) = k,\alpha,\frac{dP_b}{dt} + C
+\mu(\alpha) = k\alpha\frac{dP_b}{dt} + C
 $$
 
 Because α is proportional to (1/P_b), the equation is then:
 
 $$
-\mu(\alpha) = k',\frac{1}{P_b},\frac{dP_b}{dt} + C
+\mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + C
 $$
 
 Simplifying the equation gives:
 
 $$
-\boxed{\mu(\alpha) = k',\frac{d(\ln P_b)}{dt} + C}
+\boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + C}
 $$
 
 ---
