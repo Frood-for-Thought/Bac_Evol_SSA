@@ -31,8 +31,8 @@ $$
 \alpha \propto \frac{1}{P_b}
 $$
 
-When few receptors are bound $(low (P_b))$, the system is highly responsive $(large α)$, while at saturation $(high $(P_b)$)$ sensitivity declines.
-Substituting the product $( \alpha, dP_b/dt )$ gives:
+When few receptors are bound $(low (P_b))$, the system is highly responsive (large α), while at saturation (high $(P_b)$) sensitivity declines.
+Substituting the product $( \alpha dP_b/dt )$ gives:
 
 $$
 \frac{1}{P_b}\frac{dP_b}{dt} = \frac{d(\ln P_b)}{dt}
