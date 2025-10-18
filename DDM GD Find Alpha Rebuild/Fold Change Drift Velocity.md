@@ -14,7 +14,7 @@ The time derivative $(dP_b/dt)$ measures how rapidly receptors detect a changing
 The instantaneous **run–tumble bias** is defined as:
 
 $$
-\eta_\pm(t) = A,\exp!\big[t(-r_0 \pm \alpha,\tfrac{dP_b}{dt})\big]
+\eta_\pm(t) = A\exp\big[t(-r_0 \pm \alpha,\tfrac{dP_b}{dt})\big]
 $$
 
 where $(r_0)$ is the baseline tumble rate and $(A)$ is a scaling constant.
