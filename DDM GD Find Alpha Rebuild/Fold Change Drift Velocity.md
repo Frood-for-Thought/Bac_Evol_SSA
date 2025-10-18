@@ -8,17 +8,17 @@ $$
 P_b = \frac{N_{\text{bound}}}{N_{\text{total}}}
 $$
 
-where $(N_{\text{bound}})$ is the number of ligand-bound receptors and (N_{\text{total}}) is the total number of receptor sites.
+where $(N_{\text{bound}})$ is the number of ligand-bound receptors and $(N_{\text{total}})$ is the total number of receptor sites.
 The time derivative $(dP_b/dt)$ measures how rapidly receptors detect a changing environment.
 
 The instantaneous **run–tumble bias** is defined as:
 
 $$
-\eta_\pm(t) = A\exp\big[t(-r_0 \pm \alpha,\tfrac{dP_b}{dt})\big]
+\eta_\pm(t) = A\exp\big[t(-r_0 \pm \alpha\tfrac{dP_b}{dt})\big]
 $$
 
 where $(r_0)$ is the baseline tumble rate and $(A)$ is a scaling constant.
-The product $( \alpha, dP_b/dt )$ modulates this baseline rate: as attractant increases $((dP_b/dt > 0))$, runs lengthen; when attractant decreases, tumbling increases.
+The product $( \alpha dP_b/dt )$ modulates this baseline rate: as attractant increases $((dP_b/dt > 0))$, runs lengthen; when attractant decreases, tumbling increases.
 Dimensional analysis shows α is a parameter that defines *how frequently* the cell integrates receptor information, rather than by measuring methylation feedback.
 
 ---
