@@ -47,7 +47,7 @@ In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid chan
 
 ### **3. Drift Velocity Derived from Receptor Dynamics**
 
-![Alpha with mk and Rtroc vs Position](./Alpha with mk and Rtroc vs Position.jpg)
+![Alpha with mk and Rtroc vs Position](Alpha%20with%20mk%20and%20Rtroc%20vs%20Position.jpg)
 
 The data collected shows the relation between mean drift velocity μ and the receptor response is:
 
