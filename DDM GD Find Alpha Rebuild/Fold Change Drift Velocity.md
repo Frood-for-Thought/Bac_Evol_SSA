@@ -61,19 +61,19 @@ Here (k) translates molecular receptor changes (s⁻¹) into macroscopic velocit
 Solving the differential equation gives:
 
 $$
-\mu(\alpha) = k\alpha\frac{dP_b}{dt} + C
+\mu(\alpha) = k\alpha\frac{dP_b}{dt} + \mu_0(\alpha)
 $$
 
 Because α is proportional to (1/P_b), the equation is then:
 
 $$
-\mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + C
+\mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + \mu_0(\alpha)
 $$
 
 Simplifying the equation gives:
 
 $$
-\boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + C}
+\boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + \mu_0(\alpha)}
 $$
 
 ---
