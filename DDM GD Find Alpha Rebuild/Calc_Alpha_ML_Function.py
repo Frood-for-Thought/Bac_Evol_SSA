@@ -448,7 +448,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 f"resid_ok={bool(resid_ok)} r_cent={r_str} bound={b_str} m_k={mk_str}"
             )
             print(f"loss = {float(loss_val):.6f}")
-            print(f"mu(α_k)={mu_k:.6f}")
+            if "mu" in rec_k:
+                mu_k = rec_k["mu"]
+                print(f"mu(α_k)={mu_k:.6f}")
+            else:
+                print("mu(α_k)=N/A (record missing)")
             print(f"mu(α_next) = {mu_next:.6f}")
             print(f"n={n_k}")
             print(f"std={std_k:.6f}")
