@@ -38,7 +38,7 @@ $$
 \frac{1}{P_b}\frac{dP_b}{dt} = \frac{d(\ln P_b)}{dt}
 $$
 
-which is the rate at which receptor occupancy changes relative to its current state, i.e. **Weber-law of sensing** whereby the bacterium responds to **relative** changes.
+which is the rate at which receptor occupancy changes relative to its current state, i.e. **Weber-law of sensing** [1] whereby the bacterium responds to **relative** changes.
 In steep gradients, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. 
 At low concentrations $((P_b\ll1))$, methylation can adapt to the concentration, and α represents a high-pass filter to amplify low-frequency gradient signals.
 In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. This mechanism removes the boundary from methylation-limited simulations the the α-based model can replicate the theoretical drift velocity in steep gradients.
