@@ -39,9 +39,9 @@ $$
 $$
 
 which is the rate at which receptor occupancy changes relative to its current state, i.e. **Weber-law of sensing** whereby the bacterium responds to **relative** changes.
-In shallow gradients,  In steep gradients, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. 
+In steep gradients, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. 
 At low concentrations $((P_b\ll1))$, methylation can adapt to the concentration, and α represents a high-pass filter to amplify low-frequency gradient signals.
-In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals.
+In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. This mechanism removes the boundary from methylation-limited simulations the the α-based model can replicate the theoretical drift velocity in steep gradients.
 
 ---
 
@@ -81,11 +81,10 @@ $$
 ### **4. Biological Meaning**
 
 Classical methylation models fail in steep gradients because finite methylation sites saturate with receptor activity freezing while adaptation stops, producing nonstop runs limited only by rotational diffusion.
-In the α-model, because the drift law depends solely on $(d(\ln P_b)/dt)$, receptor sites no longer saturate, the logarithmic equations shows receptors detect relative changes and drift velocity decreases smoothly rather than collapsing.
-This mechanism removes the boundary from methylation-limited simulations and preserves continuous drift over all concentration ranges.
+In the α-model, because the drift law depends solely on $(d(\ln P_b)/dt)$, receptor sites no longer saturate, the logarithmic equations shows receptors detect relative changes and drift velocity changes smoothly in higher gradients rather than collapsing.
 
 The slope $(m_k = d\mu/d\alpha)$ is isometric to the receptor rate $(dP_b/dt)$, which describes how the behavioral output for drift velocity changes within alpha space (α-domain) is proportional to how the receptor signal changes as the environment evolves in real time (t-domain).
-α acts as a temporal control variable filtering adaptation, while the mobility constant $(k')$ gives a proportion to how how **relative** receptor changes describe drift velocity. 
+α acts as a temporal control variable filtering adaptation, while the mobility constant $(k')$ gives a proportion to how **relative** receptor changes describe drift velocity.
 
 Fold-change detection (FCD) by Goentoro and Alon [1] was made as a general sensory law for biological systems and experimentally verified in E. coli chemotaxis by Tu *et al.* [2], showed that *E. coli* chemotaxis depends on the **relative rate** of receptor stimulation through biochemical methylation feedback.  This model arrives at **the same FCD principle**, but instead of requiring methylation integrators, it reproduces the logarithmic sensing behavior through a temporal control variable α acting as a frequency filter. The α filter is reproduced through stochastic learning by D-DEME alongside the gradient of the drift velocity within a deme's alpha space, which mirrors the chemotactic FCD receptor response to environmental change seen in nature. Through the statistical aggregate data of the ML model, each deme recreates the drift velocity as the evolving mean $(d\mu/d\alpha)$ acts as a macroscopic analogue of how receptor feedback converts the time rate of change of protein bound $(dP_b/dt)$ into directed motion.
 
