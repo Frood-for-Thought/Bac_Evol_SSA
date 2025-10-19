@@ -64,7 +64,7 @@ $$
 \mu(\alpha) = k\alpha\frac{dP_b}{dt} + \mu_0(\alpha)
 $$
 
-Because α is proportional to (1/P_b), the equation is then:
+μ₀(α) represents the baseline mean drift velocity for an initial α. Because α is proportional to $(1/P_b)$, the equation is then:
 
 $$
 \mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + \mu_0(\alpha)
