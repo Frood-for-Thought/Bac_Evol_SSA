@@ -87,4 +87,18 @@ This mechanism removes the boundary from methylation-limited simulations and pre
 The slope $(m_k = d\mu/d\alpha)$ is isometric to the receptor rate $(dP_b/dt)$, which describes how the behavioral output for drift velocity changes within alpha space (α-domain) is proportional to how the receptor signal changes as the environment evolves in real time (t-domain).
 α acts as a temporal control variable filtering adaptation, while the mobility constant $(k')$ gives a proportion to how how **relative** receptor changes describe drift velocity. 
 
-Tu et al's fold-change detection (FCD) showed that *E. coli* chemotaxis depends on the **relative rate** of receptor stimulation through biochemical methylation feedback.  This model arrives at **the same FCD principle**, but instead of requiring methylation integrators, it reproduces the logarithmic sensing behavior through a temporal control variable α acting as a frequency filter. The α filter is reproduced through stochastic learning by D-DEME alongside the gradient of the drift velocity within a deme's alpha space, which mirrors the chemotactic FCD receptor response to environmental change seen in nature. Through the statistical aggregate data of the ML model, each deme recreates the drift velocity as the evolving mean $(d\mu/d\alpha)$ acts as a macroscopic analogue of how receptor feedback converts the time rate of change of protein bound $(dP_b/dt)$ into directed motion.
+Fold-change detection (FCD) formalized by Goentoro and Alon [1], and experimentally verified by Tu et al [2] showed that *E. coli* chemotaxis depends on the **relative rate** of receptor stimulation through biochemical methylation feedback.  This model arrives at **the same FCD principle**, but instead of requiring methylation integrators, it reproduces the logarithmic sensing behavior through a temporal control variable α acting as a frequency filter. The α filter is reproduced through stochastic learning by D-DEME alongside the gradient of the drift velocity within a deme's alpha space, which mirrors the chemotactic FCD receptor response to environmental change seen in nature. Through the statistical aggregate data of the ML model, each deme recreates the drift velocity as the evolving mean $(d\mu/d\alpha)$ acts as a macroscopic analogue of how receptor feedback converts the time rate of change of protein bound $(dP_b/dt)$ into directed motion.
+
+---
+
+### **References**
+
+1. L. Goentoro, O. Shoval, M. Kirkegaard, Y. Hart, E. Mayo, and U. Alon,
+   “The incoherent feedforward loop can provide fold-change detection in gene regulation,”
+   *Molecular Cell*, vol. 36, no. 6, pp. 894–899, Dec. 2009.
+   doi: 10.1016/j.molcel.2009.11.018.
+
+2. Y. V. Kalinin, L. Jiang, Y. Tu, and M. Wu,
+   “Logarithmic sensing in *Escherichia coli* bacterial chemotaxis,”
+   *Biophysical Journal*, vol. 96, no. 6, pp. 2439–2448, Mar. 2009.
+   doi: 10.1016/j.bpj.2008.10.027.
