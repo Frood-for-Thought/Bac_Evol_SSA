@@ -85,10 +85,10 @@ $$
 
 ### Non-linear extension
 
-At high receptor occupancy $((P_b \to 1))$ or large $((\alpha dP_b/dt))$,
+At high receptor occupancy $(P_b \to 1)$ or large $(\alpha dP_b/dt)$,
 the physical response of the flagellar motor saturates and the linear proportionality between μ and α breaks down.
-In this regime, the incremental effect of α on μ decreases because the drift velocity approaches its maximal attainable value $( \mu_{\max} )$.
-The effective relation can be expressed as:
+Therefore the linear effect of α on μ decreases because the drift velocity approaches its maximum $( \mu_{\max} )$.
+The relation can be expressed as:
 
 $$
 \boxed{
@@ -104,7 +104,9 @@ $$
 
 when $(\alpha dP_b/dt)$ is small, but saturates as $(\alpha dP_b/dt)$ becomes large.
 
-This captures the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the receptor-motor coupling remains monotonic but flattens as the biophysical ceiling of drift velocity is reached. Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this curved response rather than a constant linear slope, although alpha window is linear enough for the linear check to still pass.
+This represents the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the receptor-motor coupling remains monotonic but flattens as the biophysical terminal drift velocity is approached. 
+
+Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this curved response rather than a constant linear slope, although alpha window is linear enough for the linear check to still pass.
 
 ---
 
