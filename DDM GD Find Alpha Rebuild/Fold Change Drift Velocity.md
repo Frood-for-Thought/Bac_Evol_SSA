@@ -19,6 +19,7 @@ $$
 
 where $(r_0)$ is the baseline tumble rate and $(A)$ is a scaling constant.
 The product $( \alpha  dP_b/dt )$ modulates this baseline rate: as attractant increases $((dP_b/dt > 0))$, runs lengthen; when attractant decreases, tumbling increases.
+
 Dimensional analysis shows α is a parameter that defines *how frequently* the cell integrates receptor information, rather than by measuring methylation feedback.
 
 ---
@@ -38,13 +39,13 @@ $$
 \frac{1}{P_b}\frac{dP_b}{dt} = \frac{d(\ln P_b)}{dt}
 $$
 
-which is the rate at which receptor occupancy changes relative to its current state, i.e. **Weber-law of sensing** [1] whereby the bacterium responds to **relative** changes.
-At low concentrations $((P_b\ll1))$, methylation can adapt to the concentration, and α represents a high-pass filter to amplify low-frequency gradient signals.
-In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. This mechanism removes the boundary from methylation-limited simulations the the α-based model can replicate the theoretical drift velocity in steep gradients.
+which is the rate at which receptor occupancy changes relative to its current state, i.e. **Weber-law of sensing** [1] whereby the bacterium responds to **relative** changes. 
 
-The filter α describes the feedback delivered by methylation 
+The filter α describes the dynamic self-regulating feedback capacity delivered by methylation and depends on receptor occupancy. If Methylation (CheR/CheB) works on receptor activity A(t) to bring it back toward an adapted value, α is the filter that measures how strongly that correction is felt by the bacterial system. This mechanism removes the boundary from methylation-limited simulations so the α-based model can replicate the theoretical drift velocity in steep gradients.
 
-automatically gets smaller when methylation falls behind and larger when methylation can easily compensate.
+At low gradients $((P_b\ll1))$, methylation can adapt to the concentration, and α represents a high-pass filter to amplify low-frequency gradient signals. The filter α gets larger when methylation can easily compensate so the bacterial system can track environmental changes closely.
+
+In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. It automatically gets smaller when methylation falls behind and receptors saturate so cells can’t “see” further up the gradient. 
 
 ---
 
