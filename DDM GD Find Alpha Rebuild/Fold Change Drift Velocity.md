@@ -65,7 +65,7 @@ Here (k) translates molecular receptor changes (s⁻¹) into macroscopic velocit
 Solving the differential equation gives:
 
 $$
-\mu(\alpha) = k,\alpha,\frac{dP_b}{dt} + \mu_0(\alpha)
+\mu(\alpha) = k\alpha\frac{dP_b}{dt} + \mu_0(\alpha)
 $$
 
 μ₀(α) represents the baseline mean drift velocity for an initial α.
@@ -92,7 +92,7 @@ The effective relation can be expressed as:
 
 $$
 \boxed{
-\mu(\alpha) = \mu_{\max}!\left[1 - e^{-\frac{k,\alpha,dP_b/dt}{\mu_{\max}}}\right] + \mu_0(\alpha)
+\mu(\alpha) = \mu_{\max}\left[1 - e^{-\frac{k,\alpha,dP_b/dt}{\mu_{\max}}}\right] + \mu_0(\alpha)
 }
 $$
 
