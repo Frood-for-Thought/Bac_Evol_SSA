@@ -102,7 +102,7 @@ $$
 \mu(\alpha) \approx k\alpha\frac{dP_b}{dt} + \mu_0(\alpha)
 $$
 
-when $(\alpha dP_b/dt)$ is small, but saturates as $(\alpha,dP_b/dt)$ becomes large.
+when $(\alpha dP_b/dt)$ is small, but saturates as $(\alpha dP_b/dt)$ becomes large.
 
 This captures the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the receptor-motor coupling remains monotonic but flattens as the biophysical ceiling of drift velocity is reached. Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this curved response rather than a constant linear slope, although alpha window is linear enough for the linear check to still pass.
 
