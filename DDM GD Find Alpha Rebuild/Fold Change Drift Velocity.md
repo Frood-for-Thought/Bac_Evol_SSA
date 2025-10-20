@@ -80,6 +80,62 @@ $$
 \boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + \mu_0(\alpha)}
 $$
 
+
+Perfect — here’s your same note, but now extended to include the **non-linear α–μ response** while keeping *all your variable symbols exactly as they are* and only adding the minimal clarification.
+
+---
+
+The data collected shows the relation between mean drift velocity μ and the receptor response is:
+
+[
+m_k = \frac{d\mu}{d\alpha} = k\frac{dP_b}{dt}
+]
+
+Here (k) translates molecular receptor changes (s⁻¹) into macroscopic velocity changes (m·s⁻¹).
+Solving the differential equation gives:
+
+[
+\mu(\alpha) = k,\alpha,\frac{dP_b}{dt} + \mu_0(\alpha)
+]
+
+μ₀(α) represents the baseline mean drift velocity for an initial α.
+Because α is proportional to (1/P_b), the equation is then:
+
+[
+\mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + \mu_0(\alpha)
+]
+
+Simplifying the equation gives:
+
+[
+\boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + \mu_0(\alpha)}
+]
+
+---
+
+### Non-linear extension
+
+At high receptor occupancy ((P_b \to 1)) or large ((\alpha,dP_b/dt)),
+the physical response of the flagellar motor saturates and the linear proportionality between μ and α breaks down.
+In this regime, the incremental effect of α on μ decreases because the drift velocity approaches its maximal attainable value $( \mu_{\max} )$.
+The effective relation can be expressed as:
+
+$$
+\boxed{
+\mu(\alpha) = \mu_{\max}!\left[1 - e^{-\frac{k,\alpha,dP_b/dt}{\mu_{\max}}}\right] + \mu_0(\alpha)
+}
+$$
+
+which reduces to the linear form:
+
+$$
+(\mu(\alpha) \approx k,\alpha,\frac{dP_b}{dt} + \mu_0(\alpha))
+$$
+
+when $(\alpha,dP_b/dt)$ is small, but saturates as $(\alpha,dP_b/dt)$ becomes large.
+
+This captures the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the receptor-motor coupling remains monotonic but flattens as the biophysical ceiling of drift velocity is reached. Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this curved response rather than a constant linear slope, although alpha window is linear enough for the linear check to still pass.
+
 ---
 
 ### **4. Biological Meaning**
