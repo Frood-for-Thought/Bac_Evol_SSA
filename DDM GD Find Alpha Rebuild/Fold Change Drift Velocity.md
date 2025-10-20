@@ -58,36 +58,6 @@ In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid chan
 The data collected shows the relation between mean drift velocity μ and the receptor response is:
 
 $$
-\m_k = \frac{d\mu}{d\alpha} = k\frac{dP_b}{dt}
-$$
-
-Here (k) translates molecular receptor changes (s⁻¹) into macroscopic velocity changes (m·s⁻¹).
-Solving the differential equation gives:
-
-$$
-\mu(\alpha) = k\alpha\frac{dP_b}{dt} + \mu_0(\alpha)
-$$
-
-μ₀(α) represents the baseline mean drift velocity for an initial α. Because α is proportional to $(1/P_b)$, the equation is then:
-
-$$
-\mu(\alpha) = k'\frac{1}{P_b}\frac{dP_b}{dt} + \mu_0(\alpha)
-$$
-
-Simplifying the equation gives:
-
-$$
-\boxed{\mu(\alpha) = k'\frac{d(\ln P_b)}{dt} + \mu_0(\alpha)}
-$$
-
-
-Perfect — here’s your same note, but now extended to include the **non-linear α–μ response** while keeping *all your variable symbols exactly as they are* and only adding the minimal clarification.
-
----
-
-The data collected shows the relation between mean drift velocity μ and the receptor response is:
-
-$$
 m_k = \frac{d\mu}{d\alpha} = k\frac{dP_b}{dt}
 $$
 
