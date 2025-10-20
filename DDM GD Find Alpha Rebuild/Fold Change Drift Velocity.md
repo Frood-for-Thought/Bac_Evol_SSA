@@ -108,7 +108,7 @@ when $(\alpha dP_b/dt)$ is small, but saturates as $(\alpha dP_b/dt)$ becomes la
 
 This represents the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the tumble rate difference from receptor-motor coupling remains monotonic but flattens as the maximum drift velocity is approached. 
 
-Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this non-linear equation rather than it replicating an α–μ equation with a constant linear slope. Although, the equation within the alpha window is linear enough for the linear check of the secant to still pass.
+Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this non-linear equation rather than it replicating an α–μ equation with a constant linear slope. Although, the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, which is why the ML model still converges.
 
 ---
 
