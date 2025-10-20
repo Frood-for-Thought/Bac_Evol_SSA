@@ -92,7 +92,7 @@ The effective relation can be expressed as:
 
 $$
 \boxed{
-\mu(\alpha) = \mu_{\max}\left[1 - e^{-\frac{k,\alpha,dP_b/dt}{\mu_{\max}}}\right] + \mu_0(\alpha)
+\mu(\alpha) = \mu_{\max}\left[1 - e^{-\frac{k\alpha dP_b/dt}{\mu_{\max}}}\right] + \mu_0(\alpha)
 }
 $$
 
