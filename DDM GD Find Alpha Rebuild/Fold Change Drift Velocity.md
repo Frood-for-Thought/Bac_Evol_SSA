@@ -85,7 +85,7 @@ $$
 
 ### Non-linear extension
 
-At high receptor occupancy ((P_b \to 1)) or large ((\alpha,dP_b/dt)),
+At high receptor occupancy $((P_b \to 1))$ or large $((\alpha dP_b/dt))$,
 the physical response of the flagellar motor saturates and the linear proportionality between μ and α breaks down.
 In this regime, the incremental effect of α on μ decreases because the drift velocity approaches its maximal attainable value $( \mu_{\max} )$.
 The effective relation can be expressed as:
