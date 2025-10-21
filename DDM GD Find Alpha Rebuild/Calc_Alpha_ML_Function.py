@@ -273,7 +273,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # Cap the derivative used for gamma by | m_k | when PR is ready.
             if self.fd_tracker.linear_slope_ready and (m_k is not None):
-                mk_abs = abs(float(m_k.item()) if hasattr(m_k, "item") else float(m_k))
+                mk_abs = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
                 if math.isfinite(mk_abs) and mk_abs > 0.0:
                     # prevent FD spikes from shrinking γ to ~0
                     if abs(dmu_dalpha) > mk_abs:
