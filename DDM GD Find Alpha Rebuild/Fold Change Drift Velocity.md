@@ -48,8 +48,8 @@ At low gradients $((P_b\ll1))$, methylation can adapt to the concentration, and 
 In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. It automatically gets smaller when methylation falls behind and receptors saturate so cells can’t “see” further up the gradient. 
 
 Instead of filtering out methylation adaptation frequency signals, this instead is a dynamic, nonlinear **amplitude** filter to contol the magnitude of the signal based on receptor occupancy $(P_b)$. 
-Classical methylation models fail in steep gradients because finite methylation sites saturate with receptor activity freezing while adaptation stops, producing nonstop runs limited only by rotational diffusion.
-In the α-model, because tumble rate depends on $(d(\ln P_b)/dt)$, the feedback gain from methylation logarithmically scales with how occupied the receptors are to detect relative changes in concentration. 
+Previous models fail in steep gradients because methylation sites saturate and can no longer bring receptor activity to baseline causing adaptation to fail, while chemosensing is gone to produce nonstop runs.
+In the α-model, because tumble rate depends on $(d(\ln P_b)/dt)$, the feedback gain from methylation logarithmically scales with how occupied the receptors are to detect **relative** changes in concentration, and scale the sensitivity preventing adaptation from failing.
 Therefore, drift velocity continues smoothly in steep gradients instead of collapsing to replicate the theoretical drift velocity in steep gradients.
 
 ---
