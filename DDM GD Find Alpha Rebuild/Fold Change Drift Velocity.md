@@ -47,7 +47,10 @@ At low gradients $((P_b\ll1))$, methylation can adapt to the concentration, and 
 
 In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid changes in concentration, so α represents a low-pass filter to prevent the model from overreacting to noise by filtering out high-frequency gradient signals. It automatically gets smaller when methylation falls behind and receptors saturate so cells can’t “see” further up the gradient. 
 
-Instead of filtering out methylation adaptation frequency signals, this instead is a dynamic, nonlinear **amplitude** filter to contol the magnitude of the signal based on receptor occupancy $(P_b)$. This removes the boundary from methylation-limited simulations to replicate the theoretical drift velocity in steep gradients.
+Instead of filtering out methylation adaptation frequency signals, this instead is a dynamic, nonlinear **amplitude** filter to contol the magnitude of the signal based on receptor occupancy $(P_b)$. 
+Classical methylation models fail in steep gradients because finite methylation sites saturate with receptor activity freezing while adaptation stops, producing nonstop runs limited only by rotational diffusion.
+In the α-model, because tumble rate depends on $(d(\ln P_b)/dt)$, the feedback gain from methylation logarithmically scales with how occupied the receptors are to detect relative changes in concentration. 
+Therefore, drift velocity continues smoothly in steep gradients instead of collapsing to replicate the theoretical drift velocity in steep gradients.
 
 ---
 
@@ -113,9 +116,6 @@ Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **seca
 ---
 
 ### **4. Biological Meaning**
-
-Classical methylation models fail in steep gradients because finite methylation sites saturate with receptor activity freezing while adaptation stops, producing nonstop runs limited only by rotational diffusion.
-In the α-model, because the drift law depends solely on $(d(\ln P_b)/dt)$, receptor sites no longer saturate, the logarithmic equations shows receptors detect relative changes and drift velocity changes smoothly in higher gradients rather than collapsing.
 
 The slope $(m_k = d\mu/d\alpha)$ is isometric to the receptor rate $(dP_b/dt)$, which describes how the behavioral output for drift velocity changes within alpha space (α-domain) is proportional to how the receptor signal changes as the environment evolves in real time (t-domain).
 α acts as a temporal control variable filtering adaptation, while the mobility constant $(k')$ gives a proportion to how **relative** receptor changes describe drift velocity.
