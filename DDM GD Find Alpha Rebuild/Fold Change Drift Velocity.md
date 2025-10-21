@@ -50,7 +50,7 @@ In steep gradients $((P_b\to1))$, methylation cannot keep up with the rapid chan
 Instead of filtering out methylation adaptation frequency signals, this instead is a dynamic, nonlinear **amplitude** filter to contol the magnitude of the signal based on receptor occupancy $(P_b)$. 
 Previous models fail in steep gradients because methylation sites saturate and can no longer bring receptor activity to baseline, causing adaptation to fail and chemosensing to collapse creating nonstop runs.
 In the α-model, because tumble rate depends on $(d(\ln P_b)/dt)$, the feedback gain from methylation logarithmically scales with how occupied the receptors are to detect **relative** changes in concentration, and scale the sensitivity preventing adaptation from failing.
-Therefore, drift velocity continues smoothly in steep gradients instead of collapsing to replicate the theoretical drift velocity in steep gradients.
+Therefore, drift velocity continues smoothly in steep gradients instead of collapsing to replicate the theoretical drift velocity in experiemnts.
 
 ---
 
