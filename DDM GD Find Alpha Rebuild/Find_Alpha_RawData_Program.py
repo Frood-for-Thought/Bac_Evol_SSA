@@ -159,7 +159,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
     print("\nΔμ over +100 α steps:", [f"{d:.3f}" for d in deltas])
 
     # Run the sign-transition detector.
-    v_d = float(vd_chemotaxis[deme_start])
+    v_d = float(theoretical_val)
     transitions = detect_sign_transitions(stats, v_d=v_d)
 
     print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
@@ -209,21 +209,21 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 
 if __name__ == "__main__":
-    for deme_start in range(28, 40):
+    for deme_start in range(61, 65):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
-        num_epochs = 130
+        num_epochs = 70
         learning_rate = 2 / (100 * Rtroc[deme_start])
         theoretical_val = vd_chemotaxis[deme_start]
         # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
-        max_iter_start = 1000
+        max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(100, 1100, 100))
+        alphas = list(range(100, 500, 50))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
-        print(f"\nv_d = {float(vd_chemotaxis[deme_start])}")
+        print(f"\nv_d = {theoretical_val}")
 
         a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=False, samples_per_alpha=20000)
         print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
