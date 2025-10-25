@@ -115,16 +115,17 @@ In the linear region, $\mu = m_k \alpha + b$ and $\frac{d\mu}{d\alpha} = m_k$, a
 In the non-linear regions, if $\mu(\alpha)$ has a quadratic term:
 
 $$
-\mu(\alpha) = a + b\alpha + c\alpha^2
+\mu(\alpha) = b + m\alpha + c\alpha^2
 $$
 
+Where *m* is the true (physical) slope in the underlying equation, *mₖ* is the fitted slope across the α-window, and *b* is the true intercept.
 Therefore, $(m_k = d\mu/d\alpha)$, measured across the α window becomes a **secant**. The larger the alpha window the more the slope inherits curvature bias:
 
 $$
-m_k \approx b + c\Delta\alpha_{\text{window}}
+\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + c\Delta\alpha_{\text{window}}
 $$
 
-Therefore,  of this non-linear equation $(c\Delta\alpha_{\text{window}})$ rather than it replicating an α–μ equation with a constant linear slope. Although, the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, which is why the ML model still converges.
+Therefore,  of this non-linear equation $(c\Delta\alpha_{\text{window}})$ rather than it replicating an α–μ equation with a constant linear slope. Although, the mean dri.ft velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, which is why the ML model still converges.
 
 ---
 
