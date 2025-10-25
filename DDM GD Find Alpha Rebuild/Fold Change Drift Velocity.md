@@ -125,21 +125,19 @@ $$
 \frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + 1/2 c\Delta\alpha_{\text{window}}
 $$
 
-Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear:
+Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, $(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
+so the ML model perceives the region as “effectively linear” and will still converge. For this to occur
 
 $$
-\frac{1}{2}\,|c|\,(\Delta\alpha_{\text{window}})^2 \le \text{stderr}_{\text{tol}}\,\frac{2s(\alpha)}{\sqrt{n}}
+\frac{1}{2}\|c|\(\Delta\alpha_{\text{window}})^2 \le \text{stderr}_{\text{tol}}\,\frac{2s(\alpha)}{\sqrt{n}}
 $$
 
 Solving for the window width:
 
 $$
 \Delta\alpha_{\text{window}} \le 
-\sqrt{\frac{4\,\text{stderr}_{\text{tol}}\,s(\alpha)}{|c|\,\sqrt{n}}}
+\sqrt{\frac{4\text{stderr}_{\text{tol}}\,s(\alpha)}{|c|\sqrt{n}}}
 $$
-
-$(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
-so the ML model perceives the region as “effectively linear” and will still converge.
 
 ---
 
