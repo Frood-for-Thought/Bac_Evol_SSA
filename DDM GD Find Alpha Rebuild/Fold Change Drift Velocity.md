@@ -122,10 +122,23 @@ Where *m* is the true (physical) slope in the underlying equation, *mₖ* is the
 Therefore, $(m_k = d\mu/d\alpha)$, measured across the α window becomes a **secant** of the non-linear equation, rather than it replicating an α–μ equation with a constant linear slope. The larger the alpha window the more the slope inherits curvature bias $(c\Delta\alpha_{\text{window}})$:
 
 $$
-\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + c\Delta\alpha_{\text{window}}
+\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + 1/2 c\Delta\alpha_{\text{window}}
 $$
 
-Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, $(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
+Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear:
+
+$$
+\frac{1}{2}\,|c|\,(\Delta\alpha_{\text{window}})^2 \le \text{stderr}_{\text{tol}}\,\frac{2s(\alpha)}{\sqrt{n}}
+$$
+
+Solving for the window width:
+
+$$
+\Delta\alpha_{\text{window}} \le 
+\sqrt{\frac{4\,\text{stderr}_{\text{tol}}\,s(\alpha)}{|c|\,\sqrt{n}}}
+$$
+
+$(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
 so the ML model perceives the region as “effectively linear” and will still converge.
 
 ---
