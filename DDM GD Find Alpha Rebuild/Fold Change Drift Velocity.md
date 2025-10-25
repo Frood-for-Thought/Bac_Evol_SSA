@@ -125,7 +125,7 @@ $$
 \frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + c\Delta\alpha_{\text{window}}
 $$
 
-Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, the ML model will still converge.
+Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, $(\boxed{\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}}})$, the ML model will still converge.
 
 ---
 
