@@ -111,7 +111,33 @@ when $(\alpha dP_b/dt)$ is small, but saturates as $(\alpha dP_b/dt)$ becomes la
 
 This represents the **non-linear α–μ relation** observed in steep gradients at very high drift velocity, the tumble rate difference from receptor-motor coupling remains monotonic but flattens as the maximum drift velocity is approached. 
 
-Therefore, $(m_k = d\mu/d\alpha)$ measured across the α window becomes a **secant** of this non-linear equation rather than it replicating an α–μ equation with a constant linear slope. Although, the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, which is why the ML model still converges.
+In the linear region, $\mu = m_k \alpha + b$ and $\frac{d\mu}{d\alpha} = m_k$, and the derivative $m_k$ is the true slope. 
+In the non-linear regions, if $\mu(\alpha)$ has a quadratic term:
+
+$$
+\mu(\alpha) = b + m\alpha + 1/2 c\alpha^2
+$$
+
+Where *m* is the true (physical) slope in the underlying equation, *mₖ* is the fitted slope across the α-window, and *b* is the true intercept.
+Therefore, $(m_k = d\mu/d\alpha)$, measured across the α window becomes a **secant** of the non-linear equation, rather than it replicating an α–μ equation with a constant linear slope. The larger the alpha window the more the slope inherits curvature bias $(c\Delta\alpha_{\text{window}})$:
+
+$$
+\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + c\Delta\alpha_{\text{window}}
+$$
+
+Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, $(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
+so the ML model perceives the region as “effectively linear” and will still converge. For this to occur:
+
+$$
+\frac{1}{2}\|c|\(\Delta\alpha_{\text{window}})^2 \le \text{stderr}_{\text{tol}}\frac{2s(\alpha)}{\sqrt{n}}
+$$
+
+Solving for the shows the alpha window width must be within:
+
+$$
+\Delta\alpha_{\text{window}} \le 
+\sqrt{\frac{4\text{stderr}_{\text{tol}} s(\alpha)}{|c|\sqrt{n}}}
+$$
 
 ---
 
