@@ -136,7 +136,7 @@ Solving for the shows the alpha window width must be within:
 
 $$
 \Delta\alpha_{\text{window}} \le 
-\sqrt{\frac{4\text{stderr}_{\text{tol}}\s(\alpha)}{|c|\sqrt{n}}}
+\sqrt{\frac{4\text{stderr}_{\text{tol}} s(\alpha)}{|c|\sqrt{n}}}
 $$
 
 ---
