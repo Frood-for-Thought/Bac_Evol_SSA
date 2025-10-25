@@ -115,14 +115,14 @@ In the linear region, $\mu = m_k \alpha + b$ and $\frac{d\mu}{d\alpha} = m_k$, a
 In the non-linear regions, if $\mu(\alpha)$ has a quadratic term:
 
 $$
-\mu(\alpha) = b + m\alpha + c\alpha^2
+\mu(\alpha) = b + m\alpha + 1/2 c\alpha^2
 $$
 
 Where *m* is the true (physical) slope in the underlying equation, *mₖ* is the fitted slope across the α-window, and *b* is the true intercept.
 Therefore, $(m_k = d\mu/d\alpha)$, measured across the α window becomes a **secant** of the non-linear equation, rather than it replicating an α–μ equation with a constant linear slope. The larger the alpha window the more the slope inherits curvature bias $(c\Delta\alpha_{\text{window}})$:
 
 $$
-\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + 1/2 c\Delta\alpha_{\text{window}}
+\frac{d\mu}{d\alpha} = m + 2c\alpha = m_k \approx m + c\Delta\alpha_{\text{window}}
 $$
 
 Although, when the mean drift velocity equation within the alpha window is linear enough for the residual check of the secant to still pass as linear, $(\lvert r_{\mathrm{cent}}(\alpha)\rvert \le\ c\frac{2s(\alpha)}{\sqrt{n}})$, the curvature is too weak to be distinguished from noise
