@@ -209,7 +209,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 
 if __name__ == "__main__":
-    for deme_start in range(61, 65):
+    for deme_start in range(50, 51):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 70
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(100, 500, 50))
+        alphas = list(range(100, 500, 25))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
