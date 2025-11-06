@@ -130,18 +130,6 @@ $$
 
 we expect $m_k$ to be close to $m$. (We don’t know $m$, but the stabilization of $m_k$ gives a practical proxy.)
 
-**Optional conservative variant** (to account for residual slope-estimation error):
-
-$$
-\lvert r_{\mathrm{cent}}(\alpha)\rvert
-\le\
-\underbrace{c\frac{2s(\alpha)}{\sqrt{n}}}_{\verb|sampling noise|}
-\+\
-\underbrace{\verb|slope_tol|}_{\verb|slope-error leakage|}
-$$
-
-but in this setup it is already (i) gating on slope stabilization and (ii) using a narrow bracket, so the leakage is small and the plain stderr gate is usually sufficient.
-
 ---
 
 ## 4. Linearized gradient and the role of $m_k$
