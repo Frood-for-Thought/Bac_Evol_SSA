@@ -219,7 +219,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(100, 500, 25))
+        alphas = list(range(200, 1500, 50))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -265,6 +265,9 @@ if __name__ == "__main__":
 
         print("\n[Init] Estimator constructed.")
         print(f"  bracket = {bracket}")
+
+        exit()
+
         print(f"  PR ready? {fd_tracker.linear_slope_ready}")
         #--------------------------------------------------------
         # Run the ML algorithm.
