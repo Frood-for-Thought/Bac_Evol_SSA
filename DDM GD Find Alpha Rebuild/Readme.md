@@ -57,7 +57,7 @@ should be no larger than a stderr-based bound.
   * **decides the next α** with several safeguards:
 
     * **slope-normalized step:** use a γ scaled by \$1/|\mu'(α)|\$ so the raw update magnitude doesn’t explode on steep/flat patches;
-    * **γ-cap using \$m\_k\$:** if PR slope is ready, enforce \$|1-4γm\_k^2|<1\$ with the best non-oscillatory choice near \$γ≈1/(2m\_k^2)\$;
+    * **γ-cap using \$m\_k\$:** if PR slope is ready, enforce \$|1-4γm\_k^2|<1\$ with the best non-oscillatory choice near \$γ≈1/(4m\_k^2)\$;
     * **bracket direction override:** keep steps moving toward/within $[\alpha_{\min}, \alpha_{\max}]$;
     * **probe fallback:** if curvature/slope diagnostics suggest a false plateau, take a small \$h\$ suggested by `MacroStats`.
 
