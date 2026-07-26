@@ -57,7 +57,7 @@ should be no larger than a stderr-based bound.
   * **decides the next α** with several safeguards:
 
     * **slope-normalized step:** use a γ scaled by \$1/|\mu'(α)|\$ so the raw update magnitude doesn’t explode on steep/flat patches;
-    * **γ-cap using \$m\_k\$:** if PR slope is ready, enforce \$|1-2γm\_k^2|<1\$ with the best non-oscillatory choice near \$γ≈1/(2m\_k^2)\$;
+    * **γ-cap using \$m\_k\$:** if PR slope is ready, enforce \$|1-4γm\_k^2|<1\$ with the best non-oscillatory choice near \$γ≈1/(2m\_k^2)\$;
     * **bracket direction override:** keep steps moving toward/within $[\alpha_{\min}, \alpha_{\max}]$;
     * **probe fallback:** if curvature/slope diagnostics suggest a false plateau, take a small \$h\$ suggested by `MacroStats`.
 
@@ -118,10 +118,10 @@ At each α we aggregate \$n\$ independent samples; \$\hat\mu(α)\$ is approximat
 Near a solution \$α\_\*\$ where \$\mu(α\_\*)=v\_d\$, write \$\mu(α)\approx \mu(α\_\*) + m\_k(α-α\_\*)\$ with slope \$m\_k\$ from the PR fit. A vanilla gradient step with step-size γ gives the **error recursion**
 
 $$
-e_{k+1} \;=\; (1-2γm_k^2)\,e_k,\quad e_k:=α_k-α_\*.
+e_{k+1} \;=\; (1-4γm_k^2)\,e_k,\quad e_k:=α_k-α_\*.
 $$
 
-Thus \$|1-2γm\_k^2|<1\$ is the stability condition; the **best non-oscillatory contraction** is at \$γ≈1/(2m\_k^2)\$. The pipeline computes/updates \$m\_k\$ and enforces a small-margin cap on γ accordingly.
+Thus \$|1-4γm\_k^2|<1\$ is the stability condition; the **best non-oscillatory contraction** is at \$γ≈1/(2m\_k^2)\$. The pipeline computes/updates \$m\_k\$ and enforces a small-margin cap on γ accordingly.
 
 ### 3) Centered PR slope and linearity gate
 
