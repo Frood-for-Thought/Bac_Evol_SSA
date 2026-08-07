@@ -242,6 +242,38 @@ if __name__ == "__main__":
         # Compute all forward differences between adjacent α’s currently in stats.records.
         fd_tracker.compute_all_differences(stats)
 
+        # -------------------------------------------------------
+        # Export coarse α sweep (before ML training)
+        # -------------------------------------------------------
+        def to_scalar(x):
+            return x.item() if hasattr(x, "item") else x
+
+        macro_records = [
+            {k: to_scalar(v) for k, v in rec.items()}
+            for rec in stats.records
+        ]
+        fd_records = [
+            {k: to_scalar(v) for k, v in rec.items()}
+            for rec in fd_tracker.fd_records
+        ]
+        macro_df = pd.DataFrame(macro_records)
+        fd_df = pd.DataFrame(fd_records)
+        with pd.ExcelWriter(
+                f"Deme_{deme_start + 1}_alpha_w_const_Rtroc_data_raw.xlsx",
+                engine="openpyxl") as writer:
+            macro_df.to_excel(
+                writer,
+                sheet_name="MacroStats",
+                index=False
+            )
+            fd_df.to_excel(
+                writer,
+                sheet_name="FiniteDifferences",
+                index=False
+            )
+        print("Saved coarse alpha sweep.")
+        exit()
+
         print("\nFinite differences touching the detected bracket:")
         for fd in fd_tracker.fd_records:
             print(fd)
