@@ -131,8 +131,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         # This module DOES NOT optimize α with autograd.
         # α is updated by LossEvaluator.decide_next_alpha(...) (the evaluator-driven step).
         # It still keeps a tiny optimizer + scheduler to reuse PyTorch’s LR decay logic as a scalar multiplier
-        # for gamma (γ). It only reads its LR each epoch:
-        #     current_lr_scale = optimizer.param_groups[0]['lr']
+        # for gamma (γ). It only reads its LR each epoch.
         # The optimizer will handle the update of alpha based on the computed gradients.
         self.lr_scale_param = torch.nn.Parameter(torch.tensor(0.0, device=self.device))
         self.optimizer = torch.optim.SGD([self.alpha], lr=self.learning_rate)
@@ -287,25 +286,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
             gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
 
-            # if (epoch >= self.start_gamma_cap_iteration_marker
-            #         and self.fd_tracker.linear_slope_ready
-            #         and resid_ok
-            #         and self.built_gamma_cap is None):
-            #     mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
-            #     mk2 = mk_val * mk_val
-            #     # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
-            #     # Therefore eta_for_gamma_cap = 0.5 -->  self.built_gamma_cap = 1.0 / (4.0 * mk2)
-            #     self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
-            #     print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
-            #
-            # # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
-            # # Scale gamma by the decayed LR from the dummy optimizer.
-            current_lr_scale = self.optimizer.param_groups[0]['lr']
-            # # gamma *= float(current_lr_scale)
-            # # hard ceiling, prevents astronomic cap values
-            # if self.built_gamma_cap is not None:
-            #     gamma = min(gamma, self.built_gamma_cap)
-
             # Adaptive stability cap on gamma (ONLY when PR slope is ready).
             # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
             # Best non-oscillatory contraction at gamma = 1/(2*m_k^2).
@@ -356,13 +336,13 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         # Every time that number reaches a multiple of step_size, the scheduler triggers a decay.
                         # StepLR applies a decay every `step_size` epochs by multiplying by `learning_rate_gamma`.
                         # Example: after 3 scheduler steps with gamma=0.7, decay_factor = 0.7**3 = 0.343.
-                        num_decays = self.scheduler.last_epoch // self.step_size
-                        decay_factor = self.learning_rate_gamma ** num_decays
+                        current_lr = self.optimizer.param_groups[0]["lr"]
+                        lr_scale = current_lr / self.learning_rate
 
                         # Apply same learning rate scaler damping to the gamma_cap only inside noise band.
                         print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}") # stderr_ci from macro_stats.py
                         if err_mu <= stderr_ci:
-                            gamma_cap *= decay_factor
+                            gamma_cap *= lr_scale
 
                         # Extra safety for small mk2 values.
                         # Fail fast if cap is nonsensical
@@ -373,6 +353,39 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         # Cap gamma (keep original scaling but make it safe).
                         if gamma > gamma_cap:
                             gamma = gamma_cap
+            else:
+                if (epoch >= self.start_gamma_cap_iteration_marker
+                        and self.fd_tracker.linear_slope_ready
+                        and resid_ok
+                        and self.built_gamma_cap is None):
+                    mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
+                    mk2 = mk_val * mk_val
+                    # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
+                    # Therefore eta_for_gamma_cap = 0.5 -->  self.built_gamma_cap = 1.0 / (4.0 * mk2)
+                    self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+                    print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
+
+                # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
+                stderr_ci = rec_k.get("stderr_ci", None)
+                mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
+                err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
+
+                # torch.optim.lr_scheduler.StepLR starts at -1 when the scheduler is created.
+                # After every .step() call (which you do once per epoch), it increments by 1.
+                # Every time that number reaches a multiple of step_size, the scheduler triggers a decay.
+                # StepLR applies a decay every `step_size` epochs by multiplying by `learning_rate_gamma`.
+                # Example: after 3 scheduler steps with gamma=0.7, decay_factor = 0.7**3 = 0.343.
+                current_lr = self.optimizer.param_groups[0]["lr"]
+                lr_scale = current_lr / self.learning_rate
+
+                # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
+                # Scale gamma by the decayed LR from the dummy optimizer.
+                print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}")  # stderr_ci from macro_stats.py
+                if err_mu <= stderr_ci:
+                    gamma *= float(lr_scale)
+                # hard ceiling, prevents astronomic cap values
+                if self.built_gamma_cap is not None:
+                    gamma = min(gamma, self.built_gamma_cap)
 
             if self.bracket is None:
                 raise RuntimeError("Bracket (α_min, α_max) not set.")
@@ -436,7 +449,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             print(
                 f"gamma = {float(gamma):.6f}  "
-                f"(lr_scale={float(current_lr_scale):.6f})"
+                f"(lr_scale={float(lr_scale):.6f})"
             )
             print(f"dmu/dalpha={float(dmu_dalpha):.6f}")
 
