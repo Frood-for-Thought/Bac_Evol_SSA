@@ -292,7 +292,7 @@ if __name__ == "__main__":
             max_iter=max_iter_start,
             # eta_for_gamma_cap,
             # The ML algorithm iteratively refines the learning_rate and max_iter every number of step_size iterations.
-            step_size=5,
+            step_size=1,
             max_iter_limit=20000,
             max_iter_factor=2,
             learning_rate_gamma=0.8,
