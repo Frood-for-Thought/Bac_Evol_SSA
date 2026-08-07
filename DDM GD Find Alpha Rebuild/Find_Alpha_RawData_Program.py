@@ -215,9 +215,12 @@ if __name__ == "__main__":
     for deme_start in range(50, 51):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
-        num_epochs = 70
+        num_epochs = 100
         learning_rate = 2 / (100 * Rtroc[deme_start])
-        theoretical_val = vd_chemotaxis[deme_start]
+
+        # theoretical_val = vd_chemotaxis[deme_start]
+        theoretical_val = 8.15
+
         # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
         max_iter_start = 20000
 
@@ -272,7 +275,7 @@ if __name__ == "__main__":
                 index=False
             )
         print("Saved coarse alpha sweep.")
-        exit()
+        # exit()
 
         print("\nFinite differences touching the detected bracket:")
         for fd in fd_tracker.fd_records:
@@ -287,8 +290,9 @@ if __name__ == "__main__":
             theoretical_val=float(theoretical_val),
             alpha=float(a_min),  # start on the left side of the bracket
             max_iter=max_iter_start,
+            # eta_for_gamma_cap,
             # The ML algorithm iteratively refines the learning_rate and max_iter every number of step_size iterations.
-            step_size=10,
+            step_size=5,
             max_iter_limit=20000,
             max_iter_factor=2,
             learning_rate_gamma=0.8,
@@ -301,7 +305,7 @@ if __name__ == "__main__":
         print("\n[Init] Estimator constructed.")
         print(f"  bracket = {bracket}")
 
-        exit()
+        # exit()
 
         print(f"  PR ready? {fd_tracker.linear_slope_ready}")
         #--------------------------------------------------------
