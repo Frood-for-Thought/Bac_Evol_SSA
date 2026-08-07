@@ -53,7 +53,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     :param: alpha: The independent variable the ML model is optimizing for a stochastic function whose mean
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
-                 alpha, max_iter, eta_for_gamma_cap=0.05, step_size=20, max_iter_limit=20000, max_iter_factor=2,
+                 alpha, max_iter, eta_for_gamma_cap=0.5, step_size=20, max_iter_limit=20000, max_iter_factor=2,
                  learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
@@ -287,23 +287,24 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
             gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
 
-            if (epoch >= self.start_gamma_cap_iteration_marker
-                    and self.fd_tracker.linear_slope_ready
-                    and resid_ok
-                    and self.built_gamma_cap is None):
-                mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
-                mk2 = mk_val * mk_val
-                # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
-                self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
-                print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
-
-            # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
-            # Scale gamma by the decayed LR from the dummy optimizer.
+            # if (epoch >= self.start_gamma_cap_iteration_marker
+            #         and self.fd_tracker.linear_slope_ready
+            #         and resid_ok
+            #         and self.built_gamma_cap is None):
+            #     mk_val = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
+            #     mk2 = mk_val * mk_val
+            #     # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
+            #     # Therefore eta_for_gamma_cap = 0.5 -->  self.built_gamma_cap = 1.0 / (4.0 * mk2)
+            #     self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+            #     print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
+            #
+            # # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
+            # # Scale gamma by the decayed LR from the dummy optimizer.
             current_lr_scale = self.optimizer.param_groups[0]['lr']
-            gamma *= float(current_lr_scale)
-            # hard ceiling, prevents astronomic cap values
-            if self.built_gamma_cap is not None:
-                gamma = min(gamma, self.built_gamma_cap)
+            # # gamma *= float(current_lr_scale)
+            # # hard ceiling, prevents astronomic cap values
+            # if self.built_gamma_cap is not None:
+            #     gamma = min(gamma, self.built_gamma_cap)
 
             # Adaptive stability cap on gamma (ONLY when PR slope is ready).
             # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
@@ -346,7 +347,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
                         err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
                         # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
+                        # Therefore eta_for_gamma_cap = 0.5 -->  self.built_gamma_cap = 1.0 / (4.0 * mk2)
                         gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
+                        gamma = gamma_cap
 
                         # torch.optim.lr_scheduler.StepLR starts at -1 when the scheduler is created.
                         # After every .step() call (which you do once per epoch), it increments by 1.
@@ -357,6 +360,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         decay_factor = self.learning_rate_gamma ** num_decays
 
                         # Apply same learning rate scaler damping to the gamma_cap only inside noise band.
+                        print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}") # stderr_ci from macro_stats.py
                         if err_mu <= stderr_ci:
                             gamma_cap *= decay_factor
 
