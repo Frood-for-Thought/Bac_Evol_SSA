@@ -37,6 +37,9 @@ Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
+# Modify only deme 51
+Rtroc[50] = 0.00563      # λ = 1 mm^-1 example
+
 # Values used for Norm_Vd_Mean_Data_Generator.
 alpha = 100
 Start_Angle = 90  # degrees
