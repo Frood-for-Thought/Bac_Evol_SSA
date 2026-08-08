@@ -127,7 +127,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
     #  Helper function to get python scalars from tensors/numbers.
     _get = lambda x: x.item() if hasattr(x, "item") else float(x)
 
-    for a in alphas:
+    for a in alpha_grid:
         # Generate `samples_per_alpha` draws from the stochastic data generator at current α.
         # The generator may return a CUDA tensor, it needs to move to CPU before handing to
         # MacroStats to keep everything uniform.
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(200, 1500, 50))
+        alphas = list(range(500, 700, 50))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")

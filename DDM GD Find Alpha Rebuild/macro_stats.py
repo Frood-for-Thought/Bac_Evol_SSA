@@ -59,15 +59,52 @@ class MacroStats:
             "stderr_ci": stderr_ci  # Sample standard error bound (95% CI).
         }
 
-        # Check if alpha already exists. If so, replace it.
+        # Check if alpha already exists. If so, average the new statistics with the existing estimate.
         for i, r in enumerate(self.records):
-            if round(float(r["alpha"]), decimals) == alpha_rounded:
-                self.records[i] = record
-                break
-        else:
-            # Update the record within the function.
-            self.records.append(record)
+            if torch.isclose(r["alpha"], alpha_tensor, atol=1e-6, rtol=0.0):
 
+                # Check whether this α has already been sampled.
+                # If so, combine the old and new statistics rather than overwriting them.
+                # Existing sample statistics.
+                n1 = r["n"]
+                mu1 = r["mu"]
+                var1 = r["var"]
+                # Newly computed sample statistics.
+                n2 = record["n"]
+                mu2 = record["mu"]
+                var2 = record["var"]
+                # Compute the pooled sample mean.
+                n = n1 + n2
+                mu = (n1 * mu1 + n2 * mu2) / n
+                # Convert variances into sums of squared deviations (M2),
+                # then merge them using the parallel variance formula.
+                M2_1 = var1 * (n1 - 1)
+                M2_2 = var2 * (n2 - 1)
+                # Difference between the two sample means.
+                delta = mu2 - mu1
+                # Combined sum of squared deviations.
+                M2 = (
+                        M2_1
+                        + M2_2
+                        + delta ** 2 * n1 * n2 / n
+                )
+                # Recover the pooled variance and derived statistics.
+                var = M2 / (n - 1)
+                std = torch.sqrt(var)
+                stderr_ci = 2 * std / torch.sqrt(torch.tensor(float(n)))
+                # Replace the stored record with the pooled estimate.
+                self.records[i] = {
+                    "alpha": alpha_tensor,
+                    "n": n,
+                    "mu": mu,
+                    "var": var,
+                    "std": std,
+                    "stderr_ci": stderr_ci,
+                }
+                return self.records[i]
+
+        # First time this α has been sampled, so simply store its statistics.
+        self.records.append(record)
         return record  # Optionally return information for inspection.
 
     def suggest_step_size(self, alpha: float, v_d: float, d: int = 1, kappa: float = 100.0, min_h: float = 1e-3) -> float:

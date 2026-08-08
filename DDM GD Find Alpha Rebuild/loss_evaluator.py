@@ -98,7 +98,7 @@ class LossEvaluator:
         grad = 2 * (mu - torch.tensor(self.v_d, dtype=torch.float32)) * dmu_dα + torch.tensor(self.lambda_var, dtype=torch.float32) * dvar_dα
         return grad
 
-    def ensure_record(self, alpha: float, n: int, decimals: int = 6):
+    def ensure_record(self, alpha: float, n: int, decimals: int = 6, resample: bool = False):
         """
         Ensure that a MacroStats record exists at the given α (rounded to `decimals`).
 
@@ -117,12 +117,14 @@ class LossEvaluator:
         alpha = round(float(alpha), decimals)
         rec = next((r for r in self.stats.records
                     if round(float(r["alpha"]), decimals) == alpha), None)
-        if rec is None:
+        if rec is None or resample:
             samples = self.sample_func(alpha=alpha, n=n)
-            self.stats.macro_observations(alpha=alpha, samples=samples)
+
+            rec = self.stats.macro_observations(
+                alpha=alpha,
+                samples=samples,
+                decimals=decimals)
             self.fd_tracker.compute_all_differences(self.stats)
-            rec = next((r for r in self.stats.records
-                        if round(float(r["alpha"]), decimals) == alpha), None)
         return rec
 
     def decide_next_alpha(self,

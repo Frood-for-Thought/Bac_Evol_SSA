@@ -426,7 +426,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
                 # Evaluate μ(α_next) after the update for accurate logging
-                rec_next = self.loss_eval.ensure_record(alpha=float(alpha_next), n=self.max_iter)
+                rec_next = self.loss_eval.ensure_record(alpha=float(alpha_next), n=self.max_iter, resample=True)
                 mu_next = float(rec_next["mu"])
 
             # Advance the dummy optimizer once so StepLR stays in sync (avoids the warning)
