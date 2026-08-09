@@ -146,6 +146,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def train(self):
         final_loss = None  # Store the final loss to return
         for epoch in range(self.num_epochs):
+            print(f"\nEpoch: {epoch}")
             # Ensure MacroStats has a record at current α_k and recompute FDs as needed.
             alpha_k = float(self.alpha.detach().item())
             if self.loss_eval is None:
@@ -286,6 +287,29 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Any stability/convergence cap on γ is applied inside LossEvaluator.decide_next_alpha().
             gamma = 1.0 / abs(dmu_dalpha)  # scale only; LossEvaluator handles the safety cap.
 
+            # The algorithm now distinguishes two regimes:
+            #
+            #   (1) Signal-dominant region:
+            #       |μ(α) − v_d| > s(α)/√n
+            #       → PR slope m_k governs convergence.
+            #       → γ_cap = (1 - η) / (2 * m_k**2)
+            #         (curvature-based acceleration)
+            #
+            #   (2) Noise-dominant region:
+            #       |μ(α) − v_d| ≤ s(α)/√n
+            #       → StepLR scheduler controls annealing.
+            #       → γ_cap = lr_scale* (1 - η) / (2 * m_k**2)
+            #         (noise-aware damping)
+
+            # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
+            stderr_ci = float(rec_k.get("stderr_ci", None))
+            if stderr_ci is None:
+                raise RuntimeError("Record is missing stderr_ci")
+            mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
+            err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
+            print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}")  # stderr_ci from macro_stats.py
+            inside_noise_band = (err_mu <= stderr_ci)
+
             # Adaptive stability cap on gamma (ONLY when PR slope is ready).
             # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
             # Best non-oscillatory contraction at gamma = 1/(4*m_k^2).
@@ -297,26 +321,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 if math.isfinite(mk_val):
                     mk2 = mk_val * mk_val
                     if mk2 > 0.0:
-                        # The algorithm now distinguishes two regimes:
-                        #
-                        #   (1) Signal-dominant region:
-                        #       |μ(α) − v_d| > s(α)/√n
-                        #       → PR slope m_k governs convergence.
-                        #       → γ_cap = (1 - η) / (2 * m_k**2)
-                        #         (curvature-based acceleration)
-                        #
-                        #   (2) Noise-dominant region:
-                        #       |μ(α) − v_d| ≤ s(α)/√n
-                        #       → StepLR scheduler controls annealing.
-                        #       → γ_cap = lr_scale* (1 - η) / (2 * m_k**2)
-                        #         (noise-aware damping)
-
-                        # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
-                        stderr_ci = float(rec_k.get("stderr_ci", None))
-                        if stderr_ci is None:
-                            raise RuntimeError("Record is missing stderr_ci")
-                        mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
-                        err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
                         # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
                         # Therefore eta_for_gamma_cap = 0.5 -->  self.built_gamma_cap = 1.0 / (4.0 * mk2)
                         gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
@@ -330,8 +334,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         current_lr = self.optimizer.param_groups[0]["lr"]
                         lr_scale = current_lr / self.learning_rate
 
+                        print(f"pre: gamma={gamma}, gamma_cap={gamma_cap}, lr_scale={lr_scale}")
+
                         # Apply same learning rate scaler damping to the gamma_cap only inside noise band.
-                        print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}") # stderr_ci from macro_stats.py
                         if err_mu <= stderr_ci:
                             gamma_cap *= lr_scale
 
@@ -356,13 +361,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                     self.built_gamma_cap = (1.0 - self.eta_for_gamma_cap) / (2.0 * mk2)
                     print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
 
-                # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
-                stderr_ci = float(rec_k.get("stderr_ci", None))
-                if stderr_ci is None:
-                    raise RuntimeError("Record is missing stderr_ci")
-                mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
-                err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
-
                 # torch.optim.lr_scheduler.StepLR starts at -1 when the scheduler is created.
                 # After every .step() call (which you do once per epoch), it increments by 1.
                 # Every time that number reaches a multiple of step_size, the scheduler triggers a decay.
@@ -373,7 +371,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
                 # Multiply by scheduler-controlled learning_rate as well (decays every 'step_size_epochs').
                 # Scale gamma by the decayed LR from the dummy optimizer.
-                print(f"|μ-v_d|={err_mu:.6f} --> CI={stderr_ci:.6f}")  # stderr_ci from macro_stats.py
                 if err_mu <= stderr_ci:
                     gamma *= float(lr_scale)
                 # hard ceiling, prevents astronomic cap values
@@ -425,8 +422,30 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Advance the dummy optimizer once so StepLR stays in sync (avoids the warning)
             self.optimizer.zero_grad()
             self.optimizer.step()
+
+            print(
+                f"[LR CHECK] epoch={epoch} "
+                f"err_mu={err_mu:.6f} "
+                f"CI={stderr_ci:.6f} "
+                f"inside_noise_band={inside_noise_band}"
+            )
+
             # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
-            self.scheduler.step()
+            # Check to see if in the noise band before decreasing, and if not in noise band reset
+            if inside_noise_band:
+                # Continue annealing
+                self.scheduler.step()
+            else:
+                # Reset the annealing schedule
+                self.optimizer.param_groups[0]["lr"] = self.learning_rate
+                lr_scale = 1.0
+
+                print("[LR RESET] |μ-v_d| exceeded CI; restarting StepLR.")
+                self.scheduler = torch.optim.lr_scheduler.StepLR(
+                    self.optimizer,
+                    step_size=self.step_size,
+                    gamma=self.learning_rate_gamma,
+                )
 
             # From the MacroStats record:
             n_val = rec_k["n"] if "n" in rec_k else self.max_iter
@@ -448,7 +467,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 self.max_iter = min(new_max_iter, self.max_iter_limit)
 
             # Print out the gradient of alpha after backpropagation.
-            print(f"\nEpoch: {epoch}")
             print(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
             print(f"Effective Learning Rate, γ' = {gamma}")
 

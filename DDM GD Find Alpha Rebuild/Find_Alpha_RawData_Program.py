@@ -216,7 +216,7 @@ if __name__ == "__main__":
     for deme_start in range(50, 51):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
-        num_epochs = 100
+        num_epochs = 200
         learning_rate = 2 / (100 * Rtroc[deme_start])
 
         # theoretical_val = vd_chemotaxis[deme_start]
@@ -293,7 +293,7 @@ if __name__ == "__main__":
             max_iter=max_iter_start,
             # eta_for_gamma_cap,
             # The ML algorithm iteratively refines the learning_rate and max_iter every number of step_size iterations.
-            step_size=2,
+            step_size=1,
             max_iter_limit=20000,
             max_iter_factor=2,
             learning_rate_gamma=0.8,
