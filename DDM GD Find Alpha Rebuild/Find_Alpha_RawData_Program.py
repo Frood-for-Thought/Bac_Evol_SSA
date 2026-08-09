@@ -37,9 +37,6 @@ Vo_max = parameter_df.loc[1, 'Vo_max']  # The run speed.
 # Timed rate of change of the amount of receptor protein bound.
 Rtroc = vd_chemotaxis*Grad*c_df_over_dc  # This numpy vector is calculated from the above constant and pandas series.
 
-# Modify only deme 51
-Rtroc[50] = 0.00563      # λ = 1 mm^-1 example
-
 # Values used for Norm_Vd_Mean_Data_Generator.
 alpha = 100
 Start_Angle = 90  # degrees
@@ -212,6 +209,10 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 
 if __name__ == "__main__":
+
+    # Modify only deme 51
+    Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
+
     for deme_start in range(50, 51):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
@@ -292,7 +293,7 @@ if __name__ == "__main__":
             max_iter=max_iter_start,
             # eta_for_gamma_cap,
             # The ML algorithm iteratively refines the learning_rate and max_iter every number of step_size iterations.
-            step_size=1,
+            step_size=2,
             max_iter_limit=20000,
             max_iter_factor=2,
             learning_rate_gamma=0.8,

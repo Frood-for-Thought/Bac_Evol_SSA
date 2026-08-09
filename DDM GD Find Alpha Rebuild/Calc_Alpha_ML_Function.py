@@ -288,18 +288,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
 
             # Adaptive stability cap on gamma (ONLY when PR slope is ready).
             # From linear analysis: convergence needs |1 - 2*gamma*m_k^2| < 1 ⇒ gamma < 1/m_k^2.
-            # Best non-oscillatory contraction at gamma = 1/(2*m_k^2).
-            # From the MacroStats record:
-            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
-            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
-            # std is either provided or computed from var
-            if "std" in rec_k:
-                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
-            elif "var" in rec_k:
-                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
-                std_k = (max(_var, 0.0)) ** 0.5
-            else:
-                std_k = float("nan")
+            # Best non-oscillatory contraction at gamma = 1/(4*m_k^2).
 
             #-----------------------------------------------------------------------
             # Skip m_k-based gamma cap when local linearity fails (resid_ok = False).
@@ -323,7 +312,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                         #         (noise-aware damping)
 
                         # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
-                        stderr_ci = rec_k.get("stderr_ci", None)
+                        stderr_ci = float(rec_k.get("stderr_ci", None))
+                        if stderr_ci is None:
+                            raise RuntimeError("Record is missing stderr_ci")
                         mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
                         err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
                         # Best non-oscillatory contraction at γ_cap = (1 - η) / (2 * m_k**2)
@@ -366,7 +357,9 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                     print(f"[γ-cap initialized] epoch={epoch}, m_k={mk_val:.6g}, gamma_cap={self.built_gamma_cap:.3e}")
 
                 # Near-target test using stored Confidence Interval: |μ-v_d| < stderr_ci ≈ 2*s/sqrt(n)
-                stderr_ci = rec_k.get("stderr_ci", None)
+                stderr_ci = float(rec_k.get("stderr_ci", None))
+                if stderr_ci is None:
+                    raise RuntimeError("Record is missing stderr_ci")
                 mu_k = float(rec_k["mu"].item()) if "mu" in rec_k else float("nan")  # μ
                 err_mu = abs(mu_k - float(self.theoretical_val))  # |μ-v_d|
 
@@ -435,6 +428,18 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
             self.scheduler.step()
 
+            # From the MacroStats record:
+            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
+            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
+            # std is either provided or computed from var
+            if "std" in rec_k:
+                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
+            elif "var" in rec_k:
+                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
+                std_k = (max(_var, 0.0)) ** 0.5
+            else:
+                std_k = float("nan")
+
             # Logging every step_size epochs.
             if (epoch % self.step_size == 0) and (epoch > 0):
                 # Update max_iter.
@@ -472,7 +477,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 print("mu(α_k)=N/A (record missing)")
             print(f"mu(α_next) = {mu_next:.6f}")
             print(f"n={n_k}")
-            print(f"std={std_k:.6f}")
+            print(f"std_k={std_k:.6f}")
 
         # Return the final optimized alpha and the final loss value
         return self.alpha.item(), final_loss.item(), self.alpha_history
