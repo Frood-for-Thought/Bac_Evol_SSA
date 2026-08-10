@@ -210,8 +210,8 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
 if __name__ == "__main__":
 
-    # Modify only deme 51
-    Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
+    # # Modify only deme 51
+    # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
     for deme_start in range(50, 51):
         # Values used for training.
@@ -219,14 +219,13 @@ if __name__ == "__main__":
         num_epochs = 100
         learning_rate = 2 / (100 * Rtroc[deme_start])
 
-        # theoretical_val = vd_chemotaxis[deme_start]
-        theoretical_val = 8.15
+        theoretical_val = vd_chemotaxis[deme_start]
 
         # Provide the number of parallel iterations to run for sampling data points from the data generator algorithm.
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(500, 700, 50))
+        alphas = list(range(200, 500, 50))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -296,7 +295,7 @@ if __name__ == "__main__":
             step_size=1,
             max_iter_limit=20000,
             max_iter_factor=2,
-            learning_rate_gamma=0.3,
+            learning_rate_gamma=0.5,
             stats=stats,
             fd_tracker=fd_tracker,
             bracket=bracket,
@@ -324,6 +323,21 @@ if __name__ == "__main__":
             if r["n"] >= ddeme.max_iter_limit:
                 err = abs(float(r["mu"]) - float(theoretical_val))
                 eligible.append((err, r))
+
+        # Put the record of elegible candidates into a dataframe
+        eligible_records = []
+        for err, r in eligible:
+            eligible_records.append({
+                "alpha": float(r["alpha"]),
+                "mu": float(r["mu"]),
+                "abs(mu_minus_vd)": err,
+                "stderr_ci": float(r["stderr_ci"]),
+                "std": float(r["std"]),
+                "var": float(r["var"]),
+                "n": int(r["n"]),
+            })
+        eligible_df = pd.DataFrame(eligible_records)
+
         print("\n===================================================")
         print("Eligible MacroStats candidates")
         print("===================================================")
@@ -409,5 +423,8 @@ if __name__ == "__main__":
         # Write back to Excel
         with pd.ExcelWriter(output_filename, engine="openpyxl", mode="w") as writer:
             updated_df.to_excel(writer, index=False)
+            eligible_df.to_excel(writer,
+                                 sheet_name="Eligible Candidates",
+                                 index=False)
 
         print(f"\n[Saved] Results written to {output_filename}")

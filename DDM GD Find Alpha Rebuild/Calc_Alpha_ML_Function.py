@@ -55,7 +55,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
                  alpha, max_iter, eta_for_gamma_cap=0.5, step_size=20, max_iter_limit=20000, max_iter_factor=2,
                  learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True,
-                 alpha_decimals=3):
+                 alpha_decimals=2, verification_samples=80000):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter
@@ -80,6 +80,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.step_size = step_size
         self.num_epochs = num_epochs
         self.alpha_decimals = alpha_decimals
+        self.verification_samples = verification_samples
 
         # Enable Polyak–Ruppert slope estimation over the first bracket; start fresh so slope_history is clean.
         # When you call run_linear_estimation(..., enabled=True, ...), it sets linear_mode_enabled = True and
@@ -437,11 +438,47 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 f"inside_noise_band={inside_noise_band}"
             )
 
+            # From the MacroStats record:
+            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
+            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
+            # Re-record variable err_mu in case alpha_next uses macro_stats to
+            # recompute the calculations at alpha using another n samples.
+            stderr_ci = float(rec_next["stderr_ci"])
+            err_mu = abs(mu_next - float(self.theoretical_val))  # |μ-v_d|
+            # std is either provided or computed from var
+            if "std" in rec_k:
+                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
+            elif "var" in rec_k:
+                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
+                std_k = (max(_var, 0.0)) ** 0.5
+            else:
+                std_k = float("nan")
+
             # Scheduler step: Adjust the learning rate according to the schedule, γ decays over epochs.
             # Check to see if in the noise band before decreasing, and if not in noise band reset
             if inside_noise_band:
-                # Continue annealing
-                self.scheduler.step()
+                if n_k >= self.verification_samples:
+                    # Reset the annealing schedule
+                    ratio = err_mu / stderr_ci
+                    if ratio < 0.25:
+                        lr_scale = 0.5
+                    elif ratio < 0.50:
+                        lr_scale = 0.75
+                    elif ratio < 0.75:
+                        lr_scale = 0.8
+                    else:
+                        lr_scale = 1.00
+                    self.optimizer.param_groups[0]["lr"] = self.learning_rate * lr_scale
+
+                    print(f"Number of samples {n_k} exceeds verification_samples; restarting StepLR.")
+                    self.scheduler = torch.optim.lr_scheduler.StepLR(
+                        self.optimizer,
+                        step_size=self.step_size,
+                        gamma=self.learning_rate_gamma,
+                    )
+                else:
+                    # Continue annealing
+                    self.scheduler.step()
             else:
                 # Reset the annealing schedule
                 self.optimizer.param_groups[0]["lr"] = self.learning_rate
@@ -454,18 +491,6 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                     gamma=self.learning_rate_gamma,
                 )
 
-            # From the MacroStats record:
-            n_val = rec_k["n"] if "n" in rec_k else self.max_iter
-            n_k = int(n_val.item()) if hasattr(n_val, "item") else int(n_val)
-            # std is either provided or computed from var
-            if "std" in rec_k:
-                std_k = float(rec_k["std"].item() if hasattr(rec_k["std"], "item") else rec_k["std"])
-            elif "var" in rec_k:
-                _var = float(rec_k["var"].item() if hasattr(rec_k["var"], "item") else rec_k["var"])
-                std_k = (max(_var, 0.0)) ** 0.5
-            else:
-                std_k = float("nan")
-
             # Logging every step_size epochs.
             if (epoch % self.step_size == 0) and (epoch > 0):
                 # Update max_iter.
@@ -477,7 +502,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
             print(f"Effective Learning Rate, γ' = {gamma}")
 
-            print(f"(lr_scale={float(lr_scale):.6f})"            )
+            print(f"(lr_scale={float(lr_scale):.6f})")
             print(f"dmu/dalpha={float(dmu_dalpha):.6f}")
 
             # Safe formatting for possibly-None values
