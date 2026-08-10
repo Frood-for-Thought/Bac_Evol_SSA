@@ -171,8 +171,8 @@ class LossEvaluator:
         rec_k = self.ensure_record(alpha_k, n=n, decimals=decimals)
 
         # Try normal loss/grad
-        loss_k = self.loss(alpha=alpha_k)
-        grad_k = self.dloss_dalpha(alpha=alpha_k, dmu_dα=dmu_dα)
+        loss_k = self.loss(alpha=alpha_k, decimals=decimals)
+        grad_k = self.dloss_dalpha(alpha=alpha_k, dmu_dα=dmu_dα, decimals=decimals)
         # FAIL FAST on bad gradient/loss.
         if grad_k is None or not math.isfinite(float(grad_k)):
             raise RuntimeError(

@@ -54,7 +54,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     """
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
                  alpha, max_iter, eta_for_gamma_cap=0.5, step_size=20, max_iter_limit=20000, max_iter_factor=2,
-                 learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True):
+                 learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True,
+                 alpha_decimals=3):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter
@@ -78,6 +79,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
         self.learning_rate_gamma = learning_rate_gamma
         self.step_size = step_size
         self.num_epochs = num_epochs
+        self.alpha_decimals = alpha_decimals
 
         # Enable Polyak–Ruppert slope estimation over the first bracket; start fresh so slope_history is clean.
         # When you call run_linear_estimation(..., enabled=True, ...), it sets linear_mode_enabled = True and
@@ -159,7 +161,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # MacroStats generates new epoch of data for every instance of the training loop, sample = 1/n * ∑vj(α)
             # The data point generator is external to PyTorch's computational graph and PyTorch cannot connect
             # alpha using the chain rule because for this model ∂vj(α)/∂α is unknown.
-            rec_k = self.loss_eval.ensure_record(alpha=alpha_k, n=self.max_iter)
+            rec_k = self.loss_eval.ensure_record(alpha=alpha_k, n=self.max_iter, decimals=self.alpha_decimals)
             # Call path:
             # self.loss_eval.ensure_record(...)
             # → self.loss_eval.sample_func(alpha, n)
@@ -187,7 +189,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             # no linear layer or proxy scaling needed.
             # Computing the loss of the dynamic data point mean compared to the theoretical_val (now via LossEvaluator).
             # L(α) = (μ(α) − v_d)^2 + λ·var(α)
-            loss_val = self.loss_eval.loss(alpha=alpha_k)
+            loss_val = self.loss_eval.loss(alpha=alpha_k, decimals=self.alpha_decimals)
             if (loss_val is None) or (not torch.isfinite(torch.tensor(loss_val))):
                 raise RuntimeError(f"Loss unavailable/non-finite at α={alpha_k}.")
             # Keep track of the latest loss for the return value
@@ -394,7 +396,8 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 alpha_left=a_min,
                 alpha_right=a_max,
                 dmu_dα=dmu_dalpha,
-                use_gradient_override=self.use_gradient_override
+                use_gradient_override=self.use_gradient_override,
+                decimals=self.alpha_decimals
             )
 
             if not hasattr(self, "alpha_history"):
@@ -416,7 +419,11 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             with torch.no_grad():
                 self.alpha.fill_(float(alpha_next))  # update α directly
                 # Evaluate μ(α_next) after the update for accurate logging
-                rec_next = self.loss_eval.ensure_record(alpha=float(alpha_next), n=self.max_iter, resample=True)
+                rec_next = self.loss_eval.ensure_record(
+                    alpha=float(alpha_next),
+                    n=self.max_iter,
+                    resample=True,
+                    decimals=self.alpha_decimals)
                 mu_next = float(rec_next["mu"])
 
             # Advance the dummy optimizer once so StepLR stays in sync (avoids the warning)
@@ -470,10 +477,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             print(f"alpha_k = {alpha_k:.6f}  →  alpha_next = {float(alpha_next):.6f}")
             print(f"Effective Learning Rate, γ' = {gamma}")
 
-            print(
-                f"gamma = {float(gamma):.6f}  "
-                f"(lr_scale={float(lr_scale):.6f})"
-            )
+            print(f"(lr_scale={float(lr_scale):.6f})"            )
             print(f"dmu/dalpha={float(dmu_dalpha):.6f}")
 
             # Safe formatting for possibly-None values

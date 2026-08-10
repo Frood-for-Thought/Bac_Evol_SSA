@@ -216,7 +216,7 @@ if __name__ == "__main__":
     for deme_start in range(50, 51):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
-        num_epochs = 200
+        num_epochs = 100
         learning_rate = 2 / (100 * Rtroc[deme_start])
 
         # theoretical_val = vd_chemotaxis[deme_start]
@@ -296,7 +296,7 @@ if __name__ == "__main__":
             step_size=1,
             max_iter_limit=20000,
             max_iter_factor=2,
-            learning_rate_gamma=0.8,
+            learning_rate_gamma=0.3,
             stats=stats,
             fd_tracker=fd_tracker,
             bracket=bracket,
@@ -313,36 +313,62 @@ if __name__ == "__main__":
         # Run the ML algorithm.
         alpha_opt, final_loss, alpha_history = ddeme.train()
         #--------------------------------------------------------
-        # Get the last two alphas.
         alpha_opt = float(alpha_opt)
-        if len(alpha_history) >= 2:
-            alpha_prev = float(alpha_history[-2])
+
+        # --------------------------------------------------------
+        # Select the statistically best alpha from MacroStats.
+        # --------------------------------------------------------
+
+        eligible = []
+        for r in stats.records:
+            if r["n"] >= ddeme.max_iter_limit:
+                err = abs(float(r["mu"]) - float(theoretical_val))
+                eligible.append((err, r))
+        print("\n===================================================")
+        print("Eligible MacroStats candidates")
+        print("===================================================")
+        if eligible:
+            # Sort by distance from theoretical mean.
+            # Sort n based on most negative value so no not set reverse=True
+            eligible.sort(key=lambda x: (-int(x[1]["n"]), x[0]))  # x[0] = |μ-v_d|, x[1] = n
+            for rank, (err, r) in enumerate(eligible[:10], start=1):
+                print(
+                    f"{rank:2d}. "
+                    f"alpha={float(r['alpha']):10.6f}  "
+                    f"mu={float(r['mu']):10.6f}  "
+                    f"|μ-v_d|={err:.6f}  "
+                    f"CI={float(r['stderr_ci']):.6f}  "
+                    f"n={int(r['n'])}"
+                )
+            # Pick the best candidate.
+            closest_rec = eligible[0][1]
+            if len(eligible) > 1:
+                mu_prev = float(eligible[1][1]["mu"])
+            else:
+                mu_prev = float(closest_rec["mu"])
+            alpha_opt = float(closest_rec["alpha"])
+            print("\nSelected MacroStats alpha")
+            print(
+                f"alpha={alpha_opt:.6f}, "
+                f"mu={float(closest_rec['mu']):.6f}, "
+                f"|μ-v_d|={eligible[0][0]:.6f}, "
+                f"CI={float(closest_rec['stderr_ci']):.6f}, "
+                f"n={int(closest_rec['n'])}"
+            )
         else:
-            alpha_prev = None
-        print(f"\n[Result] alpha* ≈ {alpha_opt:.6f}, final_loss = {final_loss:.6f}")
+            print("\nNo alpha reached max_iter_limit.")
+            print("Falling back to optimizer result.")
+            # Find the record closest to the final alpha_star
+            alpha_opt_rounded = round(float(alpha_opt), 6)
+            closest_rec = min(
+                stats.records,
+                key=lambda rec: abs(round(float(rec["alpha"]), 6) - alpha_opt_rounded)
+            )
 
         # -------------------------------------------------------
         # Export results for each drift-velocity calculation
         # -------------------------------------------------------
-
-        # Find the record closest to the final alpha_star
-        alpha_opt_rounded = round(float(alpha_opt), 6)
-        closest_rec = min(
-            stats.records,
-            key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_opt_rounded)
-        )
         mu_final = float(closest_rec["mu"])
-
-        # Find μ for previous α (if available)
-        mu_prev = None
-        if alpha_prev is not None:
-            alpha_prev_rounded = round(alpha_prev, 6)
-            prev_rec = min(
-                stats.records,
-                key=lambda r: abs(round(float(r["alpha"]), 6) - alpha_prev_rounded)
-            )
-            mu_prev = float(prev_rec["mu"])
-
         std_final = float(closest_rec["std"])
         n_final = int(closest_rec["n"]) if "n" in closest_rec else int(ddeme.max_iter)
         std_err_final = std_final / np.sqrt(n_final)

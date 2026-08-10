@@ -43,6 +43,8 @@ class MacroStats:
         # Round α to consistent float precision
         alpha_rounded = round(float(alpha), decimals)
         alpha_tensor = torch.tensor(alpha_rounded, dtype=torch.float32)
+        # tol controls digits after the decimal point.
+        tol = 10.0 ** (-decimals)
         mu = samples.mean()  # Sample mean.
         var = samples.var(unbiased=True)  # Sample variance.
         std = torch.sqrt(var)  # Sample standard deviation.
@@ -61,7 +63,7 @@ class MacroStats:
 
         # Check if alpha already exists. If so, average the new statistics with the existing estimate.
         for i, r in enumerate(self.records):
-            if torch.isclose(r["alpha"], alpha_tensor, atol=1e-6, rtol=0.0):
+            if torch.isclose(r["alpha"], alpha_tensor, atol=tol, rtol=0.0):
 
                 # Check whether this α has already been sampled.
                 # If so, combine the old and new statistics rather than overwriting them.
