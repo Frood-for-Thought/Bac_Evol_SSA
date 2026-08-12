@@ -272,7 +272,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
             dmu_dalpha = self.fd_tracker.estimate_derivative_at(alpha=alpha_k, kind="mu")
             # Prevent blow-ups from dμ/dα
             if (dmu_dalpha is None) or (not math.isfinite(dmu_dalpha)) or (abs(dmu_dalpha) < 1e-8):
-                dmu_dalpha = 1.0  # safe default scale
+                dmu_dalpha = 1e-7  # safe default scale
 
             # Cap the derivative used for gamma by | m_k | when PR is ready.
             if self.fd_tracker.linear_slope_ready and (m_k is not None):

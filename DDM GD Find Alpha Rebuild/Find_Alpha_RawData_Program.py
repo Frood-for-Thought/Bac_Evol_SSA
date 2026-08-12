@@ -160,6 +160,7 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
 
     # Run the sign-transition detector.
     v_d = float(theoretical_val)
+    transitions = None
     transitions = detect_sign_transitions(stats, v_d=v_d)
 
     print(f"\nDetected sign transitions in μ(α) - v_d for v_d = {v_d}")
@@ -213,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(50, 51):
+    for deme_start in range(0, 1):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
@@ -225,7 +226,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(200, 500, 50))
+        alphas = list(range(19000, 20000, 100))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -324,20 +325,6 @@ if __name__ == "__main__":
                 err = abs(float(r["mu"]) - float(theoretical_val))
                 eligible.append((err, r))
 
-        # Put the record of elegible candidates into a dataframe
-        eligible_records = []
-        for err, r in eligible:
-            eligible_records.append({
-                "alpha": float(r["alpha"]),
-                "mu": float(r["mu"]),
-                "abs(mu_minus_vd)": err,
-                "stderr_ci": float(r["stderr_ci"]),
-                "std": float(r["std"]),
-                "var": float(r["var"]),
-                "n": int(r["n"]),
-            })
-        eligible_df = pd.DataFrame(eligible_records)
-
         print("\n===================================================")
         print("Eligible MacroStats candidates")
         print("===================================================")
@@ -345,6 +332,21 @@ if __name__ == "__main__":
             # Sort by distance from theoretical mean.
             # Sort n based on most negative value so no not set reverse=True
             eligible.sort(key=lambda x: (-int(x[1]["n"]), x[0]))  # x[0] = |μ-v_d|, x[1] = n
+
+            # Put the record of elegible candidates into a dataframe
+            eligible_df = pd.DataFrame([
+                {
+                    "alpha": float(r["alpha"]),
+                    "mu": float(r["mu"]),
+                    "abs(mu_minus_vd)": err,
+                    "stderr_ci": float(r["stderr_ci"]),
+                    "std": float(r["std"]),
+                    "var": float(r["var"]),
+                    "n": int(r["n"]),
+                }
+                for err, r in eligible
+            ])
+
             for rank, (err, r) in enumerate(eligible[:10], start=1):
                 print(
                     f"{rank:2d}. "
