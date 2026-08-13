@@ -202,8 +202,8 @@ def test_sign_transitions(alpha_grid, expand_alpha=False, samples_per_alpha: flo
             samples_right = v_right.detach().cpu() if hasattr(v_right, "detach") else v_right
             stats.macro_observations(alpha=float(α_max), samples=samples_right)
         return (
-            max(alpha_vals[0], α_min - (α_max - α_min)/4),
-            min(alpha_vals[-1], α_max + (α_max - α_min)/4),
+            max(alpha_vals[0], α_min - (α_max - α_min)/2),
+            min(alpha_vals[-1], α_max + (α_max - α_min)/2),
             stats,
             data_generator
         )
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(1, 2):
+    for deme_start in range(17, 20):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
@@ -226,7 +226,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(15000, 20000, 1000))
+        alphas = list(range(1000, 5000, 500))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -285,7 +285,7 @@ if __name__ == "__main__":
         # Prepare the ML estimator before training.
         bracket = (a_min, a_max)
         ddeme = Dynamic_Data_Evolving_Mean_Estimator(
-            data_generator=data_generator,
+            data_generator=data_generator,  # data_generator = Norm_Vd_Mean_Data_Generator
             num_epochs=num_epochs,
             learning_rate=learning_rate,
             theoretical_val=float(theoretical_val),
@@ -337,13 +337,23 @@ if __name__ == "__main__":
             # Put the record of elegible candidates into a dataframe
             eligible_df = pd.DataFrame([
                 {
-                    "alpha": float(r["alpha"]),
-                    "mu": float(r["mu"]),
+                    "deme_index": int(deme_start + 1),
+                    "v_d_target": float(theoretical_val),
+                    "alpha_star": float(r["alpha"]),
+                    "mu_final": float(r["mu"]),
+                    "final_loss": float(final_loss),
+                    "mk_slope_final": float(fd_tracker.m_k) if fd_tracker.m_k is not None else None,
+                    "pr_slope_ready": bool(fd_tracker.linear_slope_ready),
+                    "alpha_min": float(bracket[0]),
+                    "alpha_max": float(bracket[1]),
+                    "std_final": float(r["std"]),
+                    "var_final": float(r["var"]),
+                    "std_err_final": float(r["std"]) / np.sqrt(int(r["n"])),
+                    "std_err_ci_final": float(r["stderr_ci"]),
                     "abs(mu_minus_vd)": err,
-                    "stderr_ci": float(r["stderr_ci"]),
-                    "std": float(r["std"]),
-                    "var": float(r["var"]),
-                    "n": int(r["n"]),
+                    "learning_rate": float(ddeme.gamma_last),
+                    "num_epochs": int(num_epochs),
+                    "max_iter_final": int(r["n"]),
                 }
                 for err, r in eligible
             ])
@@ -410,8 +420,7 @@ if __name__ == "__main__":
             "abs(mu_minus_vd)": err_mu_final,
             "learning_rate": float(ddeme.gamma_last),
             "num_epochs": int(num_epochs),
-            "max_iter_final": n_final,
-            "mu_prev": mu_prev,
+            "max_iter_final": n_final
         }
 
         # Append new results to file (or create one)
