@@ -8,7 +8,7 @@ from Tumble_Angle import AngleGenerator_cuda
 angle_generator = AngleGenerator_cuda()
 # uses .simulate_bacterial_movement_cuda(alpha, max_iter) to generate Run-and-Tumble data points.
 from Calc_Alpha_ML_Function import Dynamic_Data_Evolving_Mean_Estimator, BaseDataGenerator
-from Generate_Dynamic_Data_Points import Norm_Vd_Mean_Data_Generator
+from Generate_Dynamic_Data_Points_Lower_GPU_and_Time import Norm_Vd_Mean_Data_Generator
 from macro_stats import MacroStats
 from finite_difference_tracker import FiniteDifferenceTracker
 from landscape_analysis import detect_sign_transitions
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(17, 20):
+    for deme_start in range(18, 20):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
