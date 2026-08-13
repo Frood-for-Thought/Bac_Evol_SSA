@@ -279,7 +279,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
                 mk_abs = float(m_k.item()) if hasattr(m_k, "item") else float(m_k)
                 if math.isfinite(mk_abs) and mk_abs > 0.0:
                     # prevent FD spikes from shrinking γ to ~0
-                    if abs(dmu_dalpha) > mk_abs:
+                    if abs(dmu_dalpha) < mk_abs:
                         dmu_dalpha = mk_abs
 
             # Slope-normalized step scaling:
