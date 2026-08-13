@@ -3,7 +3,6 @@ from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
 import pandas as pd
-import time
 
 
 class Norm_Vd_Mean_Data_Generator:
@@ -79,7 +78,8 @@ class Norm_Vd_Mean_Data_Generator:
         # Track how long each bacterium has been active
         start_times = torch.zeros(self.max_iter, device=self.device)
 
-        
+        # main loop
+
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
             if t_idx % 100 == 0:
@@ -100,7 +100,6 @@ class Norm_Vd_Mean_Data_Generator:
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
 
-                    timers.start("ave_v_append_loop")
                     # Vectorized append: write a slice of velocities
                     k = Calculated_Ave_Vd.numel()
                     avail = self.max_iter - velocities_index
@@ -108,12 +107,11 @@ class Norm_Vd_Mean_Data_Generator:
                         take = int(min(k, avail))
                         velocities[velocities_index:velocities_index + take] = Calculated_Ave_Vd[:take]
                         velocities_index += take
-                    timers.stop("ave_v_append_loop")
 
                 # Update the active mask: remove bacteria that have reached the boundary
                 active_mask = active_mask & (~boundary_full)
 
-                # Reset timers for newly inactive bacteria to avoid reuse
+                # Reset start times for newly inactive bacteria to avoid reuse
                 start_times[~active_mask] = 0.0
 
                 if active_mask.any():
@@ -122,16 +120,12 @@ class Norm_Vd_Mean_Data_Generator:
 
 #-----------------------------------------------------------------------------------------------------------
                     # THIS WAS THE NON-POISSON BROWN AND BERG PROCESS
-                    # Calculate Ptum using torch.where and time each sub-operation
-                    timers.start("Ptum_and_updates")
-
-                    timers.start("Ptum_compute")
+                    # Calculate Ptum using torch.where
                     Ptum_full = torch.where(
                         direction_condition,
                         self.dt * torch.exp(-self.d + self.alpha * local_Rtroc),
                         self.dt * torch.exp(-self.d - self.alpha * local_Rtroc)
                     ).float()
-                    timers.stop("Ptum_compute")
 
                     # # THIS IS THE POISSON PROCESS HAZARD FORM.
                     # r_plus  = torch.clamp(self.d + self.alpha * local_Rtroc, min=1e-8)
@@ -145,43 +139,33 @@ class Norm_Vd_Mean_Data_Generator:
 #----------------------------------------------------------------------------------------------------------
 
                     # Tumbling condition
-                    timers.start("tumble_mask")
                     tumble_mask_full = R_rt[t_idx] < Ptum_full
-                    timers.stop("tumble_mask")
 
                     # Update angles based on tumbling condition.
                     # If True, update the angle with Next_Angle; otherwise unchanged.
-                    timers.start("angle_update")
                     ang = torch.where(active_mask & tumble_mask_full,
                                       (ang + Next_Angle[t_idx]) % 360,
                                       ang)
-                    timers.stop("angle_update")
 
                     # Running condition + dot product
-                    timers.start("dot_product")
                     run_mask_full = ~tumble_mask_full
                     Dot_Product_full = torch.cos(ang * (torch.pi / 180))  # Convert ang to radians manually
-                    timers.stop("dot_product")
 
-                    timers.start("position_update")
                     position = torch.where(active_mask & run_mask_full,
                                            position + self.dt * self.Vo_max * Dot_Product_full,
                                            position)
-                    timers.stop("position_update")
 
                     if t_idx < num_steps - 1:
                         # Set position and ang for the next time step (no-op kept for clarity)
                         position = position
                         ang = ang
-                    timers.stop("Ptum_and_updates")
 
             # Remove finished bacteria from further calculations
             if not active_mask.any():
                 logging.info("The break condition is met.")
                 break
 
-        timers.stop("main_loop")
-        timers.print_summary()
+        # end main loop
 
         # Final calculation for the remaining iterations.
         # Calculate boundary_mask to identify bacteria reaching the end of the deme
@@ -189,14 +173,12 @@ class Norm_Vd_Mean_Data_Generator:
         if active_mask.any():
             Calculated_Ave_Vd = (final_remaining_positions - self.pos_ini) / (time_steps[-1])
             if Calculated_Ave_Vd.numel() > 0:
-                timers.start("final_append")
                 k = Calculated_Ave_Vd.numel()
                 avail = self.max_iter - velocities_index
                 if k > 0 and avail > 0:
                     take = int(min(k, avail))
                     velocities[velocities_index:velocities_index + take] = Calculated_Ave_Vd[:take]
                     velocities_index += take
-                timers.stop("final_append")
 
         # The class attribute is set for the class when the function is called when using it to return.
         self.velocities = velocities
