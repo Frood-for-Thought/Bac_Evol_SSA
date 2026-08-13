@@ -3,6 +3,40 @@ from Tumble_Angle import AngleGenerator_cuda
 import torch
 import logging
 import pandas as pd
+import time
+
+def cuda_timer(label):
+    torch.cuda.synchronize()
+    t0 = time.perf_counter()
+
+    def stop():
+        torch.cuda.synchronize()
+        print(f"[TIMING] {label}: {time.perf_counter() - t0:.6f} s")
+    return stop
+
+
+class SectionTimer:
+    def __init__(self):
+        self._starts = {}
+        self.totals = {}
+
+    def start(self, label):
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        self._starts[label] = time.perf_counter()
+
+    def stop(self, label):
+        if label not in self._starts:
+            return
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        dt = time.perf_counter() - self._starts.pop(label)
+        self.totals[label] = self.totals.get(label, 0.0) + dt
+
+    def print_summary(self):
+        print("[TIMING SUMMARY]")
+        for k, v in self.totals.items():
+            print(f"[TIMING] {k}: {v:.6f} s")
 
 
 class Norm_Vd_Mean_Data_Generator:
@@ -62,12 +96,17 @@ class Norm_Vd_Mean_Data_Generator:
 
         # Initialize the angle generator class to select from probability distribution.
         angle_generator = AngleGenerator_cuda()
+        timers = SectionTimer()
         # Calculating the Total Angles needed for the Algorithm.
         total_angles = num_steps * self.max_iter
+        timers.start("angle_generation")
         Next_Angle = angle_generator.tumble_angle_function_cuda(size=total_angles).view(num_steps, self.max_iter)
+        timers.stop("angle_generation")
 
         # The random numbers to be used.
+        timers.start("R_rt_generation")
         R_rt = torch.rand(total_angles, device=self.device).view(num_steps, self.max_iter)
+        timers.stop("R_rt_generation")
 
         # Initialize Ptum as a 2D tensor with dimensions [num_steps, max_iter].
         Ptum = torch.zeros(self.max_iter, dtype=torch.float32, device=self.device)
@@ -78,66 +117,66 @@ class Norm_Vd_Mean_Data_Generator:
         # Track how long each bacterium has been active
         start_times = torch.zeros(self.max_iter, device=self.device)
 
+        loop_start = timers.start("main_loop")
+
         for t_idx, t in enumerate(time_steps):
             # Tensors inside the for loop are vectorized and in parallel.
             if t_idx % 100 == 0:
                 logging.info(f"Step {t_idx}/{num_steps}: Current time = {t.item()}")
 
             if active_mask.any():
-                # Filter positions and angles using active_mask
-                active_positions = position[active_mask]
-
-                # Calculate boundary_mask to identify bacteria reaching the end of the deme
-                boundary_mask = active_positions >= (self.pos_ini + self.DL*10)
+                # Full-tensor boundary detection for active bacteria
+                boundary_full = position >= (self.pos_ini + self.DL * 10)
+                mask_boundary = active_mask & boundary_full
 
                 # Handle bacteria that have reached the boundary.
-                if boundary_mask.any():
+                if mask_boundary.any():
                     # Calculate the distance traveled for these bacteria.
-                    distance_travelled = active_positions[boundary_mask] - self.pos_ini
+                    distance_travelled = position[mask_boundary] - self.pos_ini
                     # Use per-bacterium elapsed time
-                    total_time = torch.clamp(t - start_times[active_mask][boundary_mask], min=self.dt)
+                    total_time = torch.clamp(t - start_times[mask_boundary], min=self.dt)
 
                     # Calculate the average velocity for these bacteria.
                     Calculated_Ave_Vd = distance_travelled / total_time
 
-                    # Append the values in the tensor onto another velocities tensor on 'cuda'.
-                    for v in Calculated_Ave_Vd:
-                        if velocities_index < self.max_iter:
-                            velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
-                            velocities_index += 1
-                        else:
-                            break
+                    timers.start("ave_v_append_loop")
+                    # Vectorized append: write a slice of velocities
+                    k = Calculated_Ave_Vd.numel()
+                    avail = self.max_iter - velocities_index
+                    if k > 0 and avail > 0:
+                        take = int(min(k, avail))
+                        velocities[velocities_index:velocities_index + take] = Calculated_Ave_Vd[:take]
+                        velocities_index += take
+                    timers.stop("ave_v_append_loop")
 
                 # Update the active mask: remove bacteria that have reached the boundary
-                new_active_mask = active_mask.clone()
-                new_active_mask[active_mask] = ~boundary_mask
-                active_mask = new_active_mask
+                active_mask = active_mask & (~boundary_full)
 
                 # Reset timers for newly inactive bacteria to avoid reuse
-                start_times[active_mask.logical_not()] = 0.0
+                start_times[~active_mask] = 0.0
 
                 if active_mask.any():
-                    # The .long() method ensures the tensor is of integer type, which is necessary for indexing.
-                    i = (position[active_mask] // self.DL).long()
-
-                    # Direction for moving up or down gradient.
-                    # The boolean is true if it is moving down the gradient.
-                    direction_condition = (90 <= ang[active_mask]) & (ang[active_mask] < 270)
+                    # Direction for moving up or down gradient on full tensor
+                    direction_condition = (90 <= ang) & (ang < 270)
 
 #-----------------------------------------------------------------------------------------------------------
                     # THIS WAS THE NON-POISSON BROWN AND BERG PROCESS
-                    # Calculate Ptum using torch.where
-                    Ptum[active_mask] = torch.where(
+                    # Calculate Ptum using torch.where and time each sub-operation
+                    timers.start("Ptum_and_updates")
+
+                    timers.start("Ptum_compute")
+                    Ptum_full = torch.where(
                         direction_condition,
                         self.dt * torch.exp(-self.d + self.alpha * local_Rtroc),
                         self.dt * torch.exp(-self.d - self.alpha * local_Rtroc)
-                    ).float()  # Convert to float to match Ptum's dtype.
+                    ).float()
+                    timers.stop("Ptum_compute")
 
                     # # THIS IS THE POISSON PROCESS HAZARD FORM.
                     # r_plus  = torch.clamp(self.d + self.alpha * local_Rtroc, min=1e-8)
                     # r_minus = torch.clamp(self.d - self.alpha * local_Rtroc, min=1e-8)
                     #
-                    # Ptum[active_mask] = torch.where(
+                    # Ptum_full = torch.where(
                     #     direction_condition,
                     #     1 - torch.exp(-r_plus * self.dt),
                     #     1 - torch.exp(-r_minus * self.dt)
@@ -145,39 +184,43 @@ class Norm_Vd_Mean_Data_Generator:
 #----------------------------------------------------------------------------------------------------------
 
                     # Tumbling condition
-                    tumble_mask = R_rt[t_idx, active_mask] < Ptum[active_mask]
-                    # Update angles based on tumbling condition.
-                    # Condition: tumble_mask
-                    # If the condition is True, update the angle with Next_Angle.
-                    # If the condition is False, the bacteria does not tumble and the angle is left unchanged.
-                    ang[active_mask] = torch.where(
-                        tumble_mask,
-                        (ang[active_mask] + Next_Angle[t_idx, active_mask]) % 360,
-                        ang[active_mask]
-                    )
+                    timers.start("tumble_mask")
+                    tumble_mask_full = R_rt[t_idx] < Ptum_full
+                    timers.stop("tumble_mask")
 
-                    # Running condition
-                    run_mask = ~tumble_mask
-                    # Update position based on running condition
-                    Dot_Product = torch.cos(ang[active_mask] * (torch.pi / 180))  # Convert ang to radians manually
-                    # Condition: run_mask
-                    # If the condition is True, update the position with Vo_max*Dot_Product*dt.
-                    # If the condition is False, the bacteria does not move and the position is left unchanged.
-                    position[active_mask] = torch.where(
-                        run_mask,
-                        position[active_mask] + self.dt * self.Vo_max * Dot_Product,
-                        position[active_mask]
-                    )
+                    # Update angles based on tumbling condition.
+                    # If True, update the angle with Next_Angle; otherwise unchanged.
+                    timers.start("angle_update")
+                    ang = torch.where(active_mask & tumble_mask_full,
+                                      (ang + Next_Angle[t_idx]) % 360,
+                                      ang)
+                    timers.stop("angle_update")
+
+                    # Running condition + dot product
+                    timers.start("dot_product")
+                    run_mask_full = ~tumble_mask_full
+                    Dot_Product_full = torch.cos(ang * (torch.pi / 180))  # Convert ang to radians manually
+                    timers.stop("dot_product")
+
+                    timers.start("position_update")
+                    position = torch.where(active_mask & run_mask_full,
+                                           position + self.dt * self.Vo_max * Dot_Product_full,
+                                           position)
+                    timers.stop("position_update")
 
                     if t_idx < num_steps - 1:
-                        # Set position and ang for the next time step
-                        position[active_mask] = position[active_mask]
-                        ang[active_mask] = ang[active_mask]
+                        # Set position and ang for the next time step (no-op kept for clarity)
+                        position = position
+                        ang = ang
+                    timers.stop("Ptum_and_updates")
 
             # Remove finished bacteria from further calculations
             if not active_mask.any():
                 logging.info("The break condition is met.")
                 break
+
+        timers.stop("main_loop")
+        timers.print_summary()
 
         # Final calculation for the remaining iterations.
         # Calculate boundary_mask to identify bacteria reaching the end of the deme
@@ -185,13 +228,14 @@ class Norm_Vd_Mean_Data_Generator:
         if active_mask.any():
             Calculated_Ave_Vd = (final_remaining_positions - self.pos_ini) / (time_steps[-1])
             if Calculated_Ave_Vd.numel() > 0:
-                # Any remaining values are appended to the tensor 'velocities'.
-                for v in Calculated_Ave_Vd:
-                    if velocities_index < self.max_iter:
-                        velocities[velocities_index] = v  # Directly assign tensor value on the GPU.
-                        velocities_index += 1
-                    else:
-                        pass
+                timers.start("final_append")
+                k = Calculated_Ave_Vd.numel()
+                avail = self.max_iter - velocities_index
+                if k > 0 and avail > 0:
+                    take = int(min(k, avail))
+                    velocities[velocities_index:velocities_index + take] = Calculated_Ave_Vd[:take]
+                    velocities_index += take
+                timers.stop("final_append")
 
         # The class attribute is set for the class when the function is called when using it to return.
         self.velocities = velocities
@@ -231,11 +275,11 @@ if __name__ == "__main__":
     # This numpy vector is calculated from the above constant and pandas series.
     Rtroc = vd_chemotaxis * Grad * c_df_over_dc
 
-    alpha = 0
+    alpha = 500
     diff = 1.16
     dt = 0.1
     max_iter = 20000
-    deme_start = 30
+    deme_start = 51
 
     # Initialize the data generator
     data_generator = Norm_Vd_Mean_Data_Generator(Rtroc, Angle, Vo_max, DL, nl, deme_start, diff, dt)
