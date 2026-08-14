@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(69, 91):
+    for deme_start in range(90, 101):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
@@ -226,7 +226,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(300, 1100, 100))
+        alphas = list(range(0, 700, 100))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -301,7 +301,7 @@ if __name__ == "__main__":
             fd_tracker=fd_tracker,
             bracket=bracket,
             use_gradient_override=True,
-            alpha_decimals=1
+            alpha_decimals=2
         )
 
         print("\n[Init] Estimator constructed.")
