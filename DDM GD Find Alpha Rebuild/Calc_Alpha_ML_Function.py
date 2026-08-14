@@ -55,7 +55,7 @@ class Dynamic_Data_Evolving_Mean_Estimator:
     def __init__(self, data_generator: BaseDataGenerator, num_epochs, learning_rate, theoretical_val,
                  alpha, max_iter, eta_for_gamma_cap=0.5, step_size=20, max_iter_limit=20000, max_iter_factor=2,
                  learning_rate_gamma=0.7, stats=None, fd_tracker=None, bracket=None, use_gradient_override=True,
-                 alpha_decimals=2, verification_samples=80000):
+                 alpha_decimals=2, verification_samples=180000):
 
         self.data_generator = data_generator  # class BaseDataGenerator(ABC)
         self.max_iter = max_iter

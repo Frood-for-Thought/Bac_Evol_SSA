@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(18, 20):
+    for deme_start in range(44, 75):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
@@ -226,13 +226,13 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(1000, 5000, 500))
+        alphas = list(range(0, 1000, 100))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
         print(f"\nv_d = {theoretical_val}")
 
-        a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=False, samples_per_alpha=20000)
+        a_min, a_max, stats, data_generator = test_sign_transitions(alpha_grid=alphas, expand_alpha=False, samples_per_alpha=max_iter_start)
         print(f"\n[a_min, a_max] = [{a_min}, {a_max}]")
 
         # slope_tol is the convergence threshold for m_k, to measure when ∣m(α_(k+1) )-m(α_k )∣ < slope_tol.
@@ -241,7 +241,7 @@ if __name__ == "__main__":
         # resid_ok = (abs(r_cent) <= bound)
         # The trade off being the Polyak–Ruppert slope “trusted” and prevents the γ-cap from being disabled unnecessarily,
         # but too large and it might mask real curvature and mis-estimate m_k.
-        fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=1.0)
+        fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=5.0)
 
         # Compute all forward differences between adjacent α’s currently in stats.records.
         fd_tracker.compute_all_differences(stats)
@@ -301,7 +301,7 @@ if __name__ == "__main__":
             fd_tracker=fd_tracker,
             bracket=bracket,
             use_gradient_override=True,
-            alpha_decimals=0
+            alpha_decimals=2
         )
 
         print("\n[Init] Estimator constructed.")
