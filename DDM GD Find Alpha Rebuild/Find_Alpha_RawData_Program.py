@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(44, 75):
+    for deme_start in range(69, 91):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
         num_epochs = 100
@@ -226,7 +226,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(0, 1000, 100))
+        alphas = list(range(300, 1100, 100))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
@@ -241,7 +241,7 @@ if __name__ == "__main__":
         # resid_ok = (abs(r_cent) <= bound)
         # The trade off being the Polyak–Ruppert slope “trusted” and prevents the γ-cap from being disabled unnecessarily,
         # but too large and it might mask real curvature and mis-estimate m_k.
-        fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=5.0)
+        fd_tracker = FiniteDifferenceTracker(epsilon=1e-8, slope_tol=1e-5, stderr_tol=1.0)
 
         # Compute all forward differences between adjacent α’s currently in stats.records.
         fd_tracker.compute_all_differences(stats)
@@ -301,7 +301,7 @@ if __name__ == "__main__":
             fd_tracker=fd_tracker,
             bracket=bracket,
             use_gradient_override=True,
-            alpha_decimals=2
+            alpha_decimals=1
         )
 
         print("\n[Init] Estimator constructed.")
