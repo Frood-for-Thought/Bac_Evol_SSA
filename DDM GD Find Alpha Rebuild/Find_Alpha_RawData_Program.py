@@ -214,10 +214,12 @@ if __name__ == "__main__":
     # # Modify only deme 51
     # Rtroc[50] = 0.00563  # λ = 1 mm^-1 example
 
-    for deme_start in range(90, 101):
+    starting = 51  # Start on this seme for the for loop
+    ending = 60  # End on this deme
+    for deme_start in range(starting - 1, ending):
         # Values used for training.
         # deme_start = 5  # Deme 1 is 0 for python.
-        num_epochs = 100
+        num_epochs = 125
         learning_rate = 2 / (100 * Rtroc[deme_start])
 
         theoretical_val = vd_chemotaxis[deme_start]
@@ -226,7 +228,7 @@ if __name__ == "__main__":
         max_iter_start = 20000
 
         # The variables of alpha used for inspection.
-        alphas = list(range(0, 700, 100))
+        alphas = list(range(100, 500, 50))
 
         print(f"\nDEME NUMBER = {deme_start + 1}")
         print(f"\nRtroc = {Rtroc[deme_start]}")
