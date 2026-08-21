@@ -121,7 +121,7 @@ $$
 e_{k+1} \;=\; (1-4γm_k^2)\,e_k,\quad e_k:=α_k-α_\*.
 $$
 
-Thus \$|1-4γm\_k^2|<1\$ is the stability condition; the **best non-oscillatory contraction** is at \$γ≈1/(2m\_k^2)\$. The pipeline computes/updates \$m\_k\$ and enforces a small-margin cap on γ accordingly.
+Thus \$|1-4γm\_k^2|<1\$ is the stability condition; the **best non-oscillatory contraction** is at \$γ≈1/(4m\_k^2)\$. The pipeline computes/updates \$m\_k\$ and enforces a small-margin cap on γ accordingly.
 
 ### 3) Centered PR slope and linearity gate
 
