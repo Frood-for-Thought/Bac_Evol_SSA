@@ -102,7 +102,7 @@ $$
    * Optionally log the **centered-residual gate** status to check local linearity.
    * Update PR slope (no reset), and read `linear_slope_ready`.
    * Compute \$d\mu/dα\$ from finite differences; set the **scale** \$γ = 1/|\mu'(α\_k)|\$.
-   * If PR slope is ready, **cap γ** with \$γ \le (1-\eta)/(2m\_k^2)\$ for a small safety margin \$\eta\$.
+   * If PR slope is ready, **cap γ** with \$γ \le (1-\eta)/(4m\_k^2)\$ for a small safety margin \$\eta\$.
    * Ask `LossEvaluator.decide_next_alpha(...)` for the next α (it evaluates the gradient step, may apply a direction override to respect the bracket, may probe forward if a plateau is detected, etc.).
 
 ---
